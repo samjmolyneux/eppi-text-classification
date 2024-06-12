@@ -1,0 +1,50 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "eppi_text_classification"
+version = "0.0.1"
+description = "Text classification of papers by titles and abstracts."
+authors = [
+  { name = "Sam Molyneux" },
+]
+
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    
+]
+requires-python = "~=3.11.8"
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+lint.select = ["ALL"]
+lint.ignore = ["D100",   # ignore missing docs
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+
+    "D203",    #Docstring standards for datascience
+    "D212",
+    
+    "T201",
+    "T203",
+    
+    "COM812",
+    "ISC001",
+
+    "RET504" #Disables unessecary assignement before return
+    
+    ]
+show-fixes = true
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.mypy]
+strict = true
