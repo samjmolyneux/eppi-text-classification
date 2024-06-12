@@ -1,6 +1,13 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools",
+    "setuptools-scm",
+]
+
+[tool.setuptools]
+packages = ["eppi_text_classification"]
+
 
 [project]
 name = "eppi_text_classification"
@@ -16,6 +23,19 @@ classifiers = [
     
 ]
 requires-python = "~=3.11.8"
+dependencies = []
+
+
+
+
+
+
+
+
+
+
+
+
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
