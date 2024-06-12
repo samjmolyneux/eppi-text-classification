@@ -57,7 +57,7 @@ def get_features(df):
     abstracts = preprocess_parallel(df["abstract"])
     titles = preprocess_parallel(df["title"])
     all_words = []
-    for abstract, title in zip(abstracts, titles, strict=False):
+    for abstract, title in zip(abstracts, titles, strict=True):
         words = [f"t_{word}" for word in title] + [f"a_{word}" for word in abstract]
         all_words.append(words)
 
