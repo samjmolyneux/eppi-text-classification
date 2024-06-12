@@ -2,45 +2,40 @@
 
 
 ```
-├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
-├── README.md          <- The top-level README for developers using this project.
+├── Makefile
+├── README.md          
 ├── data
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
+│   ├── processed      
+│   └── raw            
 │
-├── docs               <- A default mkdocs project; see mkdocs.org for details
+├── docs               
 │
-├── models             <- Trained and serialized models, model predictions, or model summaries
+├── models             
 │
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
+├── notebooks          
 │
-├── pyproject.toml     <- Project configuration file with package metadata for eppi_text_classification
-│                         and configuration for tools like black
+├── pyproject.toml     
+│                         
+├── reports            
+│   └── figures        
 │
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
+├── requirements.txt   
 │
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
-│
-└── eppi_text_classification                <- Source code for use in this project.
+└── eppi_text_classification                
     │
-    ├── __init__.py    <- Makes eppi_text_classification a Python module
+    ├── __init__.py    
     │
-    ├── data           <- Scripts to download or generate data
+    ├── data           
     │   └── make_dataset.py
     │
-    ├── features       <- Scripts to turn raw data into features for modeling
+    ├── features       
     │   └── build_features.py
     │
-    ├── models         <- Scripts to train models and then use trained models to make
-    │   │                 predictions
+    ├── models         
     │   ├── predict_model.py
     │   └── train_model.py
     │
-    └── visualization  <- Scripts to create exploratory and results oriented visualizations
+    └── visualization  
         └── visualize.py
 ```
 
