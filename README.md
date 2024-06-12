@@ -1,5 +1,3 @@
-# EPPI_text_classification
-
 
 ```
 ├── Makefile
