@@ -38,8 +38,14 @@ lint.ignore = ["D100",   # ignore missing docs
     "COM812",
     "ISC001",
 
-    "RET504" #Disables unessecary assignement before return
-    
+    "RET504", #Disables unessecary assignement before return
+
+    "S106", #Checks for harcoded passwords in code
+
+    #Maybe enable these for production
+    "ANN201", #Return type for a function
+    "ANN001", #Type for a function paramter
+    "PD901" #Generic use of df
     ]
 show-fixes = true
 
