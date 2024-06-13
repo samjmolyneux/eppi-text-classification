@@ -78,13 +78,3 @@ def get_features_and_labels(
     labels = get_labels(df[y_key])
 
     return word_features, labels
-
-
-if __name__ == "__main__":
-    df = pd.read_csv("data/raw/debunking_review.tsv", sep="\t")
-    features, labels = get_features_and_labels(df)
-
-    # df = pd.read_csv("../../data/raw/studytype_multiclass.tsv", sep="\t")
-    # tfidf_scores, labels = get_features_and_labels(
-    #     df, abstract_key="AB", title_key="TI"
-    # )
