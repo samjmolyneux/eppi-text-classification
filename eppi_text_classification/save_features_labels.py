@@ -59,6 +59,7 @@ def get_features(abstract_column, title_column):
     return all_words
 
 
+# TO DO: Get working for all data types
 def get_labels(label_column):
     labels = label_column.tolist()
     labels = [int(label) for label in labels]
