@@ -9,6 +9,8 @@ import os
 
 
 # TO DO:Loguru for processer count and chunksize
+# TO DO Ability to change the process count
+
 system_num_processes = os.cpu_count()
 
 
@@ -21,11 +23,10 @@ def lemmatize_pipe(doc):
     return lemma_list
 
 
-def chunker(iterable, total_length, process_count):
-    chunksize = -(-total_length // process_count)  # ceiling division
-    print(chunksize)
+def chunker(iterable, process_count):
+    chunksize = -(-len(iterable) // process_count)  # ceiling division
     return (
-        iterable[pos : pos + chunksize] for pos in range(0, total_length, chunksize)
+        iterable[pos : pos + chunksize] for pos in range(0, len(iterable), chunksize)
     )
 
 
@@ -39,10 +40,9 @@ def process_chunk(texts):
 
 
 def process_column(texts, process_count=system_num_processes):
-    print(process_count)
     tasks = (
         delayed(process_chunk)(chunk)
-        for chunk in chunker(texts, len(texts), process_count=process_count)
+        for chunk in chunker(texts, process_count=process_count)
     )
     result = Parallel(n_jobs=process_count, backend="loky")(tasks)
     return flatten(result)
@@ -88,7 +88,3 @@ if __name__ == "__main__":
     # tfidf_scores, labels = get_features_and_labels(
     #     df, abstract_key="AB", title_key="TI"
     # )
-
-
-# NEED TO MAKE SURE THAT THIS CODE WONT DELETE THE EMPTY ELEMENTS FOR SOME REASON
-# ALSO NEED TO MAKE SURE THAT THEY COME BACK OUR IN THE CORRECT ORDER (THE MULTIPROCESSING MIGHT MESS UP THE ORDER OF THE ELEMENTS)
