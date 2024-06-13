@@ -67,21 +67,15 @@ def get_labels(label_column):
 
 
 def get_features_and_labels(
-    df, title_col_name="title", abstract_col_name="abstract", y_col_name="included"
+    df, title_key="title", abstract_key="abstract", y_key="included"
 ):
-    df = df.rename(
-        columns={
-            title_col_name: "title",
-            abstract_col_name: "abstract",
-        }
-    )
-    df = df.dropna(subset=["title", "abstract"], how="all")
-    df["abstract"] = df["abstract"].astype(str)
-    df["title"] = df["title"].astype(str)
+    df = df.dropna(subset=[title_key, abstract_key], how="all")
+    df[abstract_key] = df[abstract_key].astype(str)
+    df[title_key] = df[title_key].astype(str)
 
-    word_features = get_features(df["abstract"], df["title"])
+    word_features = get_features(df[abstract_key], df[title_key])
 
-    labels = get_labels(df[y_col_name])
+    labels = get_labels(df[y_key])
 
     return word_features, labels
 
@@ -92,7 +86,7 @@ if __name__ == "__main__":
 
     # df = pd.read_csv("../../data/raw/studytype_multiclass.tsv", sep="\t")
     # tfidf_scores, labels = get_features_and_labels(
-    #     df, abstract_col_name="AB", title_col_name="TI"
+    #     df, abstract_key="AB", title_key="TI"
     # )
 
 
