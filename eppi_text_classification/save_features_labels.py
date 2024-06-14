@@ -51,12 +51,13 @@ def process_column(texts, process_count=system_num_processes):
 def get_features(abstract_column, title_column):
     abstracts = process_column(abstract_column)
     titles = process_column(title_column)
-    all_words = []
+    features = []
     for abstract, title in zip(abstracts, titles, strict=True):
         words = [f"t_{word}" for word in title] + [f"a_{word}" for word in abstract]
-        all_words.append(words)
+        string = " ".join(words)
+        features.append(string)
 
-    return all_words
+    return features
 
 
 # TO DO: Get working for all data types
