@@ -1,12 +1,9 @@
 
 ```
-├── Makefile
 ├── README.md          
 ├── data
 │   ├── processed      
-│   └── raw            
-│
-├── docs               
+│   └── raw                   
 │
 ├── models             
 │
@@ -15,26 +12,19 @@
 ├── pyproject.toml     
 │                         
 ├── reports            
-│   └── figures        
-│
-├── requirements.txt   
+│   └── figures         
 │
 └── eppi_text_classification                
     │
     ├── __init__.py    
     │
-    ├── data           
-    │   └── make_dataset.py
+    ├── opt.py
     │
-    ├── features       
-    │   └── build_features.py
+    ├── save_features_labels.py
     │
-    ├── models         
-    │   ├── predict_model.py
-    │   └── train_model.py
+    ├── utils.py
     │
-    └── visualization  
-        └── visualize.py
+    └── plots.py
 ```
 
 --------
