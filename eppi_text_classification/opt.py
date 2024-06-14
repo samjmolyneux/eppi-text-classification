@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import numpy as np
 import optuna
@@ -16,6 +17,7 @@ from xgboost import XGBClassifier
 # TO DO: Add a way for mutliclass
 # TO DO: Add a way to automatically fill the class weights for each objective function
 # TO DO: Check the defaults are all good for the params
+# TO DO: Fix all the params
 
 # URGENT TO DO: MAKE SURE ALL THE MODELS A SINGLE CORE
 
@@ -65,26 +67,23 @@ class OptunaHyperparameterOptimisation:
 
         self.interupt = False
 
+        root_path = Path(Path(__file__).resolve()).parent.parent
+        self.db_storage_url = f"sqlite:///{str(root_path)}/optuna.db"
+
     def optimise_on_single(self, n_trials, study_name):
-        study = optuna.load_study(study_name=study_name, storage="sqlite:///optuna.db")
+        study = optuna.load_study(study_name=study_name, storage=self.db_storage_url)
         study.optimize(self.objective, n_trials=n_trials)
 
     def optimise_hyperparameters(
         self,
         study_name,
     ):
-        all_studys = optuna.get_all_study_names(storage="sqlite:///optuna.db")
-
-        if study_name in all_studys:
-            study = optuna.load_study(
-                study_name=study_name, storage="sqlite:///optuna.db"
-            )
-        else:
-            study = optuna.create_study(
-                study_name=study_name,
-                storage="sqlite:///optuna.db",
-                direction="maximize",
-            )
+        study = optuna.create_study(
+            study_name=study_name,
+            storage=self.db_storage_url,
+            direction="maximize",
+            load_if_exists=True,
+        )
 
         # TO DO: try and remove the square brackets
         Parallel(n_jobs=-1)(
@@ -101,7 +100,7 @@ class OptunaHyperparameterOptimisation:
 
     def get_cv_performance(self, clf):
         scores = []
-        for i in range(self.cv_repeats):
+        for i in range(self.num_cv_repeats):
             kf = StratifiedKFold(n_splits=self.nfolds, shuffle=True, random_state=i)
             scores.extend(
                 cross_val_score(
