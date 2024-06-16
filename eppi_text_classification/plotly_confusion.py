@@ -7,13 +7,6 @@ from sklearn.metrics import (
 )
 
 
-def get_font_color(value, cm1):
-    if value > cm1.max() / 2:
-        return "white"
-    else:
-        return " dark blue"
-
-
 def binary_train_valid_confusion_plotly(
     y_train,
     y_train_pred,
@@ -188,3 +181,10 @@ def add_ticks_to_confusion(fig, labels, plot_index):
         mirror=True,  # Mirror ticks on both sides
         title_standoff=0.3,
     )
+
+
+def get_font_color(value, cm1):
+    if value > cm1.max() / 2:
+        return "white"
+    else:
+        return " dark blue"
