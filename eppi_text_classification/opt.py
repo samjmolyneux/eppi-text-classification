@@ -68,7 +68,7 @@ class OptunaHyperparameterOptimisation:
         self.interupt = False
 
         root_path = Path(Path(__file__).resolve()).parent.parent
-        self.db_storage_url = f"sqlite:///{str(root_path)}/optuna.db"
+        self.db_storage_url = f"sqlite:///{root_path}/optuna.db"
 
     def optimise_on_single(self, n_trials, study_name):
         study = optuna.load_study(study_name=study_name, storage=self.db_storage_url)
@@ -133,9 +133,6 @@ class OptunaHyperparameterOptimisation:
                 "reg_lambda": 0,  # L2
             }
 
-            param["num_leaves"] = 2 ^ param["max_depth"]
-
-            param["learning_rate"] = trial.suggest_float("learning_rate", 0.2, 0.4)
             param["n_estimators"] = trial.suggest_int(
                 "n_estimators", 100, 3000, log=True
             )
