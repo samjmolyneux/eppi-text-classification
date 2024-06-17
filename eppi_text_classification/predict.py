@@ -24,9 +24,5 @@ def predict_probabilities(model, X):
 
 
 def threshold_predict(model, X, threshold):
-    if isinstance(model, LGBMClassifier | XGBClassifier | RandomForestClassifier):
-        y_pred_prob = model.predict_proba(X)[:, 1]
-    if isinstance(model, SVC):
-        y_pred_prob = model.decision_function(X)
-
+    y_pred_prob = predict_probabilities(model, X)
     return (y_pred_prob >= threshold).astype(int)
