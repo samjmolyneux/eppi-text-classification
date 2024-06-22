@@ -42,7 +42,7 @@ class ShapPlotter:
 
         self.background_data = np.zeros(shape=(1, X_test.shape[-1]))
 
-        if isinstance(model, LGBMClassifier):
+        if isinstance(model, LGBMClassifier | XGBClassifier):
             if not tree_path_dependent:
                 self.explainer = shap.TreeExplainer(
                     model,
@@ -62,7 +62,7 @@ class ShapPlotter:
         self.shap_values = self.explainer.shap_values(self.X_test)
 
     def dot_plot(self, num_display=10, log_scale=True, plot_zero=False):
-        if isinstance(self.model, LGBMClassifier):
+        if isinstance(self.model, LGBMClassifier | XGBClassifier):
             summary_new(
                 self.shap_values,
                 self.X_test,
@@ -76,7 +76,7 @@ class ShapPlotter:
             )
 
     def bar_chart(self, num_display=10):
-        if isinstance(self.model, LGBMClassifier):
+        if isinstance(self.model, LGBMClassifier | XGBClassifier):
             summary_new(
                 self.shap_values,
                 self.X_test,
@@ -85,19 +85,9 @@ class ShapPlotter:
                 max_display=num_display,
             )
 
-    # def violin_plot(self, num_display=10):
-    #     if isinstance(self.model, LGBMClassifier):
-    #         shap.summary_plot(
-    #             self.shap_values,
-    #             self.X_test,
-    #             feature_names=self.feature_names,
-    #             plot_type="violin",
-    #             max_display=num_display,
-    #         )
-
     # TO DO: Double check that the use of threshold is right for the base value
     def decision_plot(self, threshold, num_display=10):
-        if isinstance(self.model, LGBMClassifier):
+        if isinstance(self.model, LGBMClassifier | XGBClassifier):
             decision(
                 threshold,
                 self.shap_values,
@@ -108,7 +98,7 @@ class ShapPlotter:
             )
 
     def single_decision_plot(self, threshold, index, num_display=10):
-        if isinstance(self.model, LGBMClassifier):
+        if isinstance(self.model, LGBMClassifier | XGBClassifier):
             decision(
                 threshold,
                 self.shap_values[index],
