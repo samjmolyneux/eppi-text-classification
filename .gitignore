@@ -1,6 +1,9 @@
 # Data
 /data/
 
+# Plots
+.html
+
 # Mac OS-specific storage files
 .DS_Store
 
