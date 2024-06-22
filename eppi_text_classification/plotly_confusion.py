@@ -183,8 +183,8 @@ def add_ticks_to_confusion(fig, labels, plot_index):
     )
 
 
-def get_font_color(value, cm1):
-    if value > cm1.max() / 2:
+def get_font_color(value, cm):
+    if value > cm.max() / 2:
         return "white"
     else:
         return " dark blue"

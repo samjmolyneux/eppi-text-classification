@@ -249,7 +249,7 @@ class OptunaHyperparameterOptimisation:
                 "max_leaf_nodes": None,
                 "min_impurity_decrease": 0.0,
                 "bootstrap": True,
-                "class_weight": 27,
+                "class_weight": {1: 27},
                 "ccp_alpha": 0.0,
                 "max_samples": None,
                 "monotonic_cst": None,
