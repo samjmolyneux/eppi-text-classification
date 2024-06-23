@@ -15,6 +15,8 @@ def get_tfidf_and_names(word_features, min_df=3, max_features=75000):
     )
 
     tfidf_scores = vectorizer.fit_transform(word_features)
+    tfidf_scores = tfidf_scores.toarray()
+
     feature_names = vectorizer.get_feature_names_out()
 
     return tfidf_scores, feature_names
