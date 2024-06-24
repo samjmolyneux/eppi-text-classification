@@ -10,6 +10,8 @@ from sklearn.svm import SVC
 from xgboost import XGBClassifier
 from . import shap_colors as colors
 
+# Considerations: The number of samples that are calculated to get the kernel explainer shap values should be adjusted
+
 plot_labels = {
     "MAIN_EFFECT": "SHAP main effect value for\n%s",
     "INTERACTION_VALUE": "SHAP interaction value",
@@ -35,12 +37,16 @@ class ShapPlotter:
         feature_names,
         subsample=None,
         tree_path_dependent=False,
+        kernel_nsamples="auto",
     ):
         self.model = model
         self.X_test = X_test
         self.feature_names = feature_names
 
         self.background_data = np.zeros(shape=(1, X_test.shape[-1]))
+
+        if subsample is not None:
+            self.X_test = shap.sample(self.X_test, subsample)
 
         if isinstance(model, LGBMClassifier | XGBClassifier | RandomForestClassifier):
             if not tree_path_dependent:
@@ -56,19 +62,21 @@ class ShapPlotter:
                     model_output="raw",
                     feature_perturbation="tree_path_dependent",
                 )
+            self.shap_values = self.explainer.shap_values(self.X_test)
 
         if isinstance(model, SVC):
             self.explainer = shap.KernelExplainer(
                 model.decision_function, self.background_data
             )
+            self.shap_values = self.explainer.shap_values(
+                self.X_test, nsamples=kernel_nsamples
+            )
 
-        if subsample is not None:
-            self.X_test = shap.sample(self.X_test, subsample)
-
-        self.shap_values = self.explainer.shap_values(self.X_test)
+        self.expected_value = self.explainer.expected_value
 
         if isinstance(model, RandomForestClassifier):
             self.shap_values = self.shap_values[:, :, 1]
+            self.expected_value = self.explainer.expected_value[1]
 
     def dot_plot(self, num_display=10, log_scale=True, plot_zero=False):
         summary_new(
@@ -95,7 +103,7 @@ class ShapPlotter:
     def decision_plot(self, threshold, num_display=10, log_scale=False):
         if log_scale:
             decision(
-                self.explainer.expected_value,
+                self.expected_value,
                 self.shap_values,
                 self.X_test,
                 feature_names=self.feature_names,
@@ -104,7 +112,7 @@ class ShapPlotter:
             )
         else:
             shap.decision_plot(
-                self.explainer.expected_value,
+                self.expected_value,
                 self.shap_values,
                 self.X_test,
                 feature_names=self.feature_names,
@@ -120,7 +128,7 @@ class ShapPlotter:
     def single_decision_plot(self, threshold, index, num_display=10, log_scale=False):
         if log_scale:
             decision(
-                self.explainer.expected_value,
+                self.expected_value,
                 self.shap_values[index],
                 self.X_test,
                 feature_names=self.feature_names,
@@ -129,7 +137,7 @@ class ShapPlotter:
             )
         else:
             shap.decision_plot(
-                self.explainer.expected_value,
+                self.expected_value,
                 self.shap_values[index],
                 self.X_test,
                 feature_names=self.feature_names,
