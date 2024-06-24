@@ -37,22 +37,29 @@ class ShapPlotter:
         tree_path_dependent=False,
     ):
         self.model = model
-        self.X_test = X_test.toarray()
+        self.X_test = X_test
         self.feature_names = feature_names
 
         self.background_data = np.zeros(shape=(1, X_test.shape[-1]))
 
-        if not tree_path_dependent:
-            self.explainer = shap.TreeExplainer(
-                model,
-                data=self.background_data,
-                model_output="probability",
-            )
-        else:
-            self.explainer = shap.TreeExplainer(
-                model,
-                model_output="raw",
-                feature_perturbation="tree_path_dependent",
+        if isinstance(model, LGBMClassifier | XGBClassifier | RandomForestClassifier):
+            if not tree_path_dependent:
+                self.explainer = shap.TreeExplainer(
+                    model,
+                    data=self.background_data,
+                    model_output="raw",
+                    feature_perturbation="interventional",
+                )
+            else:
+                self.explainer = shap.TreeExplainer(
+                    model,
+                    model_output="raw",
+                    feature_perturbation="tree_path_dependent",
+                )
+
+        if isinstance(model, SVC):
+            self.explainer = shap.KernelExplainer(
+                model.decision_function, self.background_data
             )
 
         if subsample is not None:
@@ -85,26 +92,84 @@ class ShapPlotter:
             max_display=num_display,
         )
 
-    # TO DO: Double check that the use of threshold is right for the base value
-    def decision_plot(self, threshold, num_display=10):
-        decision(
-            threshold,
-            self.shap_values,
-            self.X_test,
-            feature_names=self.feature_names,
-            feature_display_range=slice(-1, -num_display, -1),
-            ignore_warnings=True,
-        )
+    def decision_plot(self, threshold, num_display=10, log_scale=False):
+        if log_scale:
+            decision(
+                self.explainer.expected_value,
+                self.shap_values,
+                self.X_test,
+                feature_names=self.feature_names,
+                feature_display_range=slice(-1, -num_display, -1),
+                ignore_warnings=True,
+            )
+        else:
+            shap.decision_plot(
+                self.explainer.expected_value,
+                self.shap_values,
+                self.X_test,
+                feature_names=self.feature_names,
+                feature_display_range=slice(-1, -num_display, -1),
+                ignore_warnings=True,
+                show=False,
+            )
 
-    def single_decision_plot(self, threshold, index, num_display=10):
-        decision(
-            threshold,
-            self.shap_values[index],
-            self.X_test,
-            feature_names=self.feature_names,
-            feature_display_range=slice(-1, -num_display, -1),
-            ignore_warnings=True,
-        )
+            ax = pl.gca()
+            legacy_decision_changes(ax, threshold)
+            pl.show()
+
+    def single_decision_plot(self, threshold, index, num_display=10, log_scale=False):
+        if log_scale:
+            decision(
+                self.explainer.expected_value,
+                self.shap_values[index],
+                self.X_test,
+                feature_names=self.feature_names,
+                feature_display_range=slice(-1, -num_display, -1),
+                ignore_warnings=True,
+            )
+        else:
+            shap.decision_plot(
+                self.explainer.expected_value,
+                self.shap_values[index],
+                self.X_test,
+                feature_names=self.feature_names,
+                feature_display_range=slice(-1, -num_display, -1),
+                ignore_warnings=True,
+                show=False,
+            )
+
+            ax = pl.gca()
+            legacy_decision_changes(ax, threshold)
+            pl.show()
+
+
+def legacy_decision_changes(ax, threshold):
+    for line in ax.lines:
+        if line.get_color() == "#999999":
+            line.set_visible(False)
+
+    ax.spines["top"].set_visible(False)
+    ax.xaxis.set_ticks_position("bottom")
+
+    ax.axvline(x=threshold, color="black", zorder=1000)
+    threshold_line = mlines.Line2D([], [], color="black", label="Threshold")
+    ax.legend(handles=[threshold_line], loc="best")
+
+    text_y_position = ax.get_ylim()[1] + 0.4  # Slightly above the top
+    ax.text(
+        threshold,
+        text_y_position,
+        f"{threshold:.3}",
+        verticalalignment="top",
+        horizontalalignment="left",
+        zorder=1001,
+    )
+
+    x_lims = ax.get_xlim()
+    if threshold < x_lims[0]:
+        ax.set_xlim(left=(threshold - 0.1 * (x_lims[1] - x_lims[0])))
+    elif threshold > x_lims[1]:
+        ax.set_xlim(right=(threshold + 0.1 * (x_lims[1] - x_lims[0])))
 
 
 def shorten_text(text, length_limit):
@@ -714,9 +779,7 @@ def __decision_plot_matplotlib(
     lines = []
     for i in range(cumsum.shape[0]):
         o = pl.plot(
-            cumsum[
-                i, :
-            ],  # -base_value is to make the plot centered around the threshold
+            cumsum[i, :],  #
             y_pos,
             color=m.to_rgba(cumsum[i, -1], alpha),
             linewidth=linewidth[i],
