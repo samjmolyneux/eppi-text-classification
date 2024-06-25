@@ -1,3 +1,5 @@
+"""For generating the plotly confusion matricies."""
+
 import numpy as np
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -8,13 +10,41 @@ from sklearn.metrics import (
 
 
 def binary_train_valid_confusion_plotly(
-    y_train,
-    y_train_pred,
-    y_val,
-    y_val_pred,
-    postive_label="1",
-    negative_label="0",
-):
+    y_train: np.ndarray,
+    y_train_pred: np.ndarray,
+    y_val: np.ndarray,
+    y_val_pred: np.ndarray,
+    postive_label: str = "1",
+    negative_label: str = "0",
+) -> None:
+    """
+    Generate a binary classification confusion matrix for training and validation data.
+
+    Parameters
+    ----------
+    y_train : np.ndarray
+        The binary labels for the training data. (bool or int)
+
+    y_train_pred : np.ndarray
+        Predictied binary labels for the training data. (bool or int)
+
+    y_val : np.ndarray
+        The binary labels for the validation data. (bool or int)
+
+    y_val_pred : np.ndarray
+        _Predicted binary labels for the validation data. (bool or int)
+
+    postive_label : str, optional
+        The label for the positive class.
+        Alters the pos label displayed when hovering over confusion matrix with cursor.
+        By default "1".
+
+    negative_label : str, optional
+        The label for the negative class.
+        Alters the neg label displayed when hovering over confusion matrix with cursor.
+        By default "0".
+
+    """
     labels = ["0", "1"]
     cm1 = confusion_matrix(y_train, y_train_pred)
     cm1 = np.array([[cm1[0, 1], cm1[0, 0]], [cm1[1, 1], cm1[1, 0]]])
@@ -64,13 +94,37 @@ def binary_train_valid_confusion_plotly(
 
 
 def add_confusion_trace(
-    fig,
-    cm,
-    positive_label,
-    negative_label,
-    row,
-    col,
+    fig: go.Figure,
+    cm: np.ndarray,
+    positive_label: str,
+    negative_label: str,
+    row: int,
+    col: int,
 ):
+    """
+    Add a confusion matrix trace to a plotly figure.
+
+    Parameters
+    ----------
+    fig : go.Figure
+        Figure to add a trace to.
+
+    cm : np.ndarray
+        Confusion matrix data to add to the figure.
+
+    positive_label : str
+        Hover text for the positive class.
+
+    negative_label : str
+        Hover text for the negative class.
+
+    row : int
+        The row in fig to add the trace to.
+
+    col : int
+        The column in fig to add the trace to.
+
+    """
     labels = ["0", "1"]
     hover_text = np.empty_like(cm, dtype=object)
     hover_text[0, 0] = (
@@ -103,23 +157,58 @@ def add_confusion_trace(
     )
 
 
-def add_labels_to_confusion_trace(fig, cm, labels, plot_index):
+def add_labels_to_confusion_trace(
+    fig: go.Figure,
+    cm: np.ndarray,
+    labels: list,
+    plot_index: int,
+) -> None:
+    """
+    Add permanent text labels to a confusion matrix trace.
+
+    # Parameters
+    ----------
+    fig : go.Figure
+        Figure to add labels to.
+
+    cm : np.ndarray
+        Confusion matrix data to add to the figure.
+
+    labels : list
+        Labels for the confusion matrix.
+
+    plot_index : int
+        The index of the plot to add the labels to.
+
+    """
     for i, cm_row in enumerate(cm):
         for j, value in enumerate(cm_row):
             fig.add_annotation(
-                dict(
-                    text=str(value),
-                    x=labels[j],
-                    y=labels[i],
-                    xref=f"x{plot_index}",
-                    yref=f"y{plot_index}",
-                    showarrow=False,
-                    font=dict(color=get_font_color(value, cm)),
-                )
+                {
+                    "text": str(value),
+                    "x": labels[j],
+                    "y": labels[i],
+                    "xref": f"x{plot_index}",
+                    "yref": f"y{plot_index}",
+                    "showarrow": False,
+                    "font": {"color": get_font_color(value, cm)},
+                }
             )
 
 
-def add_lines_to_confusion(fig, plot_index):
+def add_lines_to_confusion(fig: go.Figure, plot_index: int):
+    """
+    Add aesthetic grid lines to a confusion matrix trace.
+
+    Parameters
+    ----------
+    fig : go.Figure
+        Figure to add lines to.
+
+    plot_index : int
+        Plot index to add lines to.
+
+    """
     labels = ["0", "1"]
     fig.add_shape(
         type="rect",
@@ -129,7 +218,7 @@ def add_lines_to_confusion(fig, plot_index):
         y0=-0.5,
         x1=len(labels) - 0.5,
         y1=len(labels) - 0.5,
-        line=dict(color="black", width=2),
+        line={"color": "black", "width": 2},
     )
     fig.add_shape(
         type="line",
@@ -139,7 +228,7 @@ def add_lines_to_confusion(fig, plot_index):
         y0=0.5,
         x1=len(labels) - 0.5,
         y1=0.5,
-        line=dict(color="black", width=1.5),
+        line={"color": "black", "width": 1.5},
     )
     fig.add_shape(
         type="line",
@@ -149,11 +238,26 @@ def add_lines_to_confusion(fig, plot_index):
         y0=-0.5,
         x1=0.5,
         y1=1.5,
-        line=dict(color="black", width=1.5),
+        line={"color": "black", "width": 1.5},
     )
 
 
-def add_ticks_to_confusion(fig, labels, plot_index):
+def add_ticks_to_confusion(fig: go.Figure, labels: list, plot_index: int):
+    """
+    Add aesthetic ticks to a confusion matrix trace.
+
+    Parameters
+    ----------
+    fig : go.Figure
+        Figure to add ticks to.
+
+    labels : list
+        Labels for the confusion matrix.
+
+    plot_index : int
+        Plot index to add ticks to.
+
+    """
     fig.update_xaxes(
         title_text="Prediction",
         row=1,
@@ -183,8 +287,28 @@ def add_ticks_to_confusion(fig, labels, plot_index):
     )
 
 
-def get_font_color(value, cm):
+def get_font_color(value: int, cm: np.ndarray):
+    """
+    Get the font color for a confusion matrix cell.
+
+    This prevents white text from being displayed on a white background.
+
+    Parameters
+    ----------
+    value : int
+        Number of samples in the cell.
+
+    cm : np.ndarray
+        Confusion matrix data.
+
+    Returns
+    -------
+    str
+        The font color for the cell.
+
+
+    """
     if value > cm.max() / 2:
         return "white"
     else:
-        return " dark blue"
+        return "dark blue"

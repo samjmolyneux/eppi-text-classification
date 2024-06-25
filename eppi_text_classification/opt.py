@@ -1,8 +1,12 @@
+"""Methods for optimsing hyperparameters for models."""
+
 import os
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
 import optuna
+import validation
 from joblib import Parallel, delayed
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -22,14 +26,6 @@ from xgboost import XGBClassifier
 # URGENT TO DO: MAKE SURE ALL THE MODELS A SINGLE CORE
 
 
-model_list = [
-    "SVC",
-    "LGBMClassifier",
-    "RandomForestClassifier",
-    "LogisticRegression",
-    "XGBClassifier",
-]
-
 model_to_opt_func = {
     "SVC": "SVC_objective",
     "LGBMClassifier": "LGBM_objective",
@@ -40,17 +36,53 @@ model_to_opt_func = {
 
 
 class OptunaHyperparameterOptimisation:
+    """An engine for optimsing hyperparameters for a using optuna."""
+
     def __init__(
         self,
-        tfidf_scores,
-        labels,
-        model,
-        n_trials_per_job=200,
-        n_jobs=-1,
-        nfolds=3,
-        num_cv_repeats=3,
-    ):
-        assert model in model_list, f"Model must be one of {model_list}"
+        tfidf_scores: np.ndarray,
+        labels: Sequence[int],
+        model: SVC | LGBMClassifier | RandomForestClassifier | XGBClassifier,
+        n_trials_per_job: int = 200,
+        n_jobs: int = -1,
+        nfolds: int = 3,
+        num_cv_repeats: int = 3,
+    ) -> None:
+        """
+        Build a new hyperparameter optimisation engine.
+
+        Parameters
+        ----------
+        tfidf_scores : np.ndarray
+            Tfidf scores for the text data, shape (n_samples, n_features).
+
+        labels : Sequence[int]
+            Labels corresponding to the text data, shape (n_samples,).
+
+        model : SVC | LGBMClassifier | RandomForestClassifier | XGBClassifier
+            Classification model to optimise.
+
+        n_trials_per_job : int, optional
+            Number of optimisation trials each processor will perform, by default 200.
+
+        n_jobs : int, optional
+            Number of parallel processes to use. Setting n_jobs=-1 will use all
+            available processes. By default -1.
+
+        nfolds : int, optional
+            Number of folds to use when performing cross-validation for evalutating
+            model performance. By default 3.
+
+        num_cv_repeats : int, optional
+            Number of times to repeat and average the cross validation scores.
+            Small datasets may be prone to validation set overfitting.
+            By repeating the cross validation, the selected hyperparameters
+            become more generalisable.
+            A different random seed is used for each stratified fold.
+            By default 3.
+
+        """
+        validation.check_valid_model(model)
 
         self.tfidf_scores = tfidf_scores
         self.labels = labels
@@ -70,14 +102,47 @@ class OptunaHyperparameterOptimisation:
         root_path = Path(Path(__file__).resolve()).parent.parent
         self.db_storage_url = f"sqlite:///{root_path}/optuna.db"
 
-    def optimise_on_single(self, n_trials, study_name):
+    def optimise_on_single(self, n_trials: int, study_name: str) -> None:
+        """
+        Run the hyperparameter search for a single process.
+
+        For a hyperaparameter search, given by study_name,
+        controls the hyperparmeter optimisation search for a single process.
+        This method will not start a new study, but will add an additional process
+        to search the hyperparmeter space of an existing study.
+
+        Parameters
+        ----------
+        n_trials : int
+            Number of trials to run on the given process.
+
+        study_name : str
+            Name of the study. This is what tracks our hyperparameter search.
+
+        """
         study = optuna.load_study(study_name=study_name, storage=self.db_storage_url)
         study.optimize(self.objective, n_trials=n_trials)
 
     def optimise_hyperparameters(
         self,
-        study_name,
-    ):
+        study_name: str,
+    ) -> dict:
+        """
+        Initiate the hyperparameter search.
+
+        Parameters
+        ----------
+        study_name : str
+            A name to assign to a hyperparmeter search. Allows for stopping
+            and continuing the search at a later time.
+
+        Returns
+        -------
+        dict
+            Model hyperparameters that resulted in best cross-validation performance
+            during the search. Key: hyperparameter name, value: hyperparameter value.
+
+        """
         study = optuna.create_study(
             study_name=study_name,
             storage=self.db_storage_url,
@@ -98,19 +163,50 @@ class OptunaHyperparameterOptimisation:
 
         return best_params
 
-    def get_cv_performance(self, clf):
+    def get_cv_performance(
+        self,
+        model: SVC | LGBMClassifier | RandomForestClassifier | XGBClassifier,
+    ) -> float:
+        """
+        Calculate the average cross-validation ROC-AUC of a model.
+
+        Parameters
+        ----------
+        model : SVC | LGBMClassifier | RandomForestClassifier | XGBClassifier
+            Classification model.
+
+        Returns
+        -------
+        float
+            Average cross-validation ROC-AUC score.
+
+        """
         scores = []
         for i in range(self.num_cv_repeats):
             kf = StratifiedKFold(n_splits=self.nfolds, shuffle=True, random_state=i)
             scores.extend(
                 cross_val_score(
-                    clf, self.tfidf_scores, self.labels, cv=kf, scoring="roc_auc"
+                    model, self.tfidf_scores, self.labels, cv=kf, scoring="roc_auc"
                 )
             )
         average = np.mean(scores)
         return average
 
-    def LGBM_objective(self, trial):
+    def LGBM_objective(self, trial: optuna.trial.Trial) -> float:
+        """
+        Select LightGBM hyperparameters for a given iteration in the search.
+
+        Parameters
+        ----------
+        trial : optuna.trial.Trial
+            An individual trial in the hyperparameter search.
+
+        Returns
+        -------
+        float
+            The ROC-AUC score of the model with the given hyperparameters of the trial.
+
+        """
         if self.interupt:
             return float("nan")
 
@@ -161,7 +257,21 @@ class OptunaHyperparameterOptimisation:
             self.interupt = True
             return float("nan")
 
-    def XGB_objective(self, trial):
+    def XGB_objective(self, trial: optuna.trial.Trial) -> float:
+        """
+        Select XGBoost hyperparameters for a given iteration in the search.
+
+        Parameters
+        ----------
+        trial : optuna.trial.Trial
+            An individual trial in the hyperparameter search.
+
+        Returns
+        -------
+        float
+            The ROC-AUC score of the model with the given hyperparameters of the trial.
+
+        """
         if self.interupt:
             return float("nan")
         # TO DO: sort params out to right format
@@ -196,7 +306,21 @@ class OptunaHyperparameterOptimisation:
             self.interupt = True
             return float("nan")
 
-    def SVC_objective(self, trial):
+    def SVC_objective(self, trial: optuna.trial.Trial) -> float:
+        """
+        Select SVC hyperparameters for a given iteration in the search.
+
+        Parameters
+        ----------
+        trial : optuna.trial.Trial
+            An individual trial in the hyperparameter search.
+
+        Returns
+        -------
+        float
+            The ROC-AUC score of the model with the given hyperparameters of the trial.
+
+        """
         if self.interupt:
             return float("nan")
 
@@ -231,7 +355,21 @@ class OptunaHyperparameterOptimisation:
             self.interupt = True
             return float("nan")
 
-    def RandomForest_objective(self, trial):
+    def RandomForest_objective(self, trial: optuna.trial.Trial) -> float:
+        """
+        Select RandomForest hyperparameters for a given iteration in the search.
+
+        Parameters
+        ----------
+        trial : optuna.trial.Trial
+            An individual trial in the hyperparameter search.
+
+        Returns
+        -------
+        float
+            The ROC-AUC score of the model with the given hyperparameters of the trial.
+
+        """
         if self.interupt:
             return float("nan")
 
