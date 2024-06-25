@@ -29,6 +29,14 @@ plot_labels = {
 }
 
 
+model_to_setup_func = {
+    "LGBMClassifier": "LGBM_setup",
+    "XGBClassifier": "XGB_setup",
+    "RandomForestClassifier": "RandomForest_setup",
+    "SVC": "SVC_setup",
+}
+
+
 class ShapPlotter:
     def __init__(
         self,
@@ -42,37 +50,15 @@ class ShapPlotter:
         self.model = model
         self.X_test = X_test
         self.feature_names = feature_names
+        self.tree_path_dependent = tree_path_dependent
 
         self.background_data = np.zeros(shape=(1, X_test.shape[-1]))
 
         if subsample is not None:
             self.X_test = shap.sample(self.X_test, subsample)
 
-        if isinstance(model, LGBMClassifier | XGBClassifier | RandomForestClassifier):
-            if not tree_path_dependent:
-                self.explainer = shap.TreeExplainer(
-                    model,
-                    data=self.background_data,
-                    model_output="raw",
-                    feature_perturbation="interventional",
-                )
-            else:
-                self.explainer = shap.TreeExplainer(
-                    model,
-                    model_output="raw",
-                    feature_perturbation="tree_path_dependent",
-                )
-            self.shap_values = self.explainer.shap_values(self.X_test)
-
-        if isinstance(model, SVC):
-            self.explainer = shap.KernelExplainer(
-                model.decision_function, self.background_data
-            )
-            self.shap_values = self.explainer.shap_values(
-                self.X_test, nsamples=kernel_nsamples
-            )
-
-        self.expected_value = self.explainer.expected_value
+        setup_plotter_func = getattr(self, model_to_setup_func[model])
+        setup_plotter_func(model, X_test, tree_path_dependent, kernel_nsamples)
 
         if isinstance(model, RandomForestClassifier):
             self.shap_values = self.shap_values[:, :, 1]
@@ -149,6 +135,46 @@ class ShapPlotter:
             ax = pl.gca()
             legacy_decision_changes(ax, threshold)
             pl.show()
+
+    def LGBM_setup(self):
+        self.setup_tree_explainer(self)
+        self.shap_values = self.explainer.shap_values(self.X_test)
+        self.expected_value = self.explainer.expected_value
+
+    def XGB_setup(self):
+        self.setup_tree_explainer(self)
+        self.shap_values = self.explainer.shap_values(self.X_test)
+        self.expected_value = self.explainer.expected_value
+
+    def RandomForest_setup(self):
+        self.setup_tree_explainer(self)
+        self.shap_values = self.explainer.shap_values(self.X_test)
+        self.shap_values = self.shap_values[:, :, 1]
+        self.expected_value = self.explainer.expected_value[1]
+
+    def SVC_setup(self):
+        self.explainer = shap.KernelExplainer(
+            self.model.decision_function, self.background_data
+        )
+        self.shap_values = self.explainer.shap_values(
+            self.X_test, nsamples=self.kernel_nsamples
+        )
+        self.expected_value = self.explainer.expected_value
+
+    def setup_tree_explainer(self):
+        if not self.tree_path_dependent:
+            self.explainer = shap.TreeExplainer(
+                self.model,
+                data=self.background_data,
+                model_output="raw",
+                feature_perturbation="interventional",
+            )
+        else:
+            self.explainer = shap.TreeExplainer(
+                self.model,
+                model_output="raw",
+                feature_perturbation="tree_path_dependent",
+            )
 
 
 def legacy_decision_changes(ax, threshold):
