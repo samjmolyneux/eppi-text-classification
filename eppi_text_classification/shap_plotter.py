@@ -60,10 +60,6 @@ class ShapPlotter:
         setup_plotter_func = getattr(self, model_to_setup_func[model])
         setup_plotter_func(model, X_test, tree_path_dependent, kernel_nsamples)
 
-        if isinstance(model, RandomForestClassifier):
-            self.shap_values = self.shap_values[:, :, 1]
-            self.expected_value = self.explainer.expected_value[1]
-
     def dot_plot(self, num_display=10, log_scale=True, plot_zero=False):
         summary_new(
             self.shap_values,
