@@ -51,13 +51,16 @@ class ShapPlotter:
         self.X_test = X_test
         self.feature_names = feature_names
         self.tree_path_dependent = tree_path_dependent
+        self.kernel_nsamples = kernel_nsamples
 
         self.background_data = np.zeros(shape=(1, X_test.shape[-1]))
 
         if subsample is not None:
             self.X_test = shap.sample(self.X_test, subsample)
 
-        setup_plotter_func = getattr(self, model_to_setup_func[model])
+        setup_plotter_func = getattr(
+            self, model_to_setup_func[model.__class__.__name__]
+        )
         setup_plotter_func()
 
     def dot_plot(self, num_display=10, log_scale=True, plot_zero=False):
