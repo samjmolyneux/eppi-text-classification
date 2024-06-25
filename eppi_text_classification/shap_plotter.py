@@ -58,7 +58,7 @@ class ShapPlotter:
             self.X_test = shap.sample(self.X_test, subsample)
 
         setup_plotter_func = getattr(self, model_to_setup_func[model])
-        setup_plotter_func(model, X_test, tree_path_dependent, kernel_nsamples)
+        setup_plotter_func()
 
     def dot_plot(self, num_display=10, log_scale=True, plot_zero=False):
         summary_new(
