@@ -141,12 +141,12 @@ class ShapPlotter:
         self.expected_value = self.explainer.expected_value
 
     def XGB_setup(self):
-        self.setup_tree_explainer(self)
+        self.setup_tree_explainer()
         self.shap_values = self.explainer.shap_values(self.X_test)
         self.expected_value = self.explainer.expected_value
 
     def RandomForest_setup(self):
-        self.setup_tree_explainer(self)
+        self.setup_tree_explainer()
         self.shap_values = self.explainer.shap_values(self.X_test)
         self.shap_values = self.shap_values[:, :, 1]
         self.expected_value = self.explainer.expected_value[1]
