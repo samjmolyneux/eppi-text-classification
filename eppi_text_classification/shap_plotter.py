@@ -136,7 +136,7 @@ class ShapPlotter:
             pl.show()
 
     def LGBM_setup(self):
-        self.setup_tree_explainer(self)
+        self.setup_tree_explainer()
         self.shap_values = self.explainer.shap_values(self.X_test)
         self.expected_value = self.explainer.expected_value
 
