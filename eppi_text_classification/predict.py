@@ -1,46 +1,109 @@
-from sklearn.metrics import roc_curve
+"""Universal functions for making model predictions."""
+
 import numpy as np
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import roc_curve
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
 
-# TO DO: Just double check that the roc_curve and roc are correct.
-# def get_proba_threshold(model, X, y, target_tpr=1):
-#     y_test_probabilities = predict_probabilities(model, X)
-#     _, tpr, thresholds = roc_curve(y, y_test_probabilities)
-#     idx = np.searchsorted(tpr, target_tpr)
-#     return thresholds[idx]
+def get_raw_threshold(
+    model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
+    X: np.ndarray,
+    y: np.ndarray,
+    target_tpr: float[0, 1] = 1,
+) -> float:
+    """
+    Get the model prediction threshold required to achieve the target TPR.
 
+    Given a binary classifier, using a raw prediction score, find the minimun threshold
+    that is required to achieve a target true positive that is larger than or equal to
+    target_tpr.
 
-# def predict_probabilities(model, X):
-#     if isinstance(model, LGBMClassifier | XGBClassifier | RandomForestClassifier):
-#         return model.predict_proba(X)[:, 1]
-#     if isinstance(model, SVC):
-#         return model.decision_function(X)
+    Parameters
+    ----------
+    model : LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC
+        A trained model.
 
-#     return "Model not supported"
+    X : np.ndarray
+        Data to classifiy in the shape (samples, features).
 
+    y : np.ndarray
+        True labels for the data.
 
-# def proba_threshold_predict(model, X, threshold):
-#     y_pred_prob = predict_probabilities(model, X)
-#     return (y_pred_prob >= threshold).astype(int)
+    target_tpr : float[0, 1], optional
+        Target true positive rate. By default 1.0.
 
+    Returns
+    -------
+    float
+        The model prediction threshold required to achieve the target TPR.
 
-def get_raw_threshold(model, X, y, target_tpr=1):
+    """
     y_test_scores = predict_scores(model, X)
     _, tpr, thresholds = roc_curve(y, y_test_scores)
     idx = np.searchsorted(tpr, target_tpr)
     return thresholds[idx]
 
 
-def raw_threshold_predict(model, X, threshold):
+def raw_threshold_predict(
+    model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
+    X: np.ndarray,
+    threshold: float,
+) -> np.ndarray:
+    """
+    Universal function to predict binary labels using a raw score threshold.
+
+    Parameters
+    ----------
+    model : LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC
+        Classifier to make prediction with.
+
+    X : np.ndarray
+        Samples to make predictions on.
+
+    threshold : float
+        Threshold to use for binary classification.
+
+    Returns
+    -------
+    np.ndarray[int]
+        Binary predictions for X.
+
+    """
     y_pred_scores = predict_scores(model, X)
     return (y_pred_scores >= threshold).astype(int)
 
 
-def predict_scores(model, X):
+def predict_scores(
+    model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
+    X: np.ndarray,
+) -> np.ndarray:
+    """
+    Make raw score predictions for a binary classifier.
+
+    The function works as a wrapper for the predict method of the model.
+    The function exclusively predicts using raw scores for binary classification,
+    meaning the prediction before no transformation or thresholding. This ensures
+    that these scores can be used for precisely calculating SHAP values. For models
+    where raw score cannot be predicted, predict_proba can often function as a raw
+    score.
+
+    Parameters
+    ----------
+    model : LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC
+        Binary classifier.
+
+    X : np.ndarray
+        Data to make predictions on.
+
+    Returns
+    -------
+    np.ndarray[float]
+        Raw prediction scores for binary classification.
+
+    """
     if isinstance(model, LGBMClassifier):
         return model.predict(X, raw_score=True)
     if isinstance(model, XGBClassifier):

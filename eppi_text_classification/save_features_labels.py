@@ -1,8 +1,10 @@
-from joblib import Parallel, delayed
-import pandas as pd
-import spacy
-from sklearn.feature_extraction.text import TfidfVectorizer
+"""Save word features and there associated labels."""
+
 import os
+from collections.abc import Iterator
+
+import spacy
+from joblib import Parallel, delayed
 
 # Considerations: Setting the joblib backend,
 #                Choosing spacy model,
@@ -14,7 +16,21 @@ import os
 system_num_processes = os.cpu_count()
 
 
-def lemmatize_pipe(doc):
+def lemmatize_pipe(doc: spacy.tokens.Doc) -> list[str]:
+    """
+    Lemmatize a spacy doc and remove stop words and punctuation.
+
+    Parameters
+    ----------
+    doc : spacy.tokens.Doc
+        A converted doc for an individual data point.
+
+    Returns
+    -------
+    list[str]
+        A list of lemmatized words.
+
+    """
     lemma_list = [
         token.lemma_.lower()
         for token in doc
@@ -23,23 +39,71 @@ def lemmatize_pipe(doc):
     return lemma_list
 
 
-def chunker(iterable, process_count):
-    chunksize = -(-len(iterable) // process_count)  # ceiling division
+def chunker(object_list: list, process_count: int) -> Iterator[list]:
+    """
+    Split a sequence into equal chunks for processing by multiple processes.
+
+    Parameters
+    ----------
+    object_list : list
+        Any sequence like object containing data to be processed.
+
+    process_count : int
+        The number of available processes.
+
+    Returns
+    -------
+    Iterator[list]
+        Iterator of chunks of the object_list.
+
+    """
+    chunksize = -(-len(object_list) // process_count)  # ceiling division
     return (
-        iterable[pos : pos + chunksize] for pos in range(0, len(iterable), chunksize)
+        object_list[pos : pos + chunksize]
+        for pos in range(0, len(object_list), chunksize)
     )
 
 
-def flatten(list_of_lists):
+def flatten(list_of_lists: list[list]) -> list:
+    """
+    Take a list of lists and join into a single list.
+
+    Parameters
+    ----------
+    list_of_lists : list[list]
+        List of lists.
+
+    Returns
+    -------
+    list
+        List with all lowest level lists joined.
+
+    """
     return [item for sublist in list_of_lists for item in sublist]
 
 
-def process_chunk(texts):
+def process_chunk(texts: list[str]) -> list[list[str]]:
+    """
+    Lemmatize and process a list of texts.
+
+    This function is designed to be used in parallel processing.
+
+    Parameters
+    ----------
+    texts : list[str]
+        A list of texts to be processed.
+
+    Returns
+    -------
+    list[list[str]]
+        A list of lemmatized words for each text.
+
+    """
     nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
     return [lemmatize_pipe(doc) for doc in nlp.pipe(texts, batch_size=25)]
 
 
-def process_column(texts, process_count=system_num_processes):
+def process_column(texts: list[str], process_count: int = system_num_processes):
     tasks = (
         delayed(process_chunk)(chunk)
         for chunk in chunker(texts, process_count=process_count)

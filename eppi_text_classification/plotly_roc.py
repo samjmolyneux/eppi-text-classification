@@ -1,13 +1,26 @@
-import plotly.graph_objects as go
-from sklearn.metrics import roc_curve
-import plotly.express as px
+"""For generating the plotly interactive ROC curve."""
+
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_curve, auc
-from sklearn.datasets import make_classification
+import plotly.express as px
+from sklearn.metrics import auc, roc_curve
+from collections.abc import Sequence
 
 
-def plotly_roc(y_test, y_test_pred_probs):
+def plotly_roc(y_test: Sequence, y_test_pred_probs: Sequence) -> None:
+    """
+    Create an interactive ROC curve using plotly.
+
+    This plot is designed for a binary classification problem.
+
+    Parameters
+    ----------
+    y_test : Sequence
+        Truth labels.
+
+    y_test_pred_probs : Sequence
+        Predicted labels.
+
+    """
     fpr, tpr, thresholds = roc_curve(y_test, y_test_pred_probs)
     roc_auc = auc(fpr, tpr)
 
@@ -28,7 +41,7 @@ def plotly_roc(y_test, y_test_pred_probs):
     )
 
     fig.add_shape(
-        type="line", line=dict(dash="dash", color="grey"), x0=0, x1=1, y0=0, y1=1
+        type="line", line={"dash": "dash", "color": "grey"}, x0=0, x1=1, y0=0, y1=1
     )
 
     fig.update_yaxes(scaleanchor="x", scaleratio=1)

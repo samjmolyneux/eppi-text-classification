@@ -1,4 +1,4 @@
-"""For generating the plotly confusion matricies."""
+"""Generate plotly confusion matricies. Plots can be saved to html."""
 
 import numpy as np
 import plotly.graph_objects as go
@@ -19,6 +19,10 @@ def binary_train_valid_confusion_plotly(
 ) -> None:
     """
     Generate a binary classification confusion matrix for training and validation data.
+
+    These plots can be saved to an html file.
+    The plots are interactive in the browser.
+    Change the output method at the bottom of the function.
 
     Parameters
     ----------
