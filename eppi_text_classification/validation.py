@@ -1,8 +1,4 @@
-from lightgbm import LGBMClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import StratifiedKFold, cross_val_score
-from sklearn.svm import SVC
-from xgboost import XGBClassifier
+"""For performing run time validation of eppi_text_classification package."""
 
 model_list = [
     "SVC",
@@ -19,5 +15,5 @@ class InvalidModelError(Exception):
 
 
 def check_valid_model(model):
-    if model not in model_list:
+    if model.__class__.__name__ not in model_list:
         raise InvalidModelError(model)
