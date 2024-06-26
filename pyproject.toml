@@ -1,8 +1,8 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
-    "setuptools",
-    "setuptools-scm",
+    "setuptools>=42",
+    "setuptools-scm>=3.3",
 ]
 
 [tool.setuptools]
@@ -23,7 +23,20 @@ classifiers = [
     
 ]
 requires-python = "~=3.11.8"
-dependencies = []
+dependencies = [
+    "pandas~=2.2.2",
+    "optuna~=3.6.1",
+    "joblib~=1.4.2",
+    "lightgbm~=4.4.0",
+    "scikit-learn~=1.5.0",
+    "xgboost~=2.1.0",
+    "spacy~=3.7.5",
+    "plotly~=5.22.0",
+    "nbformat~=5.10.4",
+    "matplotlib~=3.9.0",
+    "shap~=0.45.1",
+    "jupyter~=1.0.0",
+]
 
 
 
@@ -40,14 +53,38 @@ dependencies = []
 [tool.ruff]
 extend-include = ["*.ipynb"]
 lint.select = ["ALL"]
-lint.ignore = ["D100",   # ignore missing docs
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D106",
-    "D107",
+# lint.ignore = [   # ignore missing docs
+#     "D101",
+#     "D102",
+#     "D103",
+#     "D104",
+#     "D105",
+#     "D106",
+#     "D107",
+
+#     "D203",    #Docstring standards for datascience
+#     "D212",
+
+#     "T201",
+#     "T203",
+
+#     "COM812",
+#     "ISC001",
+
+#     "RET504", #Disables unessecary assignement before return
+
+#     "S106", #Checks for harcoded passwords in code
+
+#     "N803", #Checks if function parameters are lower caes
+
+#     #Maybe enable these for production
+#     "C408", #Dont use dict()
+#     "ANN201", #Return type for a function
+#     "ANN001", #Type for a function paramter
+#     "PD901" #Generic use of df
+#     ]
+
+lint.ignore = [   # ignore missing docs
 
     "D203",    #Docstring standards for datascience
     "D212",
@@ -62,12 +99,8 @@ lint.ignore = ["D100",   # ignore missing docs
 
     "S106", #Checks for harcoded passwords in code
 
-    "N803", #Checks if function parameters are lower caes
 
-    #Maybe enable these for production
-    "C408", #Dont use dict()
-    "ANN201", #Return type for a function
-    "ANN001", #Type for a function paramter
+    #Maybe enable these for productionr
     "PD901" #Generic use of df
     ]
 show-fixes = true
