@@ -4,6 +4,9 @@
 # Plots
 .html
 
+# Specific files
+test.ipynb
+
 # Mac OS-specific storage files
 .DS_Store
 
