@@ -6,6 +6,7 @@
 
 # Specific files
 test.ipynb
+optuna.db
 
 # Mac OS-specific storage files
 .DS_Store
