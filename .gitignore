@@ -2,7 +2,7 @@
 /data/
 
 # Plots
-.html
+*.html
 
 # Specific files
 test.ipynb
