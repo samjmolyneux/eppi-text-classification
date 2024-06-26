@@ -1,8 +1,9 @@
 """Save word features and there associated labels."""
 
 import os
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 
+import pandas as pd
 import spacy
 from joblib import Parallel, delayed
 
@@ -39,13 +40,13 @@ def lemmatize_pipe(doc: spacy.tokens.Doc) -> list[str]:
     return lemma_list
 
 
-def chunker(object_list: list, process_count: int) -> Iterator[list]:
+def chunker(object_list: Sequence, process_count: int) -> Iterator[list]:
     """
     Split a sequence into equal chunks for processing by multiple processes.
 
     Parameters
     ----------
-    object_list : list
+    object_list : Sequence
         Any sequence like object containing data to be processed.
 
     process_count : int
@@ -82,7 +83,7 @@ def flatten(list_of_lists: list[list]) -> list:
     return [item for sublist in list_of_lists for item in sublist]
 
 
-def process_chunk(texts: list[str]) -> list[list[str]]:
+def process_chunk(texts: Sequence[str]) -> list[list[str]]:
     """
     Lemmatize and process a list of texts.
 
@@ -90,8 +91,8 @@ def process_chunk(texts: list[str]) -> list[list[str]]:
 
     Parameters
     ----------
-    texts : list[str]
-        A list of texts to be processed.
+    texts : Seqeunce[str]
+        A Sequence of texts to be processed.
 
     Returns
     -------
@@ -103,7 +104,32 @@ def process_chunk(texts: list[str]) -> list[list[str]]:
     return [lemmatize_pipe(doc) for doc in nlp.pipe(texts, batch_size=25)]
 
 
-def process_column(texts: list[str], process_count: int = system_num_processes):
+def process_column(
+    texts: Sequence[str],
+    process_count: int = system_num_processes,
+) -> list[list[str]]:
+    """
+    Process a column of text data. E.g abstracts or titles.
+
+    The function processes the data in parallel using the process_chunk function.
+    Texts are lematized and stop words and punctuation are removed.
+
+    Parameters
+    ----------
+    texts : Sequence[str] | pd.Series
+        Any sequence like object containing strings.
+
+    process_count : int, optional
+        Number of processes to use when processing the data.
+        By default equialent to system_num_processes.
+
+    Returns
+    -------
+    list[list[str]]
+        A list of strings for each data point in the column, lemmatized with punctuation
+        and stop words removed.
+
+    """
     tasks = (
         delayed(process_chunk)(chunk)
         for chunk in chunker(texts, process_count=process_count)
@@ -112,7 +138,34 @@ def process_column(texts: list[str], process_count: int = system_num_processes):
     return flatten(result)
 
 
-def get_features(abstract_column, title_column):
+def get_features(
+    abstract_column: Sequence[str],
+    title_column: Sequence[str],
+) -> list[str]:
+    """
+    Get the word features for a given abstract and title column.
+
+    The function processes the abstract and title columns in parallel,
+    removing stop words and punctuation and lemmatizing the text.
+    The abstract and title words are then combined into a single string
+    to get the word features. To distinguish between title and abstract words,
+    a_ is added to the start of each abstract word and t_ to the start of
+    each title word.
+
+    Parameters
+    ----------
+    abstract_column : Sequence[str] | pd.Series
+        A sequence of strings containing abstracts.
+
+    title_column : Sequence[str]
+        A sequence of strings containing titles.
+
+    Returns
+    -------
+    list[str]
+        A list of processed word features for each data point.
+
+    """
     abstracts = process_column(abstract_column)
     titles = process_column(title_column)
     features = []
@@ -125,15 +178,55 @@ def get_features(abstract_column, title_column):
 
 
 # TO DO: Get working for all data types
-def get_labels(label_column):
+def get_labels(label_column: Sequence) -> list[int]:
+    """
+    Turn all labels into integers.
+
+    Parameters
+    ----------
+    label_column : Sequence
+        Sequence of labels.
+
+    Returns
+    -------
+    list[int]
+        List of labels in integer format.
+
+    """
     labels = label_column.tolist()
     labels = [int(label) for label in labels]
     return labels
 
 
 def get_features_and_labels(
-    df, title_key="title", abstract_key="abstract", y_key="included"
-):
+    df: pd.DataFrame,
+    title_key: str = "title",
+    abstract_key: str = "abstract",
+    y_key: str = "included",
+) -> tuple[list[str], list[int]]:
+    """
+    Get the title and abstract word features and labels from a dataframe.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe containing the columns.
+
+    title_key : str, optional
+        Dataframe column key for the title column, by default "title".
+
+    abstract_key : str, optional
+        Dataframe column key for the abstract column, by default "abstract".
+
+    y_key : str, optional
+        Dataframe column key for the label column, by default "included"
+
+    Returns
+    -------
+    tuple[list[str], list[int]]
+        A tuple of word features followed by labels.
+
+    """
     df = df.dropna(subset=[title_key, abstract_key], how="all")
     df[abstract_key] = df[abstract_key].astype(str)
     df[title_key] = df[title_key].astype(str)
