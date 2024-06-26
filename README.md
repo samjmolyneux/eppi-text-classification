@@ -43,3 +43,7 @@ python3 -m spacy download en_core_web_sm
 └── pyproject.toml
 ```
 
+# Known Bugs
+
+Setting ShapPlotter.decision_plot() or ShapPlotter.single_decision_plot() with log_scale=True will result in an unaccurate decision plot.
+
