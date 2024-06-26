@@ -1,13 +1,10 @@
 import warnings
 
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import shap
-from lightgbm import LGBMClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from xgboost import XGBClassifier
+
 from . import shap_colors as colors
 
 # Considerations: The number of samples that are calculated to get the kernel explainer shap values should be adjusted
@@ -106,9 +103,9 @@ class ShapPlotter:
                 show=False,
             )
 
-            ax = pl.gca()
+            ax = plt.gca()
             legacy_decision_changes(ax, threshold)
-            pl.show()
+            plt.show()
 
     def single_decision_plot(self, threshold, index, num_display=10, log_scale=False):
         if log_scale:
@@ -131,9 +128,9 @@ class ShapPlotter:
                 show=False,
             )
 
-            ax = pl.gca()
+            ax = plt.gca()
             legacy_decision_changes(ax, threshold)
-            pl.show()
+            plt.show()
 
     def LGBM_setup(self):
         self.setup_tree_explainer()
@@ -237,7 +234,8 @@ def summary_new(
     use_log_scale=False,
     plot_zero=False,
 ):
-    """Create a SHAP beeswarm plot, colored by feature values when they are provided.
+    """
+    Create a SHAP beeswarm plot, colored by feature values when they are provided.
 
     Parameters
     ----------
@@ -402,8 +400,8 @@ def summary_new(
         slow = -v
         shigh = v
 
-        pl.figure(figsize=(1.5 * max_display + 1, 0.8 * max_display + 1))
-        pl.subplot(1, max_display, 1)
+        plt.figure(figsize=(1.5 * max_display + 1, 0.8 * max_display + 1))
+        plt.subplot(1, max_display, 1)
         proj_shap_values = shap_values[:, sort_inds[0], sort_inds]
         proj_shap_values[:, 1:] *= 2  # because off diag effects are split in half
         summary_new(
@@ -416,13 +414,13 @@ def summary_new(
             plot_size=None,
             max_display=max_display,
         )
-        pl.xlim((slow, shigh))
-        pl.xlabel("")
+        plt.xlim((slow, shigh))
+        plt.xlabel("")
         title_length_limit = 11
-        pl.title(shorten_text(feature_names[sort_inds[0]], title_length_limit))
+        plt.title(shorten_text(feature_names[sort_inds[0]], title_length_limit))
         for i in range(1, min(len(sort_inds), max_display)):
             ind = sort_inds[i]
-            pl.subplot(1, max_display, i + 1)
+            plt.subplot(1, max_display, i + 1)
             proj_shap_values = shap_values[:, ind, sort_inds]
             proj_shap_values *= 2
             proj_shap_values[:, i] /= (
@@ -438,15 +436,15 @@ def summary_new(
                 plot_size=None,
                 max_display=max_display,
             )
-            pl.xlim((slow, shigh))
-            pl.xlabel("")
+            plt.xlim((slow, shigh))
+            plt.xlabel("")
             if i == min(len(sort_inds), max_display) // 2:
-                pl.xlabel(plot_labels["INTERACTION_VALUE"])
-            pl.title(shorten_text(feature_names[ind], title_length_limit))
-        pl.tight_layout(pad=0, w_pad=0, h_pad=0.0)
-        pl.subplots_adjust(hspace=0, wspace=0.1)
+                plt.xlabel(plot_labels["INTERACTION_VALUE"])
+            plt.title(shorten_text(feature_names[ind], title_length_limit))
+        plt.tight_layout(pad=0, w_pad=0, h_pad=0.0)
+        plt.subplots_adjust(hspace=0, wspace=0.1)
         if show:
-            pl.show()
+            plt.show()
         return
 
     if max_display is None:
@@ -468,22 +466,22 @@ def summary_new(
         # TO DO: MAKE IT SO THAT WE ONLY INCLUDE THE VALUES THAT WILL BE PLOTTED
         temp_feats = shap_values[:, feature_order]
         min_non_zero_by_magnitude = np.min(np.abs(temp_feats[temp_feats != 0]))
-        pl.xscale("symlog", linthresh=min_non_zero_by_magnitude, linscale=1)
+        plt.xscale("symlog", linthresh=min_non_zero_by_magnitude, linscale=1)
         # pdb.set_trace()
-        # pl.xscale('symlog')
+        # plt.xscale('symlog')
 
     row_height = 0.4
     if plot_size == "auto":
-        pl.gcf().set_size_inches(8, len(feature_order) * row_height + 1.5)
+        plt.gcf().set_size_inches(8, len(feature_order) * row_height + 1.5)
     elif type(plot_size) in (list, tuple):
-        pl.gcf().set_size_inches(plot_size[0], plot_size[1])
+        plt.gcf().set_size_inches(plot_size[0], plot_size[1])
     elif plot_size is not None:
-        pl.gcf().set_size_inches(8, len(feature_order) * plot_size + 1.5)
-    pl.axvline(x=0, color="#999999", zorder=-1)
+        plt.gcf().set_size_inches(8, len(feature_order) * plot_size + 1.5)
+    plt.axvline(x=0, color="#999999", zorder=-1)
 
     if plot_type == "dot":
         for pos, i in enumerate(feature_order):
-            pl.axhline(y=pos, color="#cccccc", lw=0.5, dashes=(1, 5), zorder=-1)
+            plt.axhline(y=pos, color="#cccccc", lw=0.5, dashes=(1, 5), zorder=-1)
             shaps = shap_values[:, i]
             values = None if features is None else features[:, i]
             inds = np.arange(len(shaps))
@@ -539,7 +537,7 @@ def summary_new(
 
                 # plot the nan values in the interaction feature as grey
                 nan_mask = np.isnan(values)
-                pl.scatter(
+                plt.scatter(
                     shaps[nan_mask],
                     pos + ys[nan_mask],
                     color="#777777",
@@ -557,7 +555,7 @@ def summary_new(
                     cvals_imp[np.isnan(cvals)] = (vmin + vmax) / 2.0
                     cvals[cvals_imp > vmax] = vmax
                     cvals[cvals_imp < vmin] = vmin
-                    pl.scatter(
+                    plt.scatter(
                         shaps[np.invert(nan_mask)],
                         pos + ys[np.invert(nan_mask)],
                         cmap=cmap,
@@ -582,7 +580,7 @@ def summary_new(
                     cvals_imp[np.isnan(cvals)] = (vmin + vmax) / 2.0
                     cvals[cvals_imp > vmax] = vmax
                     cvals[cvals_imp < vmin] = vmin
-                    pl.scatter(
+                    plt.scatter(
                         shaps[np.invert(nan_mask) & non_zero_mask],
                         pos + ys[np.invert(nan_mask) & non_zero_mask],
                         cmap=cmap,
@@ -597,7 +595,7 @@ def summary_new(
                     )
 
             else:
-                pl.scatter(
+                plt.scatter(
                     shaps,
                     pos + ys,
                     s=16,
@@ -612,11 +610,11 @@ def summary_new(
         feature_inds = feature_order[:max_display]
         y_pos = np.arange(len(feature_inds))
         global_shap_values = np.abs(shap_values).mean(0)
-        pl.barh(
+        plt.barh(
             y_pos, global_shap_values[feature_inds], 0.7, align="center", color=color
         )
-        pl.yticks(y_pos, fontsize=13)
-        pl.gca().set_yticklabels([feature_names[i] for i in feature_inds])
+        plt.yticks(y_pos, fontsize=13)
+        plt.gca().set_yticklabels([feature_names[i] for i in feature_inds])
 
     elif multi_class and plot_type == "bar":
         if class_names is None:
@@ -649,7 +647,7 @@ def summary_new(
                 label = f"{class_names[ind]} ({np.round(np.mean(global_shap_values),(n_decimals+1))})"
             else:
                 label = class_names[ind]
-            pl.barh(
+            plt.barh(
                 y_pos,
                 global_shap_values[feature_inds],
                 0.7,
@@ -659,24 +657,24 @@ def summary_new(
                 label=label,
             )
             left_pos += global_shap_values[feature_inds]
-        pl.yticks(y_pos, fontsize=13)
-        pl.gca().set_yticklabels([feature_names[i] for i in feature_inds])
-        pl.legend(frameon=False, fontsize=12)
+        plt.yticks(y_pos, fontsize=13)
+        plt.gca().set_yticklabels([feature_names[i] for i in feature_inds])
+        plt.legend(frameon=False, fontsize=12)
 
     # draw the color bar
     if (
         color_bar
         and features is not None
         and plot_type != "bar"
-        and (plot_type != "layered_violin" or color in pl.cm.datad)
+        and (plot_type != "layered_violin" or color in plt.cm.datad)
     ):
         import matplotlib.cm as cm
 
         m = cm.ScalarMappable(
-            cmap=cmap if plot_type != "layered_violin" else pl.get_cmap(color)
+            cmap=cmap if plot_type != "layered_violin" else plt.get_cmap(color)
         )
         m.set_array([0, 1])
-        cb = pl.colorbar(m, ax=pl.gca(), ticks=[0, 1], aspect=80)
+        cb = plt.colorbar(m, ax=plt.gca(), ticks=[0, 1], aspect=80)
         cb.set_ticklabels(
             [plot_labels["FEATURE_VALUE_LOW"], plot_labels["FEATURE_VALUE_HIGH"]]
         )
@@ -684,34 +682,34 @@ def summary_new(
         cb.ax.tick_params(labelsize=11, length=0)
         cb.set_alpha(1)
         cb.outline.set_visible(False)
-    #         bbox = cb.ax.get_window_extent().transformed(pl.gcf().dpi_scale_trans.inverted())
+    #         bbox = cb.ax.get_window_extent().transformed(plt.gcf().dpi_scale_trans.inverted())
     #         cb.ax.set_aspect((bbox.height - 0.9) * 20)
     # cb.draw_all()
 
-    pl.gca().xaxis.set_ticks_position("bottom")
-    pl.gca().yaxis.set_ticks_position("none")
-    pl.gca().spines["right"].set_visible(False)
-    pl.gca().spines["top"].set_visible(False)
-    pl.gca().spines["left"].set_visible(False)
-    pl.gca().tick_params(color=axis_color, labelcolor=axis_color)
-    pl.yticks(
+    plt.gca().xaxis.set_ticks_position("bottom")
+    plt.gca().yaxis.set_ticks_position("none")
+    plt.gca().spines["right"].set_visible(False)
+    plt.gca().spines["top"].set_visible(False)
+    plt.gca().spines["left"].set_visible(False)
+    plt.gca().tick_params(color=axis_color, labelcolor=axis_color)
+    plt.yticks(
         range(len(feature_order)),
         [feature_names[i] for i in feature_order],
         fontsize=13,
     )
     if plot_type != "bar":
-        pl.gca().tick_params("y", length=20, width=0.5, which="major")
-    pl.gca().tick_params("x", labelsize=11)
-    pl.ylim(-1, len(feature_order))
+        plt.gca().tick_params("y", length=20, width=0.5, which="major")
+    plt.gca().tick_params("x", labelsize=11)
+    plt.ylim(-1, len(feature_order))
     if plot_type == "bar":
-        pl.xlabel(plot_labels["GLOBAL_VALUE"], fontsize=13)
+        plt.xlabel(plot_labels["GLOBAL_VALUE"], fontsize=13)
     else:
-        pl.xlabel(plot_labels["VALUE"], fontsize=13)
-    pl.tight_layout()
+        plt.xlabel(plot_labels["VALUE"], fontsize=13)
+    plt.tight_layout()
 
     # Delete the ticks closest to zero
     if plot_type == "dot" and use_log_scale:
-        x_ticks = pl.gca().xaxis.get_major_ticks()
+        x_ticks = plt.gca().xaxis.get_major_ticks()
 
         for i, tick in enumerate(x_ticks):
             if (
@@ -723,13 +721,13 @@ def summary_new(
                 x_ticks[i + 1].label1.set_visible(False)
 
     if show:
-        pl.show()
+        plt.show()
 
 
 from typing import Union
 
 import matplotlib.cm as cm
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -789,11 +787,11 @@ def __decision_plot_matplotlib(
     # TO DO: handle the edge case where there is no value that is different to the threshold
     row_height = 0.4
     if auto_size_plot:
-        pl.gcf().set_size_inches(8, feature_display_count * row_height + 1.5)
+        plt.gcf().set_size_inches(8, feature_display_count * row_height + 1.5)
 
     # draw horizontal dashed lines for each feature contribution
     for i in range(1, feature_display_count):
-        pl.axhline(y=i, color=y_demarc_color, lw=0.5, dashes=(1, 5), zorder=-1)
+        plt.axhline(y=i, color=y_demarc_color, lw=0.5, dashes=(1, 5), zorder=-1)
 
     # initialize highlighting
     linestyle = np.array("-", dtype=object)
@@ -804,14 +802,14 @@ def __decision_plot_matplotlib(
         linewidth[highlight] = 2
 
     # plot each observation's cumulative SHAP values.
-    ax = pl.gca()
+    ax = plt.gca()
     ax.set_xlim(xlim)
     m = cm.ScalarMappable(cmap=plot_color)
     m.set_clim(xlim)
     y_pos = np.arange(0, feature_display_count + 1)
     lines = []
     for i in range(cumsum.shape[0]):
-        o = pl.plot(
+        o = plt.plot(
             cumsum[i, :],  #
             y_pos,
             color=m.to_rgba(cumsum[i, -1], alpha),
@@ -828,8 +826,8 @@ def __decision_plot_matplotlib(
 
     # if there is a single observation and feature values are supplied, print them.
     if (cumsum.shape[0] == 1) and (features is not None):
-        renderer = pl.gcf().canvas.get_renderer()
-        inverter = pl.gca().transData.inverted()
+        renderer = plt.gcf().canvas.get_renderer()
+        inverter = plt.gca().transData.inverted()
         y_pos = y_pos + 0.5
         for i in range(feature_display_count):
             v = features[0, i]
@@ -865,10 +863,10 @@ def __decision_plot_matplotlib(
     ax.spines["left"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.tick_params(color=axis_color, labelcolor=axis_color)
-    pl.yticks(np.arange(feature_display_count) + 0.5, feature_names, fontsize=fontsize)
+    plt.yticks(np.arange(feature_display_count) + 0.5, feature_names, fontsize=fontsize)
     ax.tick_params("x", labelsize=11)
-    pl.ylim(0, feature_display_count)
-    pl.xlabel("Model Output Value (Relative to Threshold)", fontsize=13)
+    plt.ylim(0, feature_display_count)
+    plt.xlabel("Model Output Value (Relative to Threshold)", fontsize=13)
 
     # draw the color bar - must come after axes styling
     if color_bar:
@@ -876,36 +874,36 @@ def __decision_plot_matplotlib(
         m.set_array(np.array([0, 1]))
 
         # place the colorbar
-        pl.ylim(0, feature_display_count + 0.25)
+        plt.ylim(0, feature_display_count + 0.25)
         ax_cb = ax.inset_axes(
             [xlim[0], feature_display_count, xlim[1] - xlim[0], 0.25],
             transform=ax.transData,
         )
-        cb = pl.colorbar(m, ticks=[0, 1], orientation="horizontal", cax=ax_cb)
+        cb = plt.colorbar(m, ticks=[0, 1], orientation="horizontal", cax=ax_cb)
         cb.set_ticklabels([])
         cb.ax.tick_params(labelsize=11, length=0)
         cb.set_alpha(alpha)
         cb.outline.set_visible(False)
 
         # re-activate the main axis for drawing.
-        pl.sca(ax)
+        plt.sca(ax)
 
     if title:
         # TODO decide on style/size
-        pl.title(title)
+        plt.title(title)
 
     if ascending:
-        pl.gca().invert_yaxis()
+        plt.gca().invert_yaxis()
 
     if legend_labels is not None:
         ax.legend(handles=lines, labels=legend_labels, loc=legend_location)
 
     non_zero_mask = (cumsum) != 0
     min_non_zero = np.min(np.abs(cumsum[non_zero_mask]))
-    pl.xscale("symlog", linthresh=min_non_zero, linscale=1)
+    plt.xscale("symlog", linthresh=min_non_zero, linscale=1)
 
     # Add details for threshold line
-    pl.axvline(x=0, color="black", zorder=1000)
+    plt.axvline(x=0, color="black", zorder=1000)
     threshold_line = mlines.Line2D([], [], color="black", label="Threshold")
     # text_y_position = ax.get_ylim()[1] + (ax.get_ylim()[1] - ax.get_ylim()[0]) * 0.04  # Slightly above the top
     text_y_position = ax.get_ylim()[1] + 0.4  # Slightly above the top
@@ -921,7 +919,7 @@ def __decision_plot_matplotlib(
     ax.legend(handles=[threshold_line], loc="best")
 
     # Remove unwanted ticks
-    pl.draw()
+    plt.draw()
     x_ticks = ax.xaxis.get_major_ticks()
     for i, tick in enumerate(x_ticks):
         if (
@@ -932,10 +930,10 @@ def __decision_plot_matplotlib(
             x_ticks[i - 1].label1.set_visible(False)
             x_ticks[i + 1].label1.set_visible(False)
 
-    pl.xticks(rotation=45)
+    plt.xticks(rotation=45)
 
     if show:
-        pl.show()
+        plt.show()
 
 
 def decision(

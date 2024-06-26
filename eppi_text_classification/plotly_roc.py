@@ -1,9 +1,10 @@
 """For generating the plotly interactive ROC curve."""
 
+from collections.abc import Sequence
+
 import pandas as pd
 import plotly.express as px
 from sklearn.metrics import auc, roc_curve
-from collections.abc import Sequence
 
 
 def plotly_roc(y_test: Sequence, y_test_pred_probs: Sequence) -> None:

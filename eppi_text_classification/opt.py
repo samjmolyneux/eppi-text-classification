@@ -6,13 +6,14 @@ from pathlib import Path
 
 import numpy as np
 import optuna
-import validation
 from joblib import Parallel, delayed
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
+
+from . import validation
 
 # Considerations: Will the database work correctly in deployment?
 # Considerations: Need a way to handle the interupts
