@@ -6,7 +6,7 @@ conda activate eppi_text
 ```
 Install.
 ```
-pip3 install -e .
+pip3 install -e . --config-settings editable_mode=strict 
 python3 -m spacy download en_core_web_sm
 ```
 
