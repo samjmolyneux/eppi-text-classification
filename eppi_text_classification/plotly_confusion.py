@@ -1,8 +1,11 @@
 """Generate plotly confusion matricies. Plots can be saved to html."""
 
+from typing import Literal
+
 import numpy as np
 import plotly.graph_objects as go
 import plotly.io as pio
+from numpy.typing import ArrayLike, NDArray
 from plotly.subplots import make_subplots
 from sklearn.metrics import (
     confusion_matrix,
@@ -10,10 +13,10 @@ from sklearn.metrics import (
 
 
 def binary_train_valid_confusion_plotly(
-    y_train: np.ndarray,
-    y_train_pred: np.ndarray,
-    y_val: np.ndarray,
-    y_val_pred: np.ndarray,
+    y_train: ArrayLike,
+    y_train_pred: ArrayLike,
+    y_val: ArrayLike,
+    y_val_pred: ArrayLike,
     postive_label: str = "1",
     negative_label: str = "0",
 ) -> None:
@@ -65,7 +68,7 @@ def binary_train_valid_confusion_plotly(
 
     # Increase font size and height of titles
     for annotation in fig["layout"]["annotations"]:
-        annotation["font"] = dict(size=18)
+        annotation["font"] = {"size": 18}
         annotation["y"] = 1.03
 
     fig.update_layout(
@@ -99,12 +102,12 @@ def binary_train_valid_confusion_plotly(
 
 def add_confusion_trace(
     fig: go.Figure,
-    cm: np.ndarray,
+    cm: NDArray[np.int_],
     positive_label: str,
     negative_label: str,
     row: int,
     col: int,
-):
+) -> None:
     """
     Add a confusion matrix trace to a plotly figure.
 
@@ -163,8 +166,8 @@ def add_confusion_trace(
 
 def add_labels_to_confusion_trace(
     fig: go.Figure,
-    cm: np.ndarray,
-    labels: list,
+    cm: NDArray[np.int_],
+    labels: list[str],
     plot_index: int,
 ) -> None:
     """
@@ -200,7 +203,7 @@ def add_labels_to_confusion_trace(
             )
 
 
-def add_lines_to_confusion(fig: go.Figure, plot_index: int):
+def add_lines_to_confusion(fig: go.Figure, plot_index: int) -> None:
     """
     Add aesthetic grid lines to a confusion matrix trace.
 
@@ -246,7 +249,7 @@ def add_lines_to_confusion(fig: go.Figure, plot_index: int):
     )
 
 
-def add_ticks_to_confusion(fig: go.Figure, labels: list, plot_index: int):
+def add_ticks_to_confusion(fig: go.Figure, labels: list[str], plot_index: int) -> None:
     """
     Add aesthetic ticks to a confusion matrix trace.
 
@@ -291,7 +294,7 @@ def add_ticks_to_confusion(fig: go.Figure, labels: list, plot_index: int):
     )
 
 
-def get_font_color(value: int, cm: np.ndarray):
+def get_font_color(value: int, cm: NDArray[np.int_]) -> Literal["white", "dark blue"]:
     """
     Get the font color for a confusion matrix cell.
 
@@ -314,5 +317,5 @@ def get_font_color(value: int, cm: np.ndarray):
     """
     if value > cm.max() / 2:
         return "white"
-    else:
-        return "dark blue"
+
+    return "dark blue"

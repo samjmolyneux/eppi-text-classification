@@ -2,17 +2,20 @@
 
 import numpy as np
 from lightgbm import LGBMClassifier
+from numpy.typing import NDArray
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_curve
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
+from .validation import InvalidModelError
+
 
 def get_raw_threshold(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
-    X: np.ndarray,
-    y: np.ndarray,
-    target_tpr: float[0, 1] = 1,
+    X: NDArray[np.float64],
+    y: NDArray[np.int_],
+    target_tpr: float = 1,
 ) -> float:
     """
     Get the model prediction threshold required to achieve the target TPR.
@@ -49,9 +52,9 @@ def get_raw_threshold(
 
 def raw_threshold_predict(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
-    X: np.ndarray,
+    X: NDArray[np.float64],
     threshold: float,
-) -> np.ndarray:
+) -> NDArray[np.int_]:
     """
     Universal function to predict binary labels using a raw score threshold.
 
@@ -78,8 +81,8 @@ def raw_threshold_predict(
 
 def predict_scores(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
-    X: np.ndarray,
-) -> np.ndarray:
+    X: NDArray[np.float64],
+) -> NDArray[np.float64]:
     """
     Make raw score predictions for a binary classifier.
 
@@ -113,4 +116,4 @@ def predict_scores(
     if isinstance(model, SVC):
         return model.decision_function(X)
 
-    return "Model not supported"
+    raise InvalidModelError(model)

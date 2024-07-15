@@ -7,7 +7,7 @@ import plotly.express as px
 from sklearn.metrics import auc, roc_curve
 
 
-def plotly_roc(y_test: Sequence, y_test_pred_probs: Sequence) -> None:
+def plotly_roc(y_test: Sequence[int], y_test_pred_probs: Sequence[float]) -> None:
     """
     Create an interactive ROC curve using plotly.
 

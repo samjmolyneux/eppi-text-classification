@@ -4,12 +4,13 @@ from pathlib import Path
 
 import numpy as np
 import optuna
+from numpy.typing import NDArray
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def get_tfidf_and_names(
     word_features: list[str], min_df: int = 3, max_features: int = 75000
-) -> tuple[np.ndarray, list[str]]:
+) -> tuple[NDArray[np.float64], list[str]]:
     """
     Get the tfidf scores and their corresponing feature names.
 
@@ -57,7 +58,7 @@ def get_tfidf_and_names(
 
 def delete_optuna_study(study_name: str) -> None:
     """
-    Delete an optuna study from the database.
+    If it exists, delete an optuna study from the database.
 
     Parameters
     ----------
@@ -67,5 +68,7 @@ def delete_optuna_study(study_name: str) -> None:
     """
     root_path = Path(Path(__file__).resolve()).parent.parent
     db_storage_url = f"sqlite:///{root_path}/optuna.db"
-
-    optuna.delete_study(study_name=study_name, storage=db_storage_url)
+    all_studies = optuna.study.get_all_study_summaries(storage=db_storage_url)
+    study_names = [study.study_name for study in all_studies]
+    if study_name in study_names:
+        optuna.delete_study(study_name=study_name, storage=db_storage_url)

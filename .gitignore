@@ -1,11 +1,15 @@
 # Data
 /data/
 
+# Legact functions
+/legacy_funcs
+
 # Plots
 *.html
 
 # Specific files
-test.ipynb
+prototyping.ipynb
+prototyping.py
 optuna.db
 
 # Mac OS-specific storage files
