@@ -8,8 +8,9 @@
 *.html
 
 # Specific files
-prototyping.ipynb
+prototyping_book.ipynb
 prototyping.py
+prototyping_txt.txt
 optuna.db
 
 # Mac OS-specific storage files

@@ -68,7 +68,7 @@ class XGBParams:
     max_depth: int = 1
 
 
-@dataclass()
+@dataclass
 class SVCParams:
     """Dataclass for SVC hyperparameters."""
 
@@ -82,7 +82,7 @@ class SVCParams:
     gamma: str | float = "scale"
 
 
-@dataclass()
+@dataclass
 class RandForestParams:
     """Dataclass for RandomForest hyperparameters."""
 
