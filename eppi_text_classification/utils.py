@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 def get_tfidf_and_names(
     word_features: list[str], min_df: int = 3, max_features: int = 75000
-) -> tuple[NDArray[np.float64], list[str]]:
+) -> tuple[NDArray[np.float64], NDArray[np.str_]]:
     """
     Get the tfidf scores and their corresponing feature names.
 
