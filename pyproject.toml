@@ -137,3 +137,9 @@ module = ['eppi_text_classification.shap_colors.*']
 disallow_untyped_calls = false
 disallow_untyped_defs = false
 disable_error_code = ['index', 'arg-type', 'type-var']
+
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
