@@ -1,0 +1,14 @@
+name: Print Directory Structure
+
+on: [push]
+
+jobs:
+  print-directory:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+      
+    - name: XDTesting Print Directory Structure
+      uses: FiorelaCiroku/XDTesting-Print-Directory-Structure@v1.0.2
