@@ -346,7 +346,7 @@ class OptunaHyperparameterOptimisation:
             n_jobs=1,
             reg_lambda=trial.suggest_float("reg_lambda", 1e-4, 100, log=True),
             reg_alpha=trial.suggest_float("reg_alpha", 1e-4, 100, log=True),
-            learning_rate=trial.suggest_float("learning_rate", 1e-2, 100, log=True),
+            learning_rate=trial.suggest_float("learning_rate", 1e-2, 1, log=True),
             max_depth=trial.suggest_int("max_depth", 1, 5),
         )
 
