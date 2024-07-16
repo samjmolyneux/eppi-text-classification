@@ -29,7 +29,8 @@ python3 -m spacy download en_core_web_sm
 │   │   ├── _colorconv.py
 │   │   └── _colors.py
 │   ├── shap_plotter.py
-│   └── utils.py
+│   ├── utils.py
+│   └── validation.py
 ├── notebooks
 │   ├── lgbm
 │   │   └── lgbm_binary.ipynb
@@ -40,12 +41,11 @@ python3 -m spacy download en_core_web_sm
 │   └── xgboost
 │       └── xgboost_binary.ipynb
 ├── optuna.db
-└── pyproject.toml
+├── pyproject.toml
+└── tests
+    └── test_00_smoke.py
 ```
+[//]: # (This is the method I used : tree -I "*.ris|*.tsv|*.html|eppi_text_classification.egg-info|__pycache__|Cochrane heart reviews|build|legacy_funcs|prototyping*")
 
 # Known Bugs
-
-### 1. Inaccurate log decision plot
-- Setting ShapPlotter.decision_plot() or ShapPlotter.single_decision_plot() with log_scale=True will result in an unaccurate decision plot.
-### 2. Functions from opt.py not running
-- Optimisation scripts still need hyperparmeter ranges tuned and whilst I'm making changes they may not run. 
+There are no known bugs.
