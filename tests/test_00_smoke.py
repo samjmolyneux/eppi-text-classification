@@ -341,6 +341,8 @@ def test_randforest_binary_optuna_hyperparameter_optimisation(
         "rf_binary", expected_types, best_params
     )
 
+    check_binary_optuna_hyperparameter_ranges(expected_ranges, best_params)
+
 
 # Want to check that each param in best_params is in the expected_type
 
