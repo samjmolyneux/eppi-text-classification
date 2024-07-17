@@ -3,7 +3,7 @@ name: Generate Directory Structure
 on:
   push:
     branches:
-      - main
+      - dev
   workflow_dispatch:
 
 jobs:
