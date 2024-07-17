@@ -51,6 +51,7 @@ python3 -m spacy download en_core_web_sm
 There are no known bugs.
 
 <!-- directory-structure-end -->
+<!-- directory-structure-end -->
 <!-- directory-structure-start -->
 ## Directory Structure
 ```
