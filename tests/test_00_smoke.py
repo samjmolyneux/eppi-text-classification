@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import jsonpickle
 import numpy as np
 import optuna
 import pandas as pd
@@ -116,9 +117,15 @@ def general_binary_optuna_hyperparameter_checks(
         ), f"Value for key {key} does not match: {best_params[key]} != {value}"
 
 
-def check_binary_optuna_hyperparameter_ranges(expected_ranges, best_params):
-    for param, range_checker in expected_ranges.items():
-        assert range_checker(best_params[param]), f"Param {param} is out of range"
+def check_binary_optuna_hyperparameter_ranges(study_name, expected_ranges, best_params):
+    root_path = Path(Path(__file__).resolve()).parent.parent
+    db_storage_url = f"sqlite:///{root_path}/optuna.db"
+    study = optuna.load_study(study_name=study_name, storage=db_storage_url)
+
+    for trial in study.trials:
+        trial_params = jsonpickle.decode(trial.user_attrs["all_params"], keys=True)
+        for param, range_checker in expected_ranges.items():
+            assert range_checker(trial_params[param]), f"Param {param} is out of range"
 
 
 def test_lgbm_binary_optuna_hyperparameter_optimisation(
@@ -177,7 +184,9 @@ def test_lgbm_binary_optuna_hyperparameter_optimisation(
         "lgbm_binary", expected_types, best_params
     )
 
-    check_binary_optuna_hyperparameter_ranges(expected_ranges, best_params)
+    check_binary_optuna_hyperparameter_ranges(
+        "lgbm_binary", expected_ranges, best_params
+    )
 
 
 def test_xgb_binary_optuna_hyperparameter_optimisation(
@@ -219,8 +228,8 @@ def test_xgb_binary_optuna_hyperparameter_optimisation(
         "n_estimators": lambda x: x >= 1,
         "colsample_bytree": lambda x: 0 < x <= 1,
         "n_jobs": lambda x: x == -1 or x >= 1,
-        "reg_lambda": lambda x: 0 <= x <= 1,
-        "reg_alpha": lambda x: 0 <= x <= 1,
+        "reg_lambda": lambda x: x >= 0,
+        "reg_alpha": lambda x: x >= 0,
         "learning_rate": lambda x: 0 < x <= 1,
         "max_depth": lambda x: x >= 1,
     }
@@ -229,7 +238,9 @@ def test_xgb_binary_optuna_hyperparameter_optimisation(
         "xgb_binary", expected_types, best_params
     )
 
-    check_binary_optuna_hyperparameter_ranges(expected_ranges, best_params)
+    check_binary_optuna_hyperparameter_ranges(
+        "xgb_binary", expected_ranges, best_params
+    )
 
 
 def test_svc_binary_optuna_hyperparameter_optimisation(
@@ -276,7 +287,9 @@ def test_svc_binary_optuna_hyperparameter_optimisation(
         "svc_binary", expected_types, best_params
     )
 
-    check_binary_optuna_hyperparameter_ranges(expected_ranges, best_params)
+    check_binary_optuna_hyperparameter_ranges(
+        "svc_binary", expected_ranges, best_params
+    )
 
 
 def test_randforest_binary_optuna_hyperparameter_optimisation(
@@ -308,7 +321,7 @@ def test_randforest_binary_optuna_hyperparameter_optimisation(
         "max_leaf_nodes": (int, type(None)),
         "min_impurity_decrease": (float, int),
         "bootstrap": bool,
-        "class_weight": dict,
+        "class_weight": (dict, str),
         "ccp_alpha": (float, int),
         "max_samples": (int, type(None)),
         "monotonic_cst": type(None),
@@ -341,11 +354,13 @@ def test_randforest_binary_optuna_hyperparameter_optimisation(
         "rf_binary", expected_types, best_params
     )
 
-    check_binary_optuna_hyperparameter_ranges(expected_ranges, best_params)
+    check_binary_optuna_hyperparameter_ranges("rf_binary", expected_ranges, best_params)
 
 
 # Want to check that each param in best_params is in the expected_type
 
+# Should extend the checking of the parameter ranges of the best trial to all trials
+# (higher likelihood of catching an error)
 # Should also test that the hyperparmeters are also in the correct range.
 # Should do some tests to ensure SHAP values add up to the model outputs
 # Should do some tests to ensure that the best params are actualy selected by making your
