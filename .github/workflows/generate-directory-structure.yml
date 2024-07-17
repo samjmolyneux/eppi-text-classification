@@ -23,15 +23,8 @@ jobs:
 
       - name: Update README.md
         run: |
-
-          echo "Initial README.md:"
-          cat README.md
-          
           # Remove the old directory structure section using sed
           sed -i '/<!-- directory-structure-start -->/,/<!-- directory-structure-end -->/d' README.md
-
-          echo "Readme after sed"
-          cat README.md
 
           # Add the new directory structure section
           # echo "<!-- directory-structure-start -->" >> README.md
@@ -40,9 +33,10 @@ jobs:
 
           awk '/# Structure/{print;print "<!-- directory-structure-start -->";system("cat DIRECTORY_STRUCTURE.md");print "<!-- directory-structure-end -->";next}1' README.md > README.tmp
           mv README.tmp README.md
-
-          echo "readme at the end:"
-          cat README.md
+          if [ -f DIRECTORY_STRUCTURE.md ]; then
+            rm DIRECTORY_STRUCTURE.md
+          fi          
+          
 
       - name: Commit and push changes
         env:
