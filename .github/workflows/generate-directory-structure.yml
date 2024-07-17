@@ -16,7 +16,6 @@ jobs:
 
       - name: Generate directory structure
         run: |
-          # echo "# Directory Structure" > DIRECTORY_STRUCTURE.md
           echo '```' >> DIRECTORY_STRUCTURE.md
           tree -I '.git|.github|DIRECTORY_STRUCTURE.md' --noreport >> DIRECTORY_STRUCTURE.md
           echo '```' >> DIRECTORY_STRUCTURE.md
@@ -26,11 +25,7 @@ jobs:
           # Remove the old directory structure section using sed
           sed -i '/<!-- directory-structure-start -->/,/<!-- directory-structure-end -->/d' README.md
 
-          # Add the new directory structure section
-          # echo "<!-- directory-structure-start -->" >> README.md
-          # cat DIRECTORY_STRUCTURE.md >> README.md
-          # echo "<!-- directory-structure-end -->" >> README.md
-
+          # Add the new directory structure
           awk '/# Structure/{print;print "<!-- directory-structure-start -->";system("cat DIRECTORY_STRUCTURE.md");print "<!-- directory-structure-end -->";next}1' README.md > README.tmp
           mv README.tmp README.md
           if [ -f DIRECTORY_STRUCTURE.md ]; then
