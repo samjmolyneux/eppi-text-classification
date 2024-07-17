@@ -52,8 +52,9 @@ There are no known bugs.
 
 <!-- directory-structure-end -->
 <!-- directory-structure-end -->
+<!-- directory-structure-end -->
 <!-- directory-structure-start -->
-## Directory Structure
+# Directory Structure
 ```
 .
 ├── DIRECTORY_STRUCTURE.md
