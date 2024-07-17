@@ -54,8 +54,6 @@ There are no known bugs.
 
 
 <!-- directory-structure-start -->
-<!-- directory-structure-end -->
-<!-- directory-structure-start -->
 # Directory Structure
 ```
 .
