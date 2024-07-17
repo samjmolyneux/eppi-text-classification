@@ -16,7 +16,7 @@ jobs:
 
       - name: Generate directory structure
         run: |
-          echo "# Directory Structure" > DIRECTORY_STRUCTURE.md
+          # echo "# Directory Structure" > DIRECTORY_STRUCTURE.md
           echo '```' >> DIRECTORY_STRUCTURE.md
           tree -I '.git|.github|DIRECTORY_STRUCTURE.md' --noreport >> DIRECTORY_STRUCTURE.md
           echo '```' >> DIRECTORY_STRUCTURE.md
