@@ -11,11 +11,6 @@ python3 -m spacy download en_core_web_sm
 ```
 
 # Structure
-
-
-# Known Bugs
-There are no known bugs.
-
 <!-- directory-structure-start -->
 # Directory Structure
 ```
@@ -50,3 +45,8 @@ There are no known bugs.
     └── test_00_smoke.py
 ```
 <!-- directory-structure-end -->
+
+
+# Known Bugs
+There are no known bugs.
+
