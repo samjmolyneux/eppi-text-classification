@@ -15,6 +15,7 @@ python3 -m spacy download en_core_web_sm
 ```
 .
 ├── README.md
+├── checkGHA
 ├── eppi_text_classification
 │   ├── __init__.py
 │   ├── opt.py
