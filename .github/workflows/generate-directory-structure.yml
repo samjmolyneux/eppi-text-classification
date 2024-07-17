@@ -27,6 +27,8 @@ jobs:
 
           # Add the new directory structure
           awk '/# Structure/{print;print "<!-- directory-structure-start -->";system("cat DIRECTORY_STRUCTURE.md");print "<!-- directory-structure-end -->";next}1' README.md > README.tmp
+
+          # Clean up
           mv README.tmp README.md
           if [ -f DIRECTORY_STRUCTURE.md ]; then
             rm DIRECTORY_STRUCTURE.md
