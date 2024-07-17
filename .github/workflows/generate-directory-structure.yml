@@ -23,11 +23,10 @@ jobs:
 
       - name: Update README.md
         run: |
-          # Remove the old directory structure section
-          awk '/<!-- directory-structure-start -->/{flag=1;next}/<!-- directory-structure-end -->/{flag=0}flag{next}1' README.md > README.tmp
-          mv README.tmp README.md
+          # Remove the old directory structure section and add the new one
+          awk '/<!-- directory-structure-start -->/{flag=1;print;next}/<!-- directory-structure-end -->/{flag=0;print;next}!flag' README.md > temp_readme.md
+          mv temp_readme.md README.md
 
-          # Add the new directory structure section
           echo "<!-- directory-structure-start -->" >> README.md
           cat DIRECTORY_STRUCTURE.md >> README.md
           echo "<!-- directory-structure-end -->" >> README.md
