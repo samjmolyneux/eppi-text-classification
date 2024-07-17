@@ -92,6 +92,7 @@ lint.ignore = [
     "PLR0912", #Function complexity
     "PLR0915", #Function complexity
 
+    "S301", #No unpickling, is unsafe
     #Maybe enable these for productionr
     "PD901" #Generic use of df
     ]
