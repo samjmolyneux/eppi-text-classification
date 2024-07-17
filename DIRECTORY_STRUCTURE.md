@@ -1,7 +1,6 @@
 # Directory Structure
 ```
 .
-├── DIRECTORY_STRUCTURE.md
 ├── README.md
 ├── eppi_text_classification
 │   ├── __init__.py
@@ -31,5 +30,5 @@
 └── tests
     └── test_00_smoke.py
 
-8 directories, 21 files
+8 directories, 20 files
 ```
