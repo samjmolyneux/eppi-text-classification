@@ -34,6 +34,8 @@ jobs:
           awk '/# Structure/{print;print "<!-- directory-structure-start -->";system("cat DIRECTORY_STRUCTURE.md");print "<!-- directory-structure-end -->";next}1' README.md > README.tmp
           mv README.tmp README.md
 
+          rm DIRECTORY_STRUCTURE.md
+
       - name: Commit and push changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
