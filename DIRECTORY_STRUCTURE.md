@@ -1,17 +1,3 @@
-# Installation
-Create a virtual environment.
-```
-conda create -n eppi_text python=3.11
-conda activate eppi_text
-```
-Install.
-```
-pip3 install -e . --config-settings editable_mode=strict 
-python3 -m spacy download en_core_web_sm
-```
-
-# Structure
-<!-- directory-structure-start -->
 ```
 .
 ├── README.md
@@ -43,8 +29,3 @@ python3 -m spacy download en_core_web_sm
 └── tests
     └── test_00_smoke.py
 ```
-<!-- directory-structure-end -->
-
-# Known Bugs
-There are no known bugs.
-
