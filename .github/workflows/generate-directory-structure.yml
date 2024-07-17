@@ -27,9 +27,12 @@ jobs:
           sed -i '/<!-- directory-structure-start -->/,/<!-- directory-structure-end -->/d' README.md
 
           # Add the new directory structure section
-          echo "<!-- directory-structure-start -->" >> README.md
-          cat DIRECTORY_STRUCTURE.md >> README.md
-          echo "<!-- directory-structure-end -->" >> README.md
+          # echo "<!-- directory-structure-start -->" >> README.md
+          # cat DIRECTORY_STRUCTURE.md >> README.md
+          # echo "<!-- directory-structure-end -->" >> README.md
+
+          awk '/# Structure/{print;print "<!-- directory-structure-start -->";system("cat DIRECTORY_STRUCTURE.md");print "<!-- directory-structure-end -->";next}1' README.md > README.tmp
+          mv README.tmp README.md
 
       - name: Commit and push changes
         env:
