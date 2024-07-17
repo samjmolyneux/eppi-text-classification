@@ -6,6 +6,7 @@ from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Any
 
+import jsonpickle
 import numpy as np
 import optuna
 from joblib import Parallel, delayed
@@ -98,7 +99,7 @@ class RandForestParams:
     max_leaf_nodes: int | None = None
     min_impurity_decrease: float = 0.0
     bootstrap: bool = True
-    class_weight: dict[int, int] = field(default_factory=lambda: {1: 27})
+    class_weight: dict[int, int] = field(default_factory=lambda: {1: 27, 0: 1})
     ccp_alpha: float = 0.0
     max_samples: int | None = None
     monotonic_cst: int | None = None
@@ -247,6 +248,7 @@ class OptunaHyperparameterOptimisation:
 
         best_trial = study.best_trial
         best_params = best_trial.user_attrs["all_params"]
+        best_params = jsonpickle.decode(best_params, keys=True)
 
         return best_params
 
@@ -271,7 +273,8 @@ class OptunaHyperparameterOptimisation:
 
         """
         params = self.select_hyperparameters(trial)
-        trial.set_user_attr("all_params", asdict(params))
+        serialized_params = jsonpickle.encode(asdict(params), keys=True)
+        trial.set_user_attr("all_params", serialized_params)
         clf = self.model_class(**asdict(params))
 
         # Calculate the cross validation score
@@ -406,7 +409,7 @@ class OptunaHyperparameterOptimisation:
             max_leaf_nodes=None,
             min_impurity_decrease=0.0,
             bootstrap=True,
-            class_weight={1: 27},
+            class_weight={1: 27, 0: 1},
             ccp_alpha=0.0,
             max_samples=None,
             monotonic_cst=None,
