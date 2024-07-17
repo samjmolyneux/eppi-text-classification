@@ -18,19 +18,20 @@ jobs:
         run: |
           # Check if any files were added or deleted
           if git diff --name-status HEAD^ | grep -E '^(A|D)'; then
-            echo "Files added or deleted. Proceeding with directory structure update."
+            echo "files_changed=true" >> $GITHUB_ENV
           else
-            echo "No files added or deleted. Exiting."
-            exit 0
+            echo "files_changed=false" >> $GITHUB_ENV
           fi
 
       - name: Generate directory structure
+        if: env.files_changed == 'true'
         run: |
           echo '```' >> DIRECTORY_STRUCTURE.md
           tree -I '.git|.github|DIRECTORY_STRUCTURE.md' --noreport >> DIRECTORY_STRUCTURE.md
           echo '```' >> DIRECTORY_STRUCTURE.md
 
       - name: Update README.md
+        if: env.files_changed == 'true'
         run: |
           # Remove the old directory structure section using sed
           sed -i '/<!-- directory-structure-start -->/,/<!-- directory-structure-end -->/d' README.md
@@ -46,6 +47,7 @@ jobs:
           
 
       - name: Commit and push changes
+        if: env.files_changed == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
