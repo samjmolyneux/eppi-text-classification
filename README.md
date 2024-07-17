@@ -83,5 +83,7 @@ There are no known bugs.
 ├── pyproject.toml
 └── tests
     └── test_00_smoke.py
+
+8 directories, 21 files
 ```
 <!-- directory-structure-end -->
