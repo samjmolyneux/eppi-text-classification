@@ -44,7 +44,7 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add README.md DIRECTORY_STRUCTURE.md
+          git add README.md
 
           # Check for changes before committing
           if git diff-index --quiet HEAD --; then
