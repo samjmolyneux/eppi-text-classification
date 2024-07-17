@@ -1,4 +1,3 @@
-pay
 # Installation
 Create a virtual environment.
 ```
