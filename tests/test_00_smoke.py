@@ -26,10 +26,10 @@ from eppi_text_classification.predict import (
     raw_threshold_predict,
 )
 from eppi_text_classification.shap_plotter import (
-    ShapPlotter,
-    DotPlot,
-    DecisionPlot,
     BarPlot,
+    DecisionPlot,
+    DotPlot,
+    ShapPlotter,
 )
 from eppi_text_classification.utils import delete_optuna_study
 
