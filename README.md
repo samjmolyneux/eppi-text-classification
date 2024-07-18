@@ -46,4 +46,4 @@ python3 -m spacy download en_core_web_sm
 <!-- directory-structure-end -->
 
 # Known Bugs
-There are no known bugs.
+Optuna tests not working correctly when run with tox. 
