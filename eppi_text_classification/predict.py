@@ -16,7 +16,7 @@ def get_raw_threshold(
     X: NDArray[np.float64],
     y: NDArray[np.int_],
     target_tpr: float = 1,
-) -> float:
+) -> np.float32 | np.float64:
     """
     Get the model prediction threshold required to achieve the target TPR.
 
@@ -82,7 +82,7 @@ def raw_threshold_predict(
 def predict_scores(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
     X: NDArray[np.float64],
-) -> NDArray[np.float64]:
+) -> NDArray[np.float64] | NDArray[np.float32]:
     """
     Make raw score predictions for a binary classifier.
 

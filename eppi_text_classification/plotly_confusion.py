@@ -93,7 +93,7 @@ def binary_train_valid_confusion_plotly(
     pio.write_html(
         fig,
         file="confusion_matrix.html",
-        auto_open=True,
+        auto_open=False,
         include_plotlyjs="cdn",
     )
 

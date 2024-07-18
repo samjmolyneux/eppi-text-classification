@@ -100,7 +100,7 @@ class DecisionPlot:
     def show(self) -> None:
         """Display the decision plot."""
         self._make_plot()
-        plt.show()
+        plt.show(block=False)
 
     def save(self, filename: str) -> None:
         """Save the decision plot."""
@@ -298,7 +298,7 @@ class DotPlot:
     def show(self) -> None:
         """Display the dot plot."""
         self._make_plot()
-        plt.show()
+        plt.show(block=False)
 
     def save(self, filename: str) -> None:
         """Save the dot plot."""
@@ -353,7 +353,7 @@ class BarPlot:
     def show(self) -> None:
         """Display the bar plot."""
         self._make_plot()
-        plt.show()
+        plt.show(block=False)
 
     def save(self, filename: str) -> None:
         """Save the bar plot."""
