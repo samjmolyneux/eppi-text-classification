@@ -1,15 +1,35 @@
 from pathlib import Path
 
 import jsonpickle
+import matplotlib.pyplot as plt
 import numpy as np
 import optuna
 import pandas as pd
 import pytest
+from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from xgboost import XGBClassifier
 
 from eppi_text_classification import (
     OptunaHyperparameterOptimisation,
+    binary_train_valid_confusion_plotly,
     get_features_and_labels,
     get_tfidf_and_names,
+)
+from eppi_text_classification.plotly_roc import plotly_roc
+from eppi_text_classification.plots import binary_train_valid_confusion_plot
+from eppi_text_classification.predict import (
+    get_raw_threshold,
+    predict_scores,
+    raw_threshold_predict,
+)
+from eppi_text_classification.shap_plotter import (
+    ShapPlotter,
+    DotPlot,
+    DecisionPlot,
+    BarPlot,
 )
 from eppi_text_classification.utils import delete_optuna_study
 
@@ -110,6 +130,33 @@ def randforest_binary_best_params(tfidf_scores, labels):
     )
     delete_optuna_study("rf_binary")
     return optimiser.optimise_hyperparameters(study_name="rf_binary")
+
+
+@pytest.fixture(scope="session")
+def Xtrain_Xtest_ytrain_ytest(tfidf_scores, labels):
+    return train_test_split(
+        tfidf_scores, labels, test_size=0.333, stratify=labels, random_state=8
+    )
+
+
+@pytest.fixture(scope="session")
+def Xtrain(Xtrain_Xtest_ytrain_ytest):
+    return Xtrain_Xtest_ytrain_ytest[0]
+
+
+@pytest.fixture(scope="session")
+def Xtest(Xtrain_Xtest_ytrain_ytest):
+    return Xtrain_Xtest_ytrain_ytest[1]
+
+
+@pytest.fixture(scope="session")
+def ytrain(Xtrain_Xtest_ytrain_ytest):
+    return Xtrain_Xtest_ytrain_ytest[2]
+
+
+@pytest.fixture(scope="session")
+def ytest(Xtrain_Xtest_ytrain_ytest):
+    return Xtrain_Xtest_ytrain_ytest[3]
 
 
 def test_load_data(raw_df):
@@ -384,6 +431,205 @@ def test_randforest_binary_optuna_hyperparameter_optimisation(
     check_binary_optuna_hyperparameter_ranges(
         "rf_binary", expected_ranges, randforest_binary_best_params
     )
+
+
+@pytest.fixture(scope="session")
+def lgbm_binary_optuna_model(lgbm_binary_best_params, Xtrain, ytrain):
+    model = LGBMClassifier(**lgbm_binary_best_params)
+    model.fit(Xtrain, ytrain)
+    return model
+
+
+def test_lgbm_binary_model_creation(lgbm_binary_optuna_model):
+    assert isinstance(lgbm_binary_optuna_model, LGBMClassifier)
+
+
+@pytest.fixture(scope="session")
+def xgb_binary_optuna_model(xgb_binary_best_params, Xtrain, ytrain):
+    model = XGBClassifier(**xgb_binary_best_params)
+    model.fit(Xtrain, ytrain)
+    return model
+
+
+def test_xgb_binary_model_creation(xgb_binary_optuna_model):
+    assert isinstance(xgb_binary_optuna_model, XGBClassifier)
+
+
+@pytest.fixture(scope="session")
+def svc_binary_optuna_model(svc_binary_best_params, Xtrain, ytrain):
+    model = SVC(**svc_binary_best_params)
+    model.fit(Xtrain, ytrain)
+    return model
+
+
+def test_svc_binary_model_creation(svc_binary_optuna_model):
+    assert isinstance(svc_binary_optuna_model, SVC)
+
+
+@pytest.fixture(scope="session")
+def randforest_binary_optuna_model(randforest_binary_best_params, Xtrain, ytrain):
+    model = RandomForestClassifier(**randforest_binary_best_params)
+    model.fit(Xtrain, ytrain)
+    return model
+
+
+def test_randforest_binary_model_creation(randforest_binary_optuna_model):
+    assert isinstance(randforest_binary_optuna_model, RandomForestClassifier)
+
+
+@pytest.fixture(scope="session")
+def all_models(
+    lgbm_binary_optuna_model,
+    xgb_binary_optuna_model,
+    svc_binary_optuna_model,
+    randforest_binary_optuna_model,
+):
+    return (
+        lgbm_binary_optuna_model,
+        xgb_binary_optuna_model,
+        svc_binary_optuna_model,
+        randforest_binary_optuna_model,
+    )
+
+
+def test_predict_scores(Xtest, all_models):
+    for model in all_models:
+        scores = predict_scores(model, Xtest)
+        assert isinstance(scores, np.ndarray)
+        assert len(scores) == len(Xtest)
+        assert isinstance(
+            scores[0], (np.float64 | np.float32)
+        ), f"expected float, got {type(scores[0])}"
+
+
+def test_plotly_roc(lgbm_binary_optuna_model, Xtest, ytest):
+    lgbm_scores = predict_scores(lgbm_binary_optuna_model, Xtest)
+    plotly_roc(ytest, lgbm_scores)
+
+
+def test_get_raw_threshold(all_models, Xtest, ytest):
+    for model in all_models:
+        threshold = get_raw_threshold(model, Xtest, ytest)
+        ypred = predict_scores(model, Xtest)
+        assert isinstance(
+            threshold, (np.float32 | np.float64)
+        ), f"expected float, got {type(threshold)}"
+        assert np.min(ypred) <= threshold <= np.max(ypred)
+
+
+def test_raw_threshold_predict(all_models, Xtest, ytest):
+    for model in all_models:
+        threshold = get_raw_threshold(model, Xtest, ytest)
+        ypred = raw_threshold_predict(model, Xtest, threshold)
+        assert isinstance(ypred, np.ndarray)
+        assert len(ypred) == len(ytest)
+        assert isinstance(ypred[0], np.int_), f"expected int, got {type(ypred[0])}"
+        assert set(np.unique(ypred)) == {
+            0,
+            1,
+        }, f"expected [0, 1], got {np.unique(ypred)}"
+
+
+def test_binary_train_valid_confusion_plot():
+    y_train = [0, 0, 0, 0, 1, 1, 1, 1]
+    y_train_pred = [0, 0, 0, 1, 1, 1, 1, 1]
+    y_test = [1, 0, 0, 0, 0, 0, 0, 0]
+    y_test_pred = [0, 0, 0, 1, 1, 1, 1, 1]
+    binary_train_valid_confusion_plot(
+        y_train,
+        y_train_pred,
+        y_test,
+        y_test_pred,
+        positive_label="1",
+        negative_label="0",
+    )
+    plt.close("all")
+
+
+def test_plotly_binary_train_valid_confusion():
+    y_train = [0, 0, 0, 0, 1, 1, 1, 1]
+    y_train_pred = [0, 0, 0, 1, 1, 1, 1, 1]
+    y_test = [1, 0, 0, 0, 0, 0, 0, 0]
+    y_test_pred = [0, 0, 0, 1, 1, 1, 1, 1]
+    binary_train_valid_confusion_plotly(
+        y_train,
+        y_train_pred,
+        y_test,
+        y_test_pred,
+        postive_label="Included",
+        negative_label="Excluded",
+    )
+
+
+def test_shap_plotter(all_models, Xtest, ytest, feature_names):
+    for model in all_models:
+        shap_plotter = ShapPlotter(model, Xtest[:10], feature_names)
+
+        # Test dot plots
+        dot_plot = shap_plotter.dot_plot(num_display=10, log_scale=True)
+        assert isinstance(dot_plot, DotPlot), f"expected dot plot, got {type(dot_plot)}"
+        dot_plot.show()
+
+        dot_plot = shap_plotter.dot_plot(num_display=10, log_scale=False)
+        assert isinstance(dot_plot, DotPlot), f"expected dot plot, got {type(dot_plot)}"
+        dot_plot.show()
+
+        # Test bar charts
+        bar_chart = shap_plotter.bar_chart(num_display=10)
+        assert isinstance(
+            bar_chart, BarPlot
+        ), f"expected bar chart, got {type(bar_chart)}"
+        bar_chart.show()
+        plt.close("all")
+
+        # Test decision plots
+        threshold = get_raw_threshold(model, Xtest, ytest, target_tpr=1)
+
+        decision_plot = shap_plotter.decision_plot(
+            threshold=threshold,
+            num_display=10,
+            log_scale=False,
+        )
+        assert isinstance(
+            decision_plot, DecisionPlot
+        ), f"expected decision plot, got {type(decision_plot)}"
+        decision_plot.show()
+
+        decision_plot = shap_plotter.decision_plot(
+            threshold=threshold,
+            num_display=10,
+            log_scale=True,
+        )
+        assert isinstance(
+            decision_plot, DecisionPlot
+        ), f"expected decision plot, got {type(decision_plot)}"
+        decision_plot.show()
+
+        decision_plot = shap_plotter.single_decision_plot(
+            threshold=threshold,
+            num_display=10,
+            log_scale=True,
+            index=0,
+        )
+        assert isinstance(
+            decision_plot, DecisionPlot
+        ), f"expected decision plot, got {type(decision_plot)}"
+        decision_plot.show()
+
+        decision_plot = shap_plotter.single_decision_plot(
+            threshold=threshold,
+            num_display=10,
+            log_scale=False,
+            index=0,
+        )
+        assert isinstance(
+            decision_plot, DecisionPlot
+        ), f"expected decision plot, got {type(decision_plot)}"
+        decision_plot.show()
+        plt.close("all")
+
+
+# def test_raw_threshold(Xtest, ytest):
 
 
 # Should do some tests to ensure SHAP values add up to the model outputs
