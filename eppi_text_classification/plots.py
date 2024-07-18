@@ -1,6 +1,6 @@
 """Basic matplotlib plots. For if you don't want to use plotly."""
 
-
+import numpy as np
 from matplotlib import pyplot as plt
 from numpy.typing import ArrayLike
 from sklearn.metrics import (
@@ -44,8 +44,8 @@ def binary_train_valid_confusion_plot(
     cm_train = confusion_matrix(y_train, y_train_pred)
     cm_test = confusion_matrix(y_valid, y_valid_pred)
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 5), dpi=300)
-
+    fig, ax = plt.subplots(1, 2, figsize=(12, 5), dpi=300, squeeze=False)
+    ax = np.squeeze(ax)
     disp_train = ConfusionMatrixDisplay(
         confusion_matrix=cm_train, display_labels=[negative_label, positive_label]
     )
@@ -63,4 +63,4 @@ def binary_train_valid_confusion_plot(
     ax[1].set_ylabel("Truth")
 
     plt.tight_layout()
-    plt.show()
+    plt.show(block=False)
