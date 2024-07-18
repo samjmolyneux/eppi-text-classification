@@ -52,6 +52,66 @@ def labels(features_and_labels):
     return features_and_labels[1]
 
 
+@pytest.fixture(scope="session")
+def lgbm_binary_best_params(tfidf_scores, labels):
+    optimiser = OptunaHyperparameterOptimisation(
+        tfidf_scores,
+        labels,
+        "LGBMClassifier",
+        n_trials_per_job=1,
+        n_jobs=-1,
+        nfolds=3,
+        num_cv_repeats=1,
+    )
+    delete_optuna_study("lgbm_binary")
+    return optimiser.optimise_hyperparameters(study_name="lgbm_binary")
+
+
+@pytest.fixture(scope="session")
+def xgb_binary_best_params(tfidf_scores, labels):
+    optimiser = OptunaHyperparameterOptimisation(
+        tfidf_scores,
+        labels,
+        "XGBClassifier",
+        n_trials_per_job=1,
+        n_jobs=-1,
+        nfolds=3,
+        num_cv_repeats=1,
+    )
+    delete_optuna_study("xgb_binary")
+    return optimiser.optimise_hyperparameters(study_name="xgb_binary")
+
+
+@pytest.fixture(scope="session")
+def svc_binary_best_params(tfidf_scores, labels):
+    optimiser = OptunaHyperparameterOptimisation(
+        tfidf_scores,
+        labels,
+        "SVC",
+        n_trials_per_job=1,
+        n_jobs=-1,
+        nfolds=3,
+        num_cv_repeats=1,
+    )
+    delete_optuna_study("svc_binary")
+    return optimiser.optimise_hyperparameters(study_name="svc_binary")
+
+
+@pytest.fixture(scope="session")
+def randforest_binary_best_params(tfidf_scores, labels):
+    optimiser = OptunaHyperparameterOptimisation(
+        tfidf_scores,
+        labels,
+        "RandomForestClassifier",
+        n_trials_per_job=1,
+        n_jobs=-1,
+        nfolds=3,
+        num_cv_repeats=1,
+    )
+    delete_optuna_study("rf_binary")
+    return optimiser.optimise_hyperparameters(study_name="rf_binary")
+
+
 def test_load_data(raw_df):
     """Test to ensure data is loaded properly."""
     df = raw_df
@@ -128,21 +188,28 @@ def check_binary_optuna_hyperparameter_ranges(study_name, expected_ranges, best_
             assert range_checker(trial_params[param]), f"Param {param} is out of range"
 
 
-def test_lgbm_binary_optuna_hyperparameter_optimisation(
-    tfidf_scores, labels, feature_names
-):
+def test_lgbm_binary_optuna_runs(lgbm_binary_best_params):
     """Test to ensure the LGBM hyperparameter optimisation runs."""
-    optimiser = OptunaHyperparameterOptimisation(
-        tfidf_scores,
-        labels,
-        "LGBMClassifier",
-        n_trials_per_job=1,
-        n_jobs=-1,
-        nfolds=3,
-        num_cv_repeats=1,
-    )
-    delete_optuna_study("lgbm_binary")
-    best_params = optimiser.optimise_hyperparameters(study_name="lgbm_binary")
+    assert lgbm_binary_best_params is not None, "LGBM best params are None"
+
+
+def test_xgb_binary_optuna_runs(xgb_binary_best_params):
+    """Test to ensure the XGB hyperparameter optimisation runs."""
+    assert xgb_binary_best_params is not None, "XGB best params are None"
+
+
+def test_svc_binary_optuna_runs(svc_binary_best_params):
+    """Test to ensure the SVC hyperparameter optimisation runs."""
+    assert svc_binary_best_params is not None, "SVC best params are None"
+
+
+def test_randforest_binary_optuna_runs(randforest_binary_best_params):
+    """Test to ensure the randforest hyperparameter optimisation runs."""
+    assert randforest_binary_best_params is not None, "randforest best params are None"
+
+
+def test_lgbm_binary_optuna_hyperparameter_optimisation(lgbm_binary_best_params):
+    "Test to ensure the LGBM hyperparameters are correct"
 
     expected_types = {
         "verbosity": int,
@@ -181,30 +248,16 @@ def test_lgbm_binary_optuna_hyperparameter_optimisation(
     }
 
     general_binary_optuna_hyperparameter_checks(
-        "lgbm_binary", expected_types, best_params
+        "lgbm_binary", expected_types, lgbm_binary_best_params
     )
 
     check_binary_optuna_hyperparameter_ranges(
-        "lgbm_binary", expected_ranges, best_params
+        "lgbm_binary", expected_ranges, lgbm_binary_best_params
     )
 
 
-def test_xgb_binary_optuna_hyperparameter_optimisation(
-    tfidf_scores, labels, feature_names
-):
-    """Test to ensure the XGBoost hyperparameter optimisation runs."""
-    optimiser = OptunaHyperparameterOptimisation(
-        tfidf_scores,
-        labels,
-        "XGBClassifier",
-        n_trials_per_job=1,
-        n_jobs=-1,
-        nfolds=3,
-        num_cv_repeats=1,
-    )
-    delete_optuna_study("xgb_binary")
-    best_params = optimiser.optimise_hyperparameters(study_name="xgb_binary")
-
+def test_xgb_binary_optuna_hyperparameter_optimisation(xgb_binary_best_params):
+    "Test to ensure the XGB hyperparameters are correct"
     expected_types = {
         "verbosity": int,
         "objective": str,
@@ -235,30 +288,16 @@ def test_xgb_binary_optuna_hyperparameter_optimisation(
     }
 
     general_binary_optuna_hyperparameter_checks(
-        "xgb_binary", expected_types, best_params
+        "xgb_binary", expected_types, xgb_binary_best_params
     )
 
     check_binary_optuna_hyperparameter_ranges(
-        "xgb_binary", expected_ranges, best_params
+        "xgb_binary", expected_ranges, xgb_binary_best_params
     )
 
 
-def test_svc_binary_optuna_hyperparameter_optimisation(
-    tfidf_scores, labels, feature_names
-):
-    """Test to ensure the XGBoost hyperparameter optimisation runs."""
-    optimiser = OptunaHyperparameterOptimisation(
-        tfidf_scores,
-        labels,
-        "SVC",
-        n_trials_per_job=1,
-        n_jobs=-1,
-        nfolds=3,
-        num_cv_repeats=1,
-    )
-    delete_optuna_study("svc_binary")
-    best_params = optimiser.optimise_hyperparameters(study_name="svc_binary")
-
+def test_svc_binary_optuna_hyperparameter_optimisation(svc_binary_best_params):
+    "Test to ensure the SVC hyperparameters are correct"
     expected_types = {
         "class_weight": (str, dict[int, float]),
         "cache_size": int,
@@ -284,30 +323,18 @@ def test_svc_binary_optuna_hyperparameter_optimisation(
     }
 
     general_binary_optuna_hyperparameter_checks(
-        "svc_binary", expected_types, best_params
+        "svc_binary", expected_types, svc_binary_best_params
     )
 
     check_binary_optuna_hyperparameter_ranges(
-        "svc_binary", expected_ranges, best_params
+        "svc_binary", expected_ranges, svc_binary_best_params
     )
 
 
 def test_randforest_binary_optuna_hyperparameter_optimisation(
-    tfidf_scores, labels, feature_names
+    randforest_binary_best_params,
 ):
-    """Test to ensure the XGBoost hyperparameter optimisation runs."""
-    optimiser = OptunaHyperparameterOptimisation(
-        tfidf_scores,
-        labels,
-        "RandomForestClassifier",
-        n_trials_per_job=1,
-        n_jobs=-1,
-        nfolds=3,
-        num_cv_repeats=1,
-    )
-    delete_optuna_study("rf_binary")
-    best_params = optimiser.optimise_hyperparameters(study_name="rf_binary")
-
+    "Test to ensure the randforest hyperparameters are correct"
     expected_types = {
         "verbose": int,
         "n_estimators": int,
@@ -351,17 +378,14 @@ def test_randforest_binary_optuna_hyperparameter_optimisation(
     }
 
     general_binary_optuna_hyperparameter_checks(
-        "rf_binary", expected_types, best_params
+        "rf_binary", expected_types, randforest_binary_best_params
     )
 
-    check_binary_optuna_hyperparameter_ranges("rf_binary", expected_ranges, best_params)
+    check_binary_optuna_hyperparameter_ranges(
+        "rf_binary", expected_ranges, randforest_binary_best_params
+    )
 
 
-# Want to check that each param in best_params is in the expected_type
-
-# Should extend the checking of the parameter ranges of the best trial to all trials
-# (higher likelihood of catching an error)
-# Should also test that the hyperparmeters are also in the correct range.
 # Should do some tests to ensure SHAP values add up to the model outputs
 # Should do some tests to ensure that the best params are actualy selected by making your
 # own instances.
