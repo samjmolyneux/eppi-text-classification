@@ -570,7 +570,7 @@ class ShapPlotter:
             self.model.decision_function, self.background_data
         )
         self.shap_values = self.explainer.shap_values(
-            self.X_test, nsamples=self.kernel_nsamples
+            self.X_test, nsamples=self.kernel_nsamples, l1_reg="aic"
         )
         self.expected_value = self.explainer.expected_value
 
