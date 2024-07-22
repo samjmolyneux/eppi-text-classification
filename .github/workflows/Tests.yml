@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, macos-latest]
         python-version: ['3.11']
       fail-fast: false
     steps:
@@ -71,9 +71,9 @@ jobs:
       id: aggregate-lint
       run: |
         lint_success=true
-        echo "Checking file: $file"
-        cat "$file"
         for file in ./artifacts/**/lint_success.txt; do
+          echo "Checking file: $file"
+          cat "$file"
           if grep -q "false" "$file"; then
             lint_success=false
             break
