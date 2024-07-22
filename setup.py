@@ -31,7 +31,7 @@ setup()
 def install_spacy():
     try:
         subprocess.run(
-            ["python", "-m", "spacy" "download", "en_core_web_sm"],
+            ["python", "-m", "spacy", "download", "en_core_web_sm"],
             check=True,
             capture_output=True,
         )
