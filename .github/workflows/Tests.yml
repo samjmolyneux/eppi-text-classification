@@ -82,9 +82,8 @@ jobs:
         if [ "$lint_success" = true ]; then
           echo "lint_badge_output=passing" >> $GITHUB_ENV
         else
-          echo "Failing"
+          echo "lint_badge_output=failed" >> $GITHUB_ENV
         fi
-        echo "lint_badge_output=failed" >> $GITHUB_ENV
 
     - name: Aggregate Type Check Results
       id: aggregate-type-check
