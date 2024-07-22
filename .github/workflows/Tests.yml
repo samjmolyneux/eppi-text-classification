@@ -26,6 +26,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
 
+    - name: Check libomp installation
+      run: brew list | grep libomp
+      
+
     - name: Test with tox
       run: tox
       continue-on-error: true
