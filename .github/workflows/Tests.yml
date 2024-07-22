@@ -79,7 +79,12 @@ jobs:
             break
           fi
         done
-        echo "lint_success=$lint_success" >> $GITHUB_ENV
+        if [ "$lint_success" = true ]; then
+          echo "lint_badge_output=passing" >> $GITHUB_ENV
+        else
+          echo "Failing"
+        fi
+        echo "lint_badge_output=failed" >> $GITHUB_ENV
 
     - name: Aggregate Type Check Results
       id: aggregate-type-check
@@ -93,19 +98,11 @@ jobs:
         done
         echo "type_check_success=$type_check_success" >> $GITHUB_ENV
 
-    - name: Set Lint Badge
-      if: ${{ env.lint_success == 'true' }}
-      run: echo "![Lint](https://img.shields.io/badge/lint-success-brightgreen)" > lint_badge.md
-
-    - name: Set Type Check Badge
-      if: ${{ env.type_check_success == 'true' }}
-      run: echo "![Type Check](https://img.shields.io/badge/type_check-success-brightgreen)" > type_check_badge.md
-
-    # - name: Commit and Push Updated README
-    #   if: ${{ env.lint_success == 'true' }} || ${{ env.type_check_success == 'true' }}
-    #   run: |
-    #     git config --global user.name 'github-actions[bot]'
-    #     git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-    #     git add README.md
-    #     git commit -m "Update README with test badges"
-    #     git push
+    - name: Upload Badges
+      uses: RubbaBoy/BYOB@v1.3.0
+      with:
+        NAME: time
+        LABEL: 'Linting'
+        STATUS: ${{ steps.aggregate-lint.outputs.lint_badge_output }}
+        COLOR: 00EEFF
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
