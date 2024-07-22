@@ -1,5 +1,10 @@
 # Data
-/data/
+/data/raw/Cochrane-heart-reviews/
+/data/raw/hedges-all.tsv
+/data/raw/Oct2021_AllRecordsBib_citationns.tsv
+/data/raw/studytype_multiclass.tsv
+/data/processed/
+
 
 # Legact functions
 /legacy_funcs
