@@ -31,7 +31,7 @@ def install_spacy():
         subprocess.run(
             ["python", "-m", "spacy", "download", "en_core_web_sm"],
             check=True,
-            capture_output=True,
+            # capture_output=True,
         )
         print("Installed spacy en_core_web_sm.")
     except subprocess.CalledProcessError:
