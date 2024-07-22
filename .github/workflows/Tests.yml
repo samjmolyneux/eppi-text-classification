@@ -72,8 +72,6 @@ jobs:
       run: |
         lint_success=true
         for file in ./artifacts/**/lint_success.txt; do
-          echo "Checking file: $file"
-          cat "$file"
           if grep -q "false" "$file"; then
             lint_success=false
             break
@@ -115,3 +113,5 @@ jobs:
         STATUS: ${{ steps.aggregate-type-check.outputs.mypy_output }}
         COLOR: 28a745
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  #We should add an additional condtional at each upload that says that if the output is true then its passing, but if it is anything else then it should be set to failed.
