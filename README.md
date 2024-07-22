@@ -48,6 +48,7 @@ python3 -m spacy download en_core_web_sm
 │       └── xgboost_binary.ipynb
 ├── pyproject.toml
 ├── setup.py
+├── shields.json
 ├── tests
 │   ├── check_install.py
 │   └── test_00_smoke.py
