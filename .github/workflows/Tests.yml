@@ -119,5 +119,18 @@ jobs:
         STATUS: ${{ steps.aggregate-type-check.outputs.mypy_output }}
         COLOR: 28a745
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Update README with Badges
+      run: |
+        BADGE_RUFF_URL='https://byob.yarr.is/samjmolyneux/eppi-text-classification/ruff-badge'
+        BADGE_MYPY_URL='https://byob.yarr.is/samjmolyneux/eppi-text-classification/mypy-badge'
+        
+        sed -i 's|!\[Ruff\](.*)|![Ruff]('"$BADGE_RUFF_URL"')|' README.md
+        sed -i 's|!\[MyPy\](.*)|![MyPy]('"$BADGE_MYPY_URL"')|' README.md
 
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add README.md
+        git commit -m "Update README with new badges"
+        git push
   #We should add an additional condtional at each upload that says that if the output is true then its passing, but if it is anything else then it should be set to failed.
