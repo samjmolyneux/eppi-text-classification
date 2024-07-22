@@ -105,7 +105,7 @@ jobs:
       with:
         NAME: ruff-badge
         LABEL: 'Ruff'
-        ICON: 'gitub'
+        ICON: 'github'
         STATUS: ${{ steps.aggregate-lint.outputs.lint_badge_output }}
         COLOR: 28a745
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -115,7 +115,7 @@ jobs:
       with:
         NAME: mypy-badge
         LABEL: 'MyPy'
-        ICON: 'gitub'
+        ICON: 'github'
         STATUS: ${{ steps.aggregate-type-check.outputs.mypy_output }}
         COLOR: 28a745
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
