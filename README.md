@@ -1,7 +1,7 @@
 ![Tests](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/Tests.yml/badge.svg)
 ![](https://byob.yarr.is/samjmolyneux/eppi-text-classification/ruff-badge)
 ![](https://byob.yarr.is/samjmolyneux/eppi-text-classification/mypy-badge)
-  
+![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/samjmolyneux/8eecb8c8d4f9050a92f87c4f8cb859f3/raw/test.json)
 # Installation
 Create a virtual environment.
 ```
