@@ -1,3 +1,5 @@
+![Tests](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/Tests.yml)
+
 # Installation
 Create a virtual environment.
 ```
