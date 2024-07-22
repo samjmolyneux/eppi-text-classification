@@ -99,7 +99,7 @@ jobs:
     - name: Upload Linting Badge
       uses: RubbaBoy/BYOB@v1.3.0
       with:
-        NAME: time
+        NAME: ruff-badge
         LABEL: 'Ruff'
         ICON: 'gitub'
         STATUS: ${{ steps.aggregate-lint.outputs.lint_badge_output }}
@@ -109,7 +109,7 @@ jobs:
     - name: Upload Type Checking Badge
       uses: RubbaBoy/BYOB@v1.3.0
       with:
-        NAME: time
+        NAME: mypy-badge
         LABEL: 'MyPy'
         ICON: 'gitub'
         STATUS: ${{ steps.aggregate-type-check.outputs.mypy_output }}
