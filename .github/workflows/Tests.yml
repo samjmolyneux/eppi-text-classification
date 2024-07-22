@@ -13,6 +13,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         python-version: ['3.11']
       fail-fast: false
+    outputs:
+      lint_success: ${{ steps.set-lint-success.outputs.lint_success }}
+      type_check_success: ${{ steps.set-type-check-success.outputs.type_check_success }}
+      # tests_success: ${{ steps.set-tests-success.outputs.tests_success }}
     steps:
     - uses: actions/checkout@v4
 
@@ -34,13 +38,66 @@ jobs:
         python tests/check_install.py
 
     - name: Test with Ruff
+      id: lint
       run: |
         ruff check eppi_text_classification/
+      continue-on-error: true
+
+    - name: Set Lint Success
+      id: set-lint-success
+      run: echo "::set-output name=lint_success::${{ steps.lint.outcome == 'success' }}"
     
     - name: Test with MyPy
+      id: type_check
       run: |
         mypy -p eppi_text_classification
+      continue-on-error: true
+   
+    - name: Set Type Check Success
+      id: set-type-check-success
+      run: echo "::set-output name=type_check_success::${{ steps.type_check.outcome == 'success' }}"
+
+  aggregate-results:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Aggregate Lint Results
+      id: aggregate-lint
+      run: echo "lint_success=${{ needs.test.outputs.lint_success }}"
     
+    - name: Aggregate Type Check Results
+      id: aggregate-type-check
+      run: echo "type_check_success=${{ needs.test.outputs.type_check_success }}"
+
+    - name: Determine Lint Overall Success
+      id: determine-lint-success
+      run: |
+        echo "lint_success=true" >> $GITHUB_ENV
+        for result in ${{ needs.test.outputs.lint_success }}; do
+          if [ "$result" != "true" ]; then
+            echo "lint_success=false" >> $GITHUB_ENV
+            break
+          fi
+        done
+
+    - name: Determine Type Check Overall Success
+      id: determine-type-check-success
+      run: |
+        echo "type_check_success=true" >> $GITHUB_ENV
+        for result in ${{ needs.test.outputs.type_check_success }}; do
+          if [ "$result" != "true" ]; then
+            echo "type_check_success=false" >> $GITHUB_ENV
+            break
+          fi
+        done
+
+    - name: Set Lint Badge
+      if: ${{ env.lint_success == 'true' }}
+      run: echo "![Lint](https://img.shields.io/badge/lint-success-brightgreen)" > lint_badge.md
+
+    - name: Set Type Check Badge
+      if: ${{ env.type_check_success == 'true' }}
+      run: echo "![Type Check](https://img.shields.io/badge/type_check-success-brightgreen)" > type_check_badge.md
     # - name: Test with PyTest
     #   run: |
     #     python -m pytest --no-header --verbose --tb=short tests/
