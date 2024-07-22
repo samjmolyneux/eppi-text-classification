@@ -25,8 +25,6 @@ def check_and_install_libomp():
 
 check_and_install_libomp()
 
-setup()
-
 
 def install_spacy():
     try:
@@ -42,3 +40,4 @@ def install_spacy():
 
 
 install_spacy()
+setup()
