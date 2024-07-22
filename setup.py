@@ -23,16 +23,13 @@ def check_and_install_libomp():
                 sys.exit(1)
 
 
-check_and_install_libomp()
-
-
 def install_spacy():
     try:
-        subprocess.run(
-            ["pip", "install", "spacy"],
-            check=True,
-            # capture_output=True,
-        )
+        # subprocess.run(
+        #     ["pip", "install", "spacy"],
+        #     check=True,
+        #     # capture_output=True,
+        # )
         subprocess.run(
             ["python", "-m", "spacy", "download", "en_core_web_sm"],
             check=True,
@@ -44,5 +41,9 @@ def install_spacy():
         sys.exit(1)
 
 
-install_spacy()
+check_and_install_libomp()
+
 setup()
+
+
+install_spacy()
