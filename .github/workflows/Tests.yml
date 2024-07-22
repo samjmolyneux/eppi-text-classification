@@ -80,9 +80,9 @@ jobs:
           fi
         done
         if [ "$lint_success" = true ]; then
-          echo "lint_badge_output=passing" >> $GITHUB_ENV
+          echo "::set-output name=lint_badge_output::passing"
         else
-          echo "lint_badge_output=failed" >> $GITHUB_ENV
+          echo "::set-output name=lint_badge_output::failed"
         fi
 
     - name: Aggregate Type Check Results
