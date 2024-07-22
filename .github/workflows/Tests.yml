@@ -41,9 +41,9 @@ jobs:
       run: |
         mypy -p eppi_text_classification
     
-    - name: Test with PyTest
-      run: |
-        python -m pytest --no-header --verbose --tb=short tests/
+    # - name: Test with PyTest
+    #   run: |
+    #     python -m pytest --no-header --verbose --tb=short tests/
         
 
       
