@@ -79,11 +79,6 @@ jobs:
             break
           fi
         done
-        if [ "$lint_success" = true ]; then
-          echo "::set-output name=lint_badge_output::passing"
-        else
-          echo "::set-output name=lint_badge_output::failed"
-        fi
 
     - name: Aggregate Type Check Results
       id: aggregate-type-check
@@ -95,13 +90,28 @@ jobs:
             break
           fi
         done
-        echo "type_check_success=$type_check_success" >> $GITHUB_ENV
+        if [ "$type_check_success" = true ]; then
+          echo "::set-output name=mypy_output::passing"
+        else
+          echo "::set-output name=mypy_output::failed"
+        fi
 
-    - name: Upload Badges
+    - name: Upload Linting Badge
       uses: RubbaBoy/BYOB@v1.3.0
       with:
         NAME: time
-        LABEL: 'Linting'
+        LABEL: 'Ruff'
+        ICON: 'gitub'
         STATUS: ${{ steps.aggregate-lint.outputs.lint_badge_output }}
-        COLOR: 00EEFF
+        COLOR: 28a745
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Type Checking Badge
+      uses: RubbaBoy/BYOB@v1.3.0
+      with:
+        NAME: time
+        LABEL: 'MyPy'
+        ICON: 'gitub'
+        STATUS: ${{ steps.aggregate-type-check.outputs.mypy_output }}
+        COLOR: 28a745
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
