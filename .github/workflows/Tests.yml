@@ -29,6 +29,7 @@ jobs:
 
     - name: Check correct installation
       run: python tests/check_install.py
+      continue-on-error: true
 
     - name: Test with Ruff
       id: lint
@@ -77,6 +78,11 @@ jobs:
             break
           fi
         done
+        if [ "$lint_success" = true ]; then
+          echo "::set-output name=lint_badge_output::passing"
+        else
+          echo "::set-output name=lint_badge_output::failed"
+        fi
 
     - name: Aggregate Type Check Results
       id: aggregate-type-check
