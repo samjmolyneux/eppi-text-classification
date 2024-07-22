@@ -127,15 +127,25 @@ jobs:
         BRANCH: 'dev'
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Create Awesome Badge
+    - name: Create new ruff badge
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
         auth: ${{ secrets.GIST_SECRET }}
         gistID: 8eecb8c8d4f9050a92f87c4f8cb859f3
         filename: badge.json # Use test.svg if you want to use the SVG mode.
-        label: Hello
-        message: World
-        color: orange
+        label: Ruff
+        message: ${{ steps.aggregate-lint.outputs.lint_badge_output }}
+        color: green
+
+    - name: Create new mypy badge
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: 8eecb8c8d4f9050a92f87c4f8cb859f3
+        filename: badge.json # Use test.svg if you want to use the SVG mode.
+        label: MyPy
+        message: ${{ steps.aggregate-type-check.outputs.mypy_output }}
+        color: green
 
     
     # - name: Update README with Badges
