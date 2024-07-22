@@ -28,4 +28,3 @@ jobs:
       
     - name: Test with tox
       run: tox
-      continue-on-error: true
