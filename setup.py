@@ -29,6 +29,11 @@ check_and_install_libomp()
 def install_spacy():
     try:
         subprocess.run(
+            ["pip", "install", "spacy"],
+            check=True,
+            # capture_output=True,
+        )
+        subprocess.run(
             ["python", "-m", "spacy", "download", "en_core_web_sm"],
             check=True,
             # capture_output=True,
