@@ -23,6 +23,11 @@ def check_and_install_libomp():
                 sys.exit(1)
 
 
+check_and_install_libomp()
+
+setup()
+
+
 def install_spacy():
     try:
         subprocess.run(
@@ -30,19 +35,10 @@ def install_spacy():
             check=True,
             capture_output=True,
         )
-        print("spacy is already installed.")
+        print("Installed spacy en_core_web_sm.")
     except subprocess.CalledProcessError:
-        print("spacy is not installed. Attempting to install it.")
-        try:
-            subprocess.run(["pip", "install", "spacy"], check=True)
-            print("spacy installed successfully.")
-        except subprocess.CalledProcessError as e:
-            print("Failed to install spacy. Please install it manually.")
-            sys.exit(1)
+        print("spacy en_core_web_sm could not be installed.")
+        sys.exit(1)
 
-
-check_and_install_libomp()
-
-setup()
 
 install_spacy()
