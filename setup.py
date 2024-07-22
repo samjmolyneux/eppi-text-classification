@@ -23,27 +23,6 @@ def check_and_install_libomp():
                 sys.exit(1)
 
 
-def install_spacy():
-    try:
-        # subprocess.run(
-        #     ["pip", "install", "spacy"],
-        #     check=True,
-        #     # capture_output=True,
-        # )
-        subprocess.run(
-            ["python", "-m", "spacy", "download", "en_core_web_sm"],
-            check=True,
-            # capture_output=True,
-        )
-        print("Installed spacy en_core_web_sm.")
-    except subprocess.CalledProcessError:
-        print("spacy en_core_web_sm could not be installed.")
-        sys.exit(1)
-
-
 check_and_install_libomp()
 
 setup()
-
-
-install_spacy()
