@@ -13,7 +13,7 @@ from .validation import InvalidModelError
 
 def get_raw_threshold(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
-    X: NDArray[np.float64],
+    X,
     y: NDArray[np.int_],
     target_tpr: float = 1,
 ) -> np.float32 | np.float64:
