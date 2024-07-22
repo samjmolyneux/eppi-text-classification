@@ -112,7 +112,8 @@ jobs:
         LABEL: 'Ruff'
         ICON: 'github'
         STATUS: ${{ steps.aggregate-lint.outputs.lint_badge_output }}
-        COLOR: 28a745
+        COLOR: green
+        BRANCH: 'dev'
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload Type Checking Badge
@@ -122,7 +123,8 @@ jobs:
         LABEL: 'MyPy'
         ICON: 'github'
         STATUS: ${{ steps.aggregate-type-check.outputs.mypy_output }}
-        COLOR: 28a745
+        COLOR: green
+        BRANCH: 'dev'
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     # - name: Update README with Badges
