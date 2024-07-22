@@ -15,6 +15,9 @@ python3 -m spacy download en_core_web_sm
 ```
 .
 ├── README.md
+├── data
+│   └── raw
+│       └── debunking_review.tsv
 ├── eppi_text_classification
 │   ├── __init__.py
 │   ├── opt.py
