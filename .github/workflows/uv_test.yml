@@ -32,10 +32,10 @@ jobs:
     
     - name: intermediary step
       run: |
-        uv pip install numpy==1.26.4
         python -m ensurepip --upgrade
         python -c "import numpy as np; print(np.__version__)"
         uv pip list
+# uv pip install numpy==1.26.4
 
     - name: Install Spacy model
       run: |
