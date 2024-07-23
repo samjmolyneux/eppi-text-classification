@@ -1,6 +1,6 @@
 ![PyTest](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/pytest_tests.yml/badge.svg)
-![Ruff](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/ruff_tests.yml/badge.svg)
-![MyPy](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/mypy_tests.yml/badge.svg)
+![Ruff](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/ruff_test.yml/badge.svg)
+![MyPy](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/mypy_test.yml/badge.svg)
 
 # Installation
 Create a virtual environment.
