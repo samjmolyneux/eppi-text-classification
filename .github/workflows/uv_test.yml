@@ -27,7 +27,6 @@ jobs:
       run: |
         uv pip install .
         uv pip install .[test]
-        uv python find pip
         python -m spacy download en_core_web_sm
     
     - name: Install Spacy model
