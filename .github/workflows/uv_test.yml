@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     strategy:
         fail-fast: false
 
@@ -25,13 +25,17 @@ jobs:
         uv pip install .[test]
     
     - name: Install Spacy model
-      run: 
+      run: |
         source .venv/bin/activate
         python -m spacy download en_core_web_sm
 
     - name: Check correct installation
-      run: python tests/check_install.py
+      run: |
+        source .venv/bin/activate
+        python tests/check_install.py
     
     - name: Test with Ruff
-      run: ruff check eppi_text_classification/
+      run: |
+        source .venv/bin/activate
+        ruff check eppi_text_classification/
       continue-on-error: true
