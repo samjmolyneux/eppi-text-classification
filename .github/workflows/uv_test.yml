@@ -19,7 +19,7 @@ jobs:
     - uses: yezz123/setup-uv@v4
       with: 
         uv-venv: "my_venv"
-        uv-version: "0.2.27"
+        uv-version: "0.2.10"
 
     - run: |
         uv --version
