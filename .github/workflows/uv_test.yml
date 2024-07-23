@@ -30,6 +30,10 @@ jobs:
     - name: Test dependencies
       run: uv pip install .[test]
     
+    - name: intermediary step
+      run: |
+        uv pip show thinc 
+
     - name: Install Spacy model
       run: |
         python -m spacy download en_core_web_sm
