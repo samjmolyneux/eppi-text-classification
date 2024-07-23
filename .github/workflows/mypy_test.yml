@@ -1,4 +1,4 @@
-name: Ruff Tests
+name: MyPy
 
 on:
   push:
