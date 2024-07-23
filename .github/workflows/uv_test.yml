@@ -23,11 +23,11 @@ jobs:
         uv venv .venv
         source .venv/bin/activate
         uv pip install .[test]
+        python -c "import spacy; print(spacy.__version__)"
     
     - name: Install Spacy model
       run: |
         source .venv/bin/activate
-        python -c "import spacy; print(spacy.__version__)"
         python -m spacy download en_core_web_sm
 
     - name: Check correct installation
