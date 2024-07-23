@@ -32,7 +32,8 @@ jobs:
     
     - name: intermediary step
       run: |
-        uv pip show thinc 
+        uv pip show thinc
+        python -c "import numpy as np; print(np.__version__)"
 
     - name: Install Spacy model
       run: |
