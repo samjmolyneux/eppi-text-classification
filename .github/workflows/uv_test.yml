@@ -23,6 +23,7 @@ jobs:
     - name: Check uv version
       run: |
         uv --version
+        find ~/.virtualenvs -name 'activate' -type f
 
     - name: Install dependencies
       run: |
