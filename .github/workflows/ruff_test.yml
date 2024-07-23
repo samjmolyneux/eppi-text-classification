@@ -1,4 +1,4 @@
-name: Ruff Tests
+name: Ruff
 
 on:
   push:
