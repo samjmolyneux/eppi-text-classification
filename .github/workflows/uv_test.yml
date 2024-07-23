@@ -12,7 +12,9 @@ jobs:
         fail-fast: false
 
     steps:
-    - uses: hynek/setup-cached-uv@v1
+    - uses: yezz123/setup-uv@v4
+      with: 
+        uv-venv: "my_venv"
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
@@ -20,23 +22,18 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv venv .venv
-        source .venv/bin/activate
         uv pip install .[test]
         python -c "import spacy; print(spacy.__version__)"
     
     - name: Install Spacy model
       run: |
-        source .venv/bin/activate
         python -m spacy download en_core_web_sm
 
     - name: Check correct installation
       run: |
-        source .venv/bin/activate
         python tests/check_install.py
     
     - name: Test with Ruff
       run: |
-        source .venv/bin/activate
         ruff check eppi_text_classification/
       continue-on-error: true
