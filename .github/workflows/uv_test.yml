@@ -19,9 +19,8 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
-    - name: Check uv version
-      run: |
+
+    - run: |
         uv --version
         find ~/.virtualenvs -name 'activate' -type f
 
