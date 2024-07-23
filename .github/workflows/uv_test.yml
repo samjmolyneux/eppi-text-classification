@@ -22,11 +22,10 @@ jobs:
 
     - run: |
         uv --version
-        find ~/.virtualenvs -name 'activate' -type f
+        uv pip install .[test]
 
     - name: Install dependencies
       run: |
-        uv pip install .[test]
         python -c "import spacy; print(spacy.__version__)"
     
     - name: Install Spacy model
