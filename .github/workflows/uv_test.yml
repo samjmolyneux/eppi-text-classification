@@ -25,7 +25,9 @@ jobs:
         uv pip install .[test]
     
     - name: Install Spacy model
-      run: python -m spacy download en_core_web_sm
+      run: 
+        source .venv/bin/activate
+        python -m spacy download en_core_web_sm
 
     - name: Check correct installation
       run: python tests/check_install.py
