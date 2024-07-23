@@ -37,7 +37,6 @@ dependencies = [
     "shap~=0.45.1",
     "jupyter~=1.0.0",
     "jsonpickle~=3.2.2",
-    "thinc~=9.0.0"
 ]
 
 [project.optional-dependencies]
