@@ -12,13 +12,13 @@ jobs:
         fail-fast: false
 
     steps:
-    - uses: yezz123/setup-uv@v4
-      with: 
-        uv-venv: "my_venv"
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+    - uses: yezz123/setup-uv@v4
+      with: 
+        uv-venv: "my_venv"
 
     - run: |
         uv --version
