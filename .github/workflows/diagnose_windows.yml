@@ -10,44 +10,40 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v4
+    - name: Check drives
+      run: |
+        echo "System Drive: $Env:SystemDrive"
+        echo "GitHub Workspace: $Env:GITHUB_WORKSPACE"
+        Get-PSDrive
+
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    
-    - name: Copy Python to D drive
-      run: |
-        mkdir -p D:\python
-        xcopy /s /e /i /y %pythonLocation% D:\python\3.11.9\x64
 
-    - name: Create virtual environment on D drive
-      run: |
-        # Use Python from D drive
-        D:\python\3.11.9\x64\python -m venv D:\a\venv
+    - name: Display Python location
+      run: echo "Python location: ${{ steps.cp311.outputs.python-location }}"
 
-    - name: Activate virtual environment and install dependencies
-      run: |
-        # Activate the virtual environment
-        call D:\a\venv\Scripts\activate
-        
-        # Confirm the Python version and path
-        python --version
-        python -c "import sys; print(sys.executable)"
-        python -c "import site; print(site.getsitepackages())"
-        
-        # Install dependencies
-        pip install --upgrade pip
-        pip install .
-        
-    - name: Check Working Directory
-      run: |
-        echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
-        echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
+    - name: Check where Python is installed
+      run: where python
+  
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          C:\Users\runneradmin\AppData\Local\pip\Cache
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
-
+    - name: Install dependencies with pinned version
+      run: |
+        echo "GITHUB_WORKSPACE: $Env:GITHUB_WORKSPACE"
+        echo "RUNNER_WORKSPACE: $Env:RUNNER_WORKSPACE"
+        python -m pip install --upgrade pip
+        python -m pip install .
 
 
 # name: Diagnose Windows
@@ -84,7 +80,7 @@ jobs:
 #         echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
 #         python -m pip install --upgrade pip
 #         python -m pip install . 
-    #   env:
-    #     TEMP: C:\temp
-    #     TMP: C:\temp
-    #     pythonLocation: C:\hostedtoolcache\windows\Python\3.11.9\x64
+      # env:
+      #   TEMP: C:\temp
+      #   TMP: C:\temp
+      #   pythonLocation: C:\hostedtoolcache\windows\Python\3.11.9\x64
