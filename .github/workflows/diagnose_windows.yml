@@ -30,18 +30,17 @@ jobs:
 
     - name: Check where Python is installed
       run: where python
+    
+    - name: Check Python Environment Variables
+      run: |
+        echo "pythonLocation: $Env:pythonLocation"
+        echo "PKG_CONFIG_PATH: $Env:PKG_CONFIG_PATH"
+        echo "Python_ROOT_DIR: $Env:Python_ROOT_DIR"
+        echo "Python2_ROOT_DIR: $Env:Python2_ROOT_DIR"
+        echo "Python3_ROOT_DIR: $Env:Python3_ROOT_DIR"
 
     - name: Verify Python installation
       run: python --version
-
-    - name: Cache pip dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          C:\Users\runneradmin\AppData\Local\pip\Cache
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
 
     - name: Install dependencies with pinned version
       run: |
