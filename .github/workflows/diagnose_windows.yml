@@ -23,8 +23,9 @@ jobs:
         uv-venv: "my_venv"
         uv-version: "0.2.28"
 
-    - name: Create temporary directory
-      run: mkdir -p ${{ github.workspace }}\temp
+    - name: Create temporary directory on C
+      run: mkdir -p C:\temp
+  
 
     - name: Install dependencies with pinned version
       run: |
