@@ -28,12 +28,7 @@ jobs:
       
     - name: Test dependencies
       run: |
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          uv pip install .[test] --link-mode=copy
-        else
-          uv pip install .[test]
-        fi
-      shell: bash
+        uv pip install .[test]
       
     - name: Test dependencies
       run: uv pip install .[test]
