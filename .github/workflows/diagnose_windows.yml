@@ -1,9 +1,9 @@
-name: CI on D Drive
+name: Diagnose Windows
 
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
   build:
