@@ -32,6 +32,7 @@ jobs:
       run: |
         echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
         echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
+        python -m pip install --upgrade pip
         python -m pip install . 
     #   env:
     #     TEMP: C:\temp
