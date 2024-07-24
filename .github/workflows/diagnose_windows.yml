@@ -25,6 +25,8 @@ jobs:
   
     - name: Install dependencies with pinned version
       run: |
+        echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
+        echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
         uv pip install .
       env:
         TEMP: C:\temp
