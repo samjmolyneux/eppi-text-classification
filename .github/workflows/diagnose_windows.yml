@@ -16,25 +16,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    - uses: yezz123/setup-uv@v4
-      with: 
-        uv-venv: "my_venv"
-        uv-version: "0.2.28"
-
-    - name: Check Virtual Environment
-      run: |
-        echo "Checking virtual environment location and contents:"
-        echo "Virtual environment location:"
-        where python
-        where uv
-        echo "Listing virtual environment directory:"
-        dir my_venv
   
     - name: Install dependencies with pinned version
       run: |
         echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
         echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
-        uv pip install .
     #   env:
     #     TEMP: C:\temp
     #     TMP: C:\temp
