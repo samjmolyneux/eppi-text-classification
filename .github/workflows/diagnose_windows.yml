@@ -18,7 +18,12 @@ jobs:
         python-version: '3.11'
 
     - name: Debug and Fix
-      run: |             
+      run: |
+        echo "TEMP: ${{ runner.temp }}"
+        echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
+        echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
+        echo "SYSTEMROOT: $SYSTEMROOT"
+             
         python -m pip install --upgrade pip
         pip install .
       env:

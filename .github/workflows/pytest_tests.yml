@@ -28,10 +28,19 @@ jobs:
       
     - name: Test dependencies
       run: |
+        
+        echo "TEMP: ${{ runner.temp }}"
+        echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
+        echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
+        echo "SYSTEMROOT: $SYSTEMROOT"
         uv pip install .[test]
+      env:
+        TEMP: ${{ github.workspace }}\temp
+        TMP: ${{ github.workspace }}\temp
+        TMPDIR: ${{ github.workspace }}\temp  
       
-    - name: Test dependencies
-      run: uv pip install .[test]
+    # - name: Test dependencies
+    #   run: uv pip install .[test]
       
     - name: intermediary step
       run: |
