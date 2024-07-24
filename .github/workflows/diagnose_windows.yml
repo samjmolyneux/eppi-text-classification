@@ -1,4 +1,4 @@
-name: CI
+name: Diagnose Windows
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
         echo "SYSTEMROOT: $SYSTEMROOT"
         
         python -m pip install --upgrade pip
-        pip install . --link-mode=copy
+        pip install .
       env:
         # Ensure TEMP and TMP are on the same filesystem as the workspace
         TEMP: ${{ github.workspace }}\temp
