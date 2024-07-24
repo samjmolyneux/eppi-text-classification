@@ -21,6 +21,7 @@ jobs:
       run: |
         echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
         echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
+        python3 -m pip install . 
     #   env:
     #     TEMP: C:\temp
     #     TMP: C:\temp
