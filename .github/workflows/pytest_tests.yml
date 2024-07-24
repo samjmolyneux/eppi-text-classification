@@ -25,7 +25,9 @@ jobs:
         uv-venv: "my_venv"
         uv-version: "0.2.28"
   
-      
+    - name: Create temporary directory
+      run: mkdir -p ${{ github.workspace }}\temp
+  
     - name: Test dependencies
       run: |
         
