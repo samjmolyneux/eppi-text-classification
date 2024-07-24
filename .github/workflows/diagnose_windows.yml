@@ -24,7 +24,8 @@ jobs:
         python-version: '3.11'
 
     - name: Display Python location
-      run: echo "Python location: ${{ steps.cp311.outputs.python-location }}"
+      run: |
+        echo "Python location: ${{ steps.cp311.outputs.python-location }}"
 
     - name: Check where Python is installed
       run: where python
@@ -44,6 +45,7 @@ jobs:
         echo "RUNNER_WORKSPACE: $Env:RUNNER_WORKSPACE"
         python -m pip install --upgrade pip
         python -m pip install .
+
 
 
 # name: Diagnose Windows
