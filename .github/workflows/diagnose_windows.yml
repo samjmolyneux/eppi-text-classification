@@ -14,9 +14,14 @@ jobs:
 
     - name: Set up Python
       uses: actions/setup-python@v5
+      id: su-py
       with:
         python-version: '3.11'
     
+    - name:
+      run: |
+        echo "The python-path is ${{ steps.su-py.outputs.python-location }}"
+        
     - name: Check where Python
       run: where python
   
