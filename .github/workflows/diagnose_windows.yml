@@ -1,37 +1,91 @@
-name: Diagnose Windows
+name: CI on D Drive
 
 on:
   push:
     branches:
-      - dev
+      - main
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Check out repository
+      uses: actions/checkout@v4
+      with:
+        path: D:\a\repo
 
     - name: Set up Python
-      uses: actions/setup-python@v4
-      id: cp311
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
-    - name:
+    - name: Copy Python to D drive
       run: |
-        echo "Python location: ${{ steps.cp311.outputs.python-location }}"
-        echo "${{ steps.cp311.outputs.python-location }}"
+        mkdir -p D:\python
+        xcopy /s /e /i /y %pythonLocation% D:\python\3.11.9\x64
 
-    - name: Check where Python
-      run: where python
-  
-    - name: Install dependencies with pinned version
+    - name: Create virtual environment on D drive
+      run: |
+        # Use Python from D drive
+        D:\python\3.11.9\x64\python -m venv D:\a\venv
+
+    - name: Activate virtual environment and install dependencies
+      run: |
+        # Activate the virtual environment
+        call D:\a\venv\Scripts\activate
+        
+        # Confirm the Python version and path
+        python --version
+        python -c "import sys; print(sys.executable)"
+        python -c "import site; print(site.getsitepackages())"
+        
+        # Install dependencies
+        pip install --upgrade pip
+        pip install .
+        
+    - name: Check Working Directory
       run: |
         echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
         echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
-        python -m pip install --upgrade pip
-        python -m pip install . 
+
+
+
+
+# name: Diagnose Windows
+
+# on:
+#   push:
+#     branches:
+#       - dev
+
+# jobs:
+#   build:
+#     runs-on: windows-latest
+
+#     steps:
+#     - uses: actions/checkout@v4
+
+#     - name: Set up Python
+#       uses: actions/setup-python@v4
+#       id: cp311
+#       with:
+#         python-version: '3.11'
+    
+#     - name:
+#       run: |
+#         echo "Python location: ${{ steps.cp311.outputs.python-location }}"
+#         echo "${{ steps.cp311.outputs.python-location }}"
+
+#     - name: Check where Python
+#       run: where python
+  
+#     - name: Install dependencies with pinned version
+#       run: |
+#         echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
+#         echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
+#         python -m pip install --upgrade pip
+#         python -m pip install . 
     #   env:
     #     TEMP: C:\temp
     #     TMP: C:\temp
