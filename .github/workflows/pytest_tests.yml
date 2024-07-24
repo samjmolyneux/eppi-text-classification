@@ -25,26 +25,15 @@ jobs:
         uv-venv: "my_venv"
         uv-version: "0.2.28"
   
-    - name: Create temporary directory
-      run: mkdir -p ${{ github.workspace }}\temp
-  
-    - name: Test dependencies
+      
+    - name: Main dependencies
       run: |
-        
-        echo "TEMP: ${{ runner.temp }}"
-        echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
-        echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
-        echo "SYSTEMROOT: $SYSTEMROOT"
-        uv pip install .[test]
-      env:
-        TEMP: ${{ github.workspace }}\temp
-        TMP: ${{ github.workspace }}\temp
-        TMPDIR: ${{ github.workspace }}\temp  
+        uv pip install .
       
-    # - name: Test dependencies
-    #   run: uv pip install .[test]
+    - name: Test dependencies
+      run: uv pip install .[test]
       
-    - name: intermediary step
+    - name: Install pip
       run: |
         python -m ensurepip --upgrade
         uv pip list
