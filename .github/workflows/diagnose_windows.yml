@@ -29,8 +29,7 @@ jobs:
         echo "Virtual environment location:"
         where python
         where uv
-        echo "Listing virtual environment directory:"
-        dir my_venv
+
   
     - name: Install dependencies with pinned version
       run: |
