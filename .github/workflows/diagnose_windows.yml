@@ -5,8 +5,6 @@ on:
     branches:
       - dev
 
-
-
 jobs:
   build:
     runs-on: windows-latest
@@ -37,7 +35,7 @@ jobs:
         echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
         echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
         uv pip install .
-      env:
-        TEMP: C:\temp
-        TMP: C:\temp
-        pythonLocation: C:\hostedtoolcache\windows\Python\3.11.9\x64
+    #   env:
+    #     TEMP: C:\temp
+    #     TMP: C:\temp
+    #     pythonLocation: C:\hostedtoolcache\windows\Python\3.11.9\x64
