@@ -19,7 +19,7 @@ jobs:
     - uses: yezz123/setup-uv@v4
       with: 
         uv-venv: "my_venv"
-        uv-version: "0.2.10"
+        uv-version: "0.2.28"
 
     - run: |
         uv --version
@@ -34,9 +34,7 @@ jobs:
     - name: intermediary step
       run: |
         python -m ensurepip --upgrade
-        python -c "import numpy as np; print(np.__version__)"
         uv pip list
-# uv pip install numpy==1.26.4
 
     - name: Install Spacy model
       run: |
@@ -49,4 +47,3 @@ jobs:
     - name: Test with Ruff
       run: |
         ruff check eppi_text_classification/
-      continue-on-error: true
