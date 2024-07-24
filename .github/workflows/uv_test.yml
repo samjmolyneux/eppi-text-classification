@@ -1,4 +1,4 @@
-name: CI
+name: uv test
 
 on:
   push:
@@ -6,32 +6,44 @@ on:
       - dev
 
 jobs:
-  build:
-    runs-on: windows-latest
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+        fail-fast: false
 
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        python-version: '3.x'
+        python-version: '3.11'
+    - uses: yezz123/setup-uv@v4
+      with: 
+        uv-venv: "my_venv"
+        uv-version: "0.2.28"
 
-    - name: Debug and Fix
-      run: |
-        echo "TEMP: ${{ runner.temp }}"
-        echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
-        echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
-        echo "SYSTEMROOT: $SYSTEMROOT"
-        
-        python -m pip install --upgrade pip
-        pip install . --link-mode=copy
-      env:
-        # Ensure TEMP and TMP are on the same filesystem as the workspace
-        TEMP: ${{ github.workspace }}\temp
-        TMP: ${{ github.workspace }}\temp
-        TMPDIR: ${{ github.workspace }}\temp
+    - run: |
+        uv --version
 
-    - name: Create temporary directory
+    - name: Install dependencies
       run: |
-        mkdir ${{ github.workspace }}\temp
+        uv pip install .
+    
+    - name: Test dependencies
+      run: uv pip install .[test]
+    
+    - name: intermediary step
+      run: |
+        python -m ensurepip --upgrade
+        uv pip list
+
+    - name: Install Spacy model
+      run: |
+        python -m spacy download en_core_web_sm
+
+    - name: Check correct installation
+      run: |
+        python tests/check_install.py
+    
+    - name: Test with Ruff
+      run: |
+        ruff check eppi_text_classification/
