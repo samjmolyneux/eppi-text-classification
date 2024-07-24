@@ -5,6 +5,8 @@ on:
     branches:
       - dev
 
+
+
 jobs:
   build:
     runs-on: windows-latest
@@ -16,22 +18,19 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-
-    - name: Debug and Fix
-      run: |
-        echo "TEMP: ${{ runner.temp }}"
-        echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
-        echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
-        echo "SYSTEMROOT: $SYSTEMROOT"
-             
-        python -m pip install --upgrade pip
-        pip install .
-      env:
-        # Ensure TEMP and TMP are on the same filesystem as the workspace
-        TEMP: ${{ github.workspace }}\temp
-        TMP: ${{ github.workspace }}\temp
-        TMPDIR: ${{ github.workspace }}\temp
+    - uses: yezz123/setup-uv@v4
+      with: 
+        uv-venv: "my_venv"
+        uv-version: "0.2.28"
 
     - name: Create temporary directory
+      run: mkdir -p ${{ github.workspace }}\temp
+
+    - name: Install dependencies with pinned version
       run: |
-        mkdir ${{ github.workspace }}\temp
+        uv pip install .
+      env:
+        TEMP: C:\temp
+        TMP: C:\temp
+        TMPDIR: C:\temp
+        pythonLocation: C:\hostedtoolcache\windows\Python\3.11.9\x64
