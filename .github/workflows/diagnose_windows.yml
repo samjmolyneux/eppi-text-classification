@@ -22,16 +22,11 @@ jobs:
       with: 
         uv-venv: "my_venv"
         uv-version: "0.2.28"
-
-    - name: Create temporary directory on C
-      run: mkdir -p C:\temp
   
-
     - name: Install dependencies with pinned version
       run: |
         uv pip install .
       env:
         TEMP: C:\temp
         TMP: C:\temp
-        TMPDIR: C:\temp
         pythonLocation: C:\hostedtoolcache\windows\Python\3.11.9\x64
