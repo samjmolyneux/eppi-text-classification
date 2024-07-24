@@ -33,6 +33,7 @@ jobs:
         else
           uv pip install .[test]
         fi
+      shell: bash
       
     - name: Test dependencies
       run: uv pip install .[test]
