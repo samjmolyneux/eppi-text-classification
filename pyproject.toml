@@ -6,7 +6,7 @@ requires = [
 ]
 
 [tool.setuptools]
-packages = ["eppi_text_classification"]
+packages = ["eppi_text_classification", "eppi_text_classification.shap_colors"]
 
 
 [project]
