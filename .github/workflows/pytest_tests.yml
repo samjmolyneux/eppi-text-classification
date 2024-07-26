@@ -20,32 +20,69 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - uses: yezz123/setup-uv@v4
-      with: 
-        uv-venv: "my_venv"
-        uv-version: "0.2.28"
-  
-      
-    - name: Main dependencies
+        cache: 'pip'
+
+    - name: Install dependencies
       run: |
-        uv pip install .
-      
-    - name: Test dependencies
-      run: uv pip install .[test]
-      
-    - name: Install pip
-      run: |
-        python -m ensurepip --upgrade
-        uv pip list
-  
-    - name: Install Spacy model
-      run: python -m spacy download en_core_web_sm
-  
+        python -m pip install --upgrade pip
+        pip install .[test]
+        python -m spacy download en_core_web_sm
+
     - name: Check correct installation
       run: python tests/check_install.py
     
     - name: Test with Pytest
       run: python -m pytest --no-header --verbose --tb=short tests/
+
+
+# name: Pytest
+
+# on:
+#   push:
+#     branches:
+#       - dev
+
+# jobs:
+#   test:
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       matrix:
+#         os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+#         python-version: ['3.11']
+#       fail-fast: false
+#     steps:
+#     - uses: actions/checkout@v4
+
+#     - name: Set up Python ${{ matrix.python-version }}
+#       uses: actions/setup-python@v5
+#       with:
+#         python-version: ${{ matrix.python-version }}
+#     - uses: yezz123/setup-uv@v4
+#       with: 
+#         uv-venv: "my_venv"
+#         uv-version: "0.2.28"
+  
+      
+#     - name: Main dependencies
+#       run: |
+#         uv pip install .
+      
+#     - name: Test dependencies
+#       run: uv pip install .[test]
+      
+#     - name: Install pip
+#       run: |
+#         python -m ensurepip --upgrade
+#         uv pip list
+  
+#     - name: Install Spacy model
+#       run: python -m spacy download en_core_web_sm
+  
+#     - name: Check correct installation
+#       run: python tests/check_install.py
+    
+#     - name: Test with Pytest
+#       run: python -m pytest --no-header --verbose --tb=short tests/
 
 #Test
 
