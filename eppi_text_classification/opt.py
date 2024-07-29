@@ -132,6 +132,7 @@ class OptunaHyperparameterOptimisation:
         n_jobs: int = -1,
         nfolds: int = 3,
         num_cv_repeats: int = 3,
+        db_url: str | None = None,
     ) -> None:
         """
         Build a new hyperparameter optimisation engine.
@@ -166,6 +167,12 @@ class OptunaHyperparameterOptimisation:
             A different random seed is used for each stratified fold.
             By default 3.
 
+        db_url : str, optional
+            URL to the database to store the hyperparameter search history.
+            If None, a database will be created in the current working directory.
+            !!!!!!!DO NOT USE NONE IF RUNNING ON AZURE ML STUDIO!!!!!!!!!!!!
+            By default None.
+
         """
         validation.check_valid_model(model)
 
@@ -185,8 +192,11 @@ class OptunaHyperparameterOptimisation:
 
         self.interupt = False
 
-        root_path = Path(Path(__file__).resolve()).parent.parent
-        self.db_storage_url = f"sqlite:///{root_path}/optuna.db"
+        if db_url is None:
+            root_path = Path(Path(__file__).resolve()).parent.parent
+            self.db_storage_url = f"sqlite:///{root_path}/optuna.db"
+        else:
+            self.db_storage_url = db_url
 
     def optimise_on_single(self, n_trials: int, study_name: str) -> None:
         """
