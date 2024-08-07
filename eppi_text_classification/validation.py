@@ -40,6 +40,20 @@ class InvalidDatabasePathError(Exception):
 
 
 def check_valid_database_path(database_url: str) -> None:
+    """
+    Check if there is a database for the given database_url.
+
+    Parameters
+    ----------
+    database_url : str
+        Url to the database.
+
+    Raises
+    ------
+    InvalidDatabasePathError
+        Throws if there is no data at the given path.
+
+    """
     database_path = database_url.split(":///", maxsplit=1)[1]
     if not Path(database_path).exists():
         raise InvalidDatabasePathError(database_path)

@@ -428,6 +428,15 @@ class OptunaHyperparameterOptimisation:
         )
 
     def delete_optuna_study(self, study_name: str) -> None:
+        """
+        Delete an optuna study from the database at self.db_storage_url.
+
+        Parameters
+        ----------
+        study_name : str
+            Name of the study to delete.
+
+        """
         delete_optuna_study(self.db_storage_url, study_name)
 
 
@@ -438,6 +447,9 @@ def delete_optuna_study(db_url: str, study_name: str) -> None:
 
     Parameters
     ----------
+    db_url : str
+        URL to the database where the study is stored.
+
     study_name : str
         Name of the study to delete.
 
