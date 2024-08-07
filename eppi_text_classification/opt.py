@@ -198,6 +198,8 @@ class OptunaHyperparameterOptimisation:
         else:
             self.db_storage_url = db_url
 
+        validation.check_valid_database_path(self.db_storage_url)
+
     def optimise_on_single(self, n_trials: int, study_name: str) -> None:
         """
         Run the hyperparameter search for a single process.
@@ -424,3 +426,23 @@ class OptunaHyperparameterOptimisation:
             max_samples=None,
             monotonic_cst=None,
         )
+
+    def delete_optuna_study(self, study_name: str) -> None:
+        delete_optuna_study(self.db_storage_url, study_name)
+
+
+# TO DO: Do the documenation for the function below
+def delete_optuna_study(db_url: str, study_name: str) -> None:
+    """
+    If it exists, delete an optuna study from the database.
+
+    Parameters
+    ----------
+    study_name : str
+        Name of the study to delete.
+
+    """
+    all_studies = optuna.study.get_all_study_summaries(storage=db_url)
+    study_names = [study.study_name for study in all_studies]
+    if study_name in study_names:
+        optuna.delete_study(study_name=study_name, storage=db_url)

@@ -1,5 +1,7 @@
 """For performing run time validation of eppi_text_classification package."""
 
+from pathlib import Path
+
 valid_models = ("LGBMClassifier", "RandomForestClassifier", "SVC", "XGBClassifier")
 
 
@@ -27,3 +29,17 @@ def check_valid_model(model: str) -> None:
     """
     if model not in valid_models:
         raise InvalidModelError(model)
+
+
+class InvalidDatabasePathError(Exception):
+    """Exception for when an invalid database path is passed."""
+
+    def __init__(self, path: str) -> None:
+        """Create an exception for an invalid database path."""
+        super().__init__(f"No database found at {path}")
+
+
+def check_valid_database_path(database_url: str) -> None:
+    database_path = database_url.split(":///", maxsplit=1)[1]
+    if not Path(database_path).exists():
+        raise InvalidDatabasePathError(database_path)

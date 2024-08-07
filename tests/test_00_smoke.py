@@ -17,7 +17,9 @@ from eppi_text_classification import (
     binary_train_valid_confusion_plotly,
     get_features_and_labels,
     get_tfidf_and_names,
+    validation,
 )
+from eppi_text_classification.opt import delete_optuna_study
 from eppi_text_classification.plotly_roc import plotly_roc
 from eppi_text_classification.plots import binary_train_valid_confusion_plot
 from eppi_text_classification.predict import (
@@ -31,7 +33,11 @@ from eppi_text_classification.shap_plotter import (
     DotPlot,
     ShapPlotter,
 )
-from eppi_text_classification.utils import delete_optuna_study
+
+
+@pytest.fixture(scope="session")
+def database_url() -> str:
+    return f"sqlite:///{Path(__file__).parent.parent}/optuna.db"
 
 
 @pytest.fixture(scope="session")
@@ -73,7 +79,7 @@ def labels(features_and_labels):
 
 
 @pytest.fixture(scope="session")
-def lgbm_binary_best_params(tfidf_scores, labels):
+def lgbm_binary_best_params(tfidf_scores, labels, database_url):
     optimiser = OptunaHyperparameterOptimisation(
         tfidf_scores,
         labels,
@@ -83,12 +89,12 @@ def lgbm_binary_best_params(tfidf_scores, labels):
         nfolds=3,
         num_cv_repeats=1,
     )
-    delete_optuna_study("lgbm_binary")
+    delete_optuna_study(database_url, "lgbm_binary")
     return optimiser.optimise_hyperparameters(study_name="lgbm_binary")
 
 
 @pytest.fixture(scope="session")
-def xgb_binary_best_params(tfidf_scores, labels):
+def xgb_binary_best_params(tfidf_scores, labels, database_url):
     optimiser = OptunaHyperparameterOptimisation(
         tfidf_scores,
         labels,
@@ -98,12 +104,12 @@ def xgb_binary_best_params(tfidf_scores, labels):
         nfolds=3,
         num_cv_repeats=1,
     )
-    delete_optuna_study("xgb_binary")
+    delete_optuna_study(database_url, "xgb_binary")
     return optimiser.optimise_hyperparameters(study_name="xgb_binary")
 
 
 @pytest.fixture(scope="session")
-def svc_binary_best_params(tfidf_scores, labels):
+def svc_binary_best_params(tfidf_scores, labels, database_url):
     optimiser = OptunaHyperparameterOptimisation(
         tfidf_scores,
         labels,
@@ -113,12 +119,12 @@ def svc_binary_best_params(tfidf_scores, labels):
         nfolds=3,
         num_cv_repeats=1,
     )
-    delete_optuna_study("svc_binary")
+    delete_optuna_study(database_url, "svc_binary")
     return optimiser.optimise_hyperparameters(study_name="svc_binary")
 
 
 @pytest.fixture(scope="session")
-def randforest_binary_best_params(tfidf_scores, labels):
+def randforest_binary_best_params(tfidf_scores, labels, database_url):
     optimiser = OptunaHyperparameterOptimisation(
         tfidf_scores,
         labels,
@@ -128,7 +134,7 @@ def randforest_binary_best_params(tfidf_scores, labels):
         nfolds=3,
         num_cv_repeats=1,
     )
-    delete_optuna_study("rf_binary")
+    delete_optuna_study(database_url, "rf_binary")
     return optimiser.optimise_hyperparameters(study_name="rf_binary")
 
 
@@ -157,6 +163,30 @@ def ytrain(Xtrain_Xtest_ytrain_ytest):
 @pytest.fixture(scope="session")
 def ytest(Xtrain_Xtest_ytrain_ytest):
     return Xtrain_Xtest_ytrain_ytest[3]
+
+
+def test_optuna_db_path(database_url):
+    """Test to ensure the database path is correct."""
+    validation.check_valid_database_path(database_url)
+
+
+def test_delete_optuna_study(database_url):
+    """Create a study, delete it, and check it is gone."""
+    delete_optuna_study(database_url, "test_study")
+
+    # Create a study and check it exists
+    study = optuna.create_study(study_name="test_study", storage=database_url)
+    study.optimize(lambda x: x, n_trials=10)
+    assert len(study.trials) == 10, "Study did not run 10 trials"
+    all_studies = optuna.study.get_all_study_summaries(storage=database_url)
+    study_names = [study.study_name for study in all_studies]
+    assert "test_study" in study_names, "Study was not created"
+
+    # Delete the study and check it is gone
+    delete_optuna_study(database_url, "test_study")
+    all_studies = optuna.study.get_all_study_summaries(storage=database_url)
+    study_names = [study.study_name for study in all_studies]
+    assert "test_study" not in study_names, "Study was not deleted"
 
 
 def test_load_data(raw_df):
@@ -191,7 +221,7 @@ def test_get_tfidf_and_names(tfidf_and_names):
 
 
 def general_binary_optuna_hyperparameter_checks(
-    study_name, expected_types, best_params
+    study_name, expected_types, best_params, db_storage_url
 ):
     assert isinstance(best_params, dict), "Best parameters are not a dictionary"
 
@@ -210,8 +240,6 @@ def general_binary_optuna_hyperparameter_checks(
         ), f"{param} is not of type {expected_type}"
 
     # Now just check its the best one.
-    root_path = Path(Path(__file__).resolve()).parent.parent
-    db_storage_url = f"sqlite:///{root_path}/optuna.db"
     study = optuna.load_study(study_name=study_name, storage=db_storage_url)
 
     trial_values = [trial.value for trial in study.trials]
@@ -224,9 +252,9 @@ def general_binary_optuna_hyperparameter_checks(
         ), f"Value for key {key} does not match: {best_params[key]} != {value}"
 
 
-def check_binary_optuna_hyperparameter_ranges(study_name, expected_ranges, best_params):
-    root_path = Path(Path(__file__).resolve()).parent.parent
-    db_storage_url = f"sqlite:///{root_path}/optuna.db"
+def check_binary_optuna_hyperparameter_ranges(
+    study_name, expected_ranges, best_params, db_storage_url
+):
     study = optuna.load_study(study_name=study_name, storage=db_storage_url)
 
     for trial in study.trials:
@@ -255,7 +283,9 @@ def test_randforest_binary_optuna_runs(randforest_binary_best_params):
     assert randforest_binary_best_params is not None, "randforest best params are None"
 
 
-def test_lgbm_binary_optuna_hyperparameter_optimisation(lgbm_binary_best_params):
+def test_lgbm_binary_optuna_hyperparameter_optimisation(
+    lgbm_binary_best_params, database_url
+):
     "Test to ensure the LGBM hyperparameters are correct"
 
     expected_types = {
@@ -295,15 +325,17 @@ def test_lgbm_binary_optuna_hyperparameter_optimisation(lgbm_binary_best_params)
     }
 
     general_binary_optuna_hyperparameter_checks(
-        "lgbm_binary", expected_types, lgbm_binary_best_params
+        "lgbm_binary", expected_types, lgbm_binary_best_params, database_url
     )
 
     check_binary_optuna_hyperparameter_ranges(
-        "lgbm_binary", expected_ranges, lgbm_binary_best_params
+        "lgbm_binary", expected_ranges, lgbm_binary_best_params, database_url
     )
 
 
-def test_xgb_binary_optuna_hyperparameter_optimisation(xgb_binary_best_params):
+def test_xgb_binary_optuna_hyperparameter_optimisation(
+    xgb_binary_best_params, database_url
+):
     "Test to ensure the XGB hyperparameters are correct"
     expected_types = {
         "verbosity": int,
@@ -335,15 +367,17 @@ def test_xgb_binary_optuna_hyperparameter_optimisation(xgb_binary_best_params):
     }
 
     general_binary_optuna_hyperparameter_checks(
-        "xgb_binary", expected_types, xgb_binary_best_params
+        "xgb_binary", expected_types, xgb_binary_best_params, database_url
     )
 
     check_binary_optuna_hyperparameter_ranges(
-        "xgb_binary", expected_ranges, xgb_binary_best_params
+        "xgb_binary", expected_ranges, xgb_binary_best_params, database_url
     )
 
 
-def test_svc_binary_optuna_hyperparameter_optimisation(svc_binary_best_params):
+def test_svc_binary_optuna_hyperparameter_optimisation(
+    svc_binary_best_params, database_url
+):
     "Test to ensure the SVC hyperparameters are correct"
     expected_types = {
         "class_weight": (str, dict[int, float]),
@@ -370,16 +404,16 @@ def test_svc_binary_optuna_hyperparameter_optimisation(svc_binary_best_params):
     }
 
     general_binary_optuna_hyperparameter_checks(
-        "svc_binary", expected_types, svc_binary_best_params
+        "svc_binary", expected_types, svc_binary_best_params, database_url
     )
 
     check_binary_optuna_hyperparameter_ranges(
-        "svc_binary", expected_ranges, svc_binary_best_params
+        "svc_binary", expected_ranges, svc_binary_best_params, database_url
     )
 
 
 def test_randforest_binary_optuna_hyperparameter_optimisation(
-    randforest_binary_best_params,
+    randforest_binary_best_params, database_url
 ):
     "Test to ensure the randforest hyperparameters are correct"
     expected_types = {
@@ -425,11 +459,11 @@ def test_randforest_binary_optuna_hyperparameter_optimisation(
     }
 
     general_binary_optuna_hyperparameter_checks(
-        "rf_binary", expected_types, randforest_binary_best_params
+        "rf_binary", expected_types, randforest_binary_best_params, database_url
     )
 
     check_binary_optuna_hyperparameter_ranges(
-        "rf_binary", expected_ranges, randforest_binary_best_params
+        "rf_binary", expected_ranges, randforest_binary_best_params, database_url
     )
 
 
