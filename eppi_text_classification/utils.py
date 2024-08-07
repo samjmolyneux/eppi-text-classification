@@ -54,21 +54,3 @@ def get_tfidf_and_names(
     feature_names = vectorizer.get_feature_names_out()
 
     return tfidf_scores, feature_names
-
-
-def delete_optuna_study(study_name: str) -> None:
-    """
-    If it exists, delete an optuna study from the database.
-
-    Parameters
-    ----------
-    study_name : str
-        Name of the study to delete.
-
-    """
-    root_path = Path(Path(__file__).resolve()).parent.parent
-    db_storage_url = f"sqlite:///{root_path}/optuna.db"
-    all_studies = optuna.study.get_all_study_summaries(storage=db_storage_url)
-    study_names = [study.study_name for study in all_studies]
-    if study_name in study_names:
-        optuna.delete_study(study_name=study_name, storage=db_storage_url)
