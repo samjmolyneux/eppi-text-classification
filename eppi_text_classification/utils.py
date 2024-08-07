@@ -1,9 +1,6 @@
 """Utility functions for the eppi_text_classification package."""
 
-from pathlib import Path
-
 import numpy as np
-import optuna
 from numpy.typing import NDArray
 from sklearn.feature_extraction.text import TfidfVectorizer
 

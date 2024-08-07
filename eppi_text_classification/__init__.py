@@ -1,6 +1,6 @@
 """Init file for the eppi_text_classification package."""
 
-from .opt import OptunaHyperparameterOptimisation
+from .opt import OptunaHyperparameterOptimisation, delete_optuna_study
 from .plotly_confusion import binary_train_valid_confusion_plotly
 from .plotly_roc import plotly_roc
 from .save_features_labels import get_features_and_labels
@@ -12,4 +12,5 @@ __all__ = [
     "OptunaHyperparameterOptimisation",
     "binary_train_valid_confusion_plotly",
     "plotly_roc",
+    "delete_optuna_study",
 ]
