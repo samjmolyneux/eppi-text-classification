@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 import jsonpickle
 import matplotlib.pyplot as plt
@@ -37,6 +38,10 @@ from eppi_text_classification.shap_plotter import (
 
 @pytest.fixture(scope="session")
 def database_url() -> str:
+    if "AML_CloudName" in os.environ:
+        print("in")
+        return f"sqlite:////mnt/tmp/optuna.db"
+    print("here")
     return f"sqlite:///{Path(__file__).parent.parent}/optuna.db"
 
 
@@ -88,6 +93,7 @@ def lgbm_binary_best_params(tfidf_scores, labels, database_url):
         n_jobs=-1,
         nfolds=3,
         num_cv_repeats=1,
+        db_url=database_url,
     )
     delete_optuna_study(database_url, "lgbm_binary")
     return optimiser.optimise_hyperparameters(study_name="lgbm_binary")
@@ -103,6 +109,7 @@ def xgb_binary_best_params(tfidf_scores, labels, database_url):
         n_jobs=-1,
         nfolds=3,
         num_cv_repeats=1,
+        db_url=database_url,
     )
     delete_optuna_study(database_url, "xgb_binary")
     return optimiser.optimise_hyperparameters(study_name="xgb_binary")
@@ -118,6 +125,7 @@ def svc_binary_best_params(tfidf_scores, labels, database_url):
         n_jobs=-1,
         nfolds=3,
         num_cv_repeats=1,
+        db_url=database_url,
     )
     delete_optuna_study(database_url, "svc_binary")
     return optimiser.optimise_hyperparameters(study_name="svc_binary")
@@ -133,6 +141,7 @@ def randforest_binary_best_params(tfidf_scores, labels, database_url):
         n_jobs=-1,
         nfolds=3,
         num_cv_repeats=1,
+        db_url=database_url,
     )
     delete_optuna_study(database_url, "rf_binary")
     return optimiser.optimise_hyperparameters(study_name="rf_binary")
