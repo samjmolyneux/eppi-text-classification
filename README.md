@@ -46,6 +46,7 @@ python3 -m spacy download en_core_web_sm
 │   │   └── svm_binary.ipynb
 │   └── xgboost
 │       └── xgboost_binary.ipynb
+├── optuna.db
 ├── pyproject.toml
 ├── setup.py
 ├── tests
