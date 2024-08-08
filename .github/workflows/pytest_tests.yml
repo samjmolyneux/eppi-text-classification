@@ -30,11 +30,6 @@ jobs:
 
     - name: Check correct installation
       run: python tests/check_install.py
-    
-    - name: Create optuna.db file
-      run: |
-        ls -al
-      shell: bash
 
     - name: Test with Pytest
       run: python -m pytest --no-header --verbose --tb=short tests/
