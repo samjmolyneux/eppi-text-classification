@@ -33,10 +33,7 @@ jobs:
     
     - name: Create optuna.db file
       run: |
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          echo.>optuna.db
-        else
-          touch optuna.db
+        pwd
       shell: bash
 
     - name: Test with Pytest
