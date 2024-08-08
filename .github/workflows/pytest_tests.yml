@@ -31,6 +31,13 @@ jobs:
     - name: Check correct installation
       run: python tests/check_install.py
     
+    - name: Make database
+      run: |
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+            echo.>optuna.db
+        else
+            touch optuna.db
+
     - name: Test with Pytest
       run: python -m pytest --no-header --verbose --tb=short tests/
 
