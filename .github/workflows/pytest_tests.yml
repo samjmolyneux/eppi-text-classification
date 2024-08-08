@@ -33,7 +33,7 @@ jobs:
     
     - name: Create optuna.db file
       run: |
-        pwd
+        ls -al
       shell: bash
 
     - name: Test with Pytest
