@@ -1,11 +1,16 @@
 """Save word features and there associated labels."""
 
-import os
 from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any
 
-import pandas as pd
 import spacy
 from joblib import Parallel, delayed
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+
+from multiprocessing import cpu_count
 
 # Considerations: Setting the joblib backend,
 #                Choosing spacy model,
@@ -14,7 +19,7 @@ from joblib import Parallel, delayed
 # TO DO:Loguru for processer count and chunksize
 # TO DO Ability to change the process count
 
-system_num_processes = os.cpu_count()
+system_num_processes = cpu_count()
 
 
 def lemmatize_pipe(doc: spacy.tokens.Doc) -> list[str]:
@@ -40,13 +45,13 @@ def lemmatize_pipe(doc: spacy.tokens.Doc) -> list[str]:
     return lemma_list
 
 
-def chunker(object_list: Sequence, process_count: int) -> Iterator[list]:
+def chunker(object_list: Sequence[Any], process_count: int) -> Iterator[Sequence[Any]]:
     """
     Split a sequence into equal chunks for processing by multiple processes.
 
     Parameters
     ----------
-    object_list : Sequence
+    object_list : Sequence[int]
         Any sequence like object containing data to be processed.
 
     process_count : int
@@ -54,7 +59,7 @@ def chunker(object_list: Sequence, process_count: int) -> Iterator[list]:
 
     Returns
     -------
-    Iterator[list]
+    Iterator[Sequence]
         Iterator of chunks of the object_list.
 
     """
@@ -65,7 +70,7 @@ def chunker(object_list: Sequence, process_count: int) -> Iterator[list]:
     )
 
 
-def flatten(list_of_lists: list[list]) -> list:
+def flatten(list_of_lists: list[list[Any]]) -> list[Any]:
     """
     Take a list of lists and join into a single list.
 
@@ -178,7 +183,7 @@ def get_features(
 
 
 # TO DO: Get working for all data types
-def get_labels(label_column: Sequence) -> list[int]:
+def get_labels(label_column: Sequence[int | str]) -> list[int]:
     """
     Turn all labels into integers.
 
@@ -193,13 +198,12 @@ def get_labels(label_column: Sequence) -> list[int]:
         List of labels in integer format.
 
     """
-    labels = label_column.tolist()
-    labels = [int(label) for label in labels]
+    labels = [int(label) for label in label_column]
     return labels
 
 
 def get_features_and_labels(
-    df: pd.DataFrame,
+    df: "pd.DataFrame",
     title_key: str = "title",
     abstract_key: str = "abstract",
     y_key: str = "included",
@@ -231,8 +235,8 @@ def get_features_and_labels(
     df[abstract_key] = df[abstract_key].astype(str)
     df[title_key] = df[title_key].astype(str)
 
-    word_features = get_features(df[abstract_key], df[title_key])
+    word_features = get_features(df[abstract_key].to_list(), df[title_key].to_list())
 
-    labels = get_labels(df[y_key])
+    labels = get_labels(df[y_key].to_list())
 
     return word_features, labels

@@ -1,13 +1,17 @@
 """Methods for optimsing hyperparameters for models."""
 
-import os
 from collections.abc import Sequence
+from dataclasses import asdict, dataclass, field
+from multiprocessing import cpu_count
 from pathlib import Path
+from typing import Any
 
+import jsonpickle
 import numpy as np
 import optuna
 from joblib import Parallel, delayed
 from lightgbm import LGBMClassifier
+from numpy.typing import NDArray
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.svm import SVC
@@ -27,12 +31,92 @@ from . import validation
 # URGENT TO DO: MAKE SURE ALL THE MODELS A SINGLE CORE
 
 
-model_to_opt_func = {
-    "SVC": "SVC_objective",
-    "LGBMClassifier": "LGBM_objective",
-    "RandomForestClassifier": "RandomForest_objective",
-    "LogisticRegression": "LogisticRegression_objective",
-    "XGBClassifier": "XGB_objective",
+@dataclass
+class LGBMParams:
+    """Dataclass for LightGBM hyperparameters."""
+
+    verbosity: int = -1
+    boosting_type: str = "gbdt"
+    max_depth: int = 7
+    min_child_samples: int = 20
+    learning_rate: float = 0.33
+    num_leaves: int = 31
+    n_estimators: int = 500
+    subsample_for_bin: int = 20000
+    subsample: float = 1.0
+    objective: str = "binary"
+    scale_pos_weight: int = 27
+    min_split_gain: float = 0
+    min_child_weight: float = 1e-3
+    reg_alpha: float = 0
+    reg_lambda: float = 0
+
+
+@dataclass
+class XGBParams:
+    """Dataclass for XGBoost hyperparameters."""
+
+    verbosity: int = 0
+    objective: str = "binary:logistic"
+    eval_metric: str = "logloss"
+    scale_pos_weight: int = 1
+    n_estimators: int = 1000
+    colsample_bytree: float = 1.0
+    n_jobs: int = 1
+    reg_lambda: float = 0.0
+    reg_alpha: float = 0.0
+    learning_rate: float = 0.01
+    max_depth: int = 1
+
+
+@dataclass
+class SVCParams:
+    """Dataclass for SVC hyperparameters."""
+
+    class_weight: str = "balanced"
+    cache_size: int = 1000
+    probability: bool = False
+    C: float = 1.0
+    kernel: str = "rbf"
+    shrinking: bool = True
+    tol: float = 1e-3
+    gamma: str | float = "scale"
+
+
+@dataclass
+class RandForestParams:
+    """Dataclass for RandomForest hyperparameters."""
+
+    verbose: int = 0
+    n_estimators: int = 100
+    criterion: str = "gini"
+    n_jobs: int = 1
+    max_depth: int | None = None
+    min_samples_split: int = 2
+    min_samples_leaf: int = 1
+    min_weight_fraction_leaf: float = 0.0
+    max_features: str = "sqrt"
+    max_leaf_nodes: int | None = None
+    min_impurity_decrease: float = 0.0
+    bootstrap: bool = True
+    class_weight: dict[int, int] = field(default_factory=lambda: {1: 27, 0: 1})
+    ccp_alpha: float = 0.0
+    max_samples: int | None = None
+    monotonic_cst: int | None = None
+
+
+mname_to_mclass = {
+    "SVC": SVC,
+    "LGBMClassifier": LGBMClassifier,
+    "RandomForestClassifier": RandomForestClassifier,
+    "XGBClassifier": XGBClassifier,
+}
+
+model_to_selector = {
+    "SVC": "select_svc_hyperparameters",
+    "LGBMClassifier": "select_lgbm_hyperparameters",
+    "RandomForestClassifier": "select_rand_forest_hyperparameters",
+    "XGBClassifier": "select_xgb_hyperparameters",
 }
 
 
@@ -41,13 +125,14 @@ class OptunaHyperparameterOptimisation:
 
     def __init__(
         self,
-        tfidf_scores: np.ndarray,
+        tfidf_scores: NDArray[np.float64],
         labels: Sequence[int],
-        model: SVC | LGBMClassifier | RandomForestClassifier | XGBClassifier,
+        model: str,
         n_trials_per_job: int = 200,
         n_jobs: int = -1,
         nfolds: int = 3,
         num_cv_repeats: int = 3,
+        db_url: str | None = None,
     ) -> None:
         """
         Build a new hyperparameter optimisation engine.
@@ -82,6 +167,12 @@ class OptunaHyperparameterOptimisation:
             A different random seed is used for each stratified fold.
             By default 3.
 
+        db_url : str, optional
+            URL to the database to store the hyperparameter search history.
+            If None, a database will be created in the current working directory.
+            !!!!!!!DO NOT USE NONE IF RUNNING ON AZURE ML STUDIO!!!!!!!!!!!!
+            By default None.
+
         """
         validation.check_valid_model(model)
 
@@ -92,16 +183,22 @@ class OptunaHyperparameterOptimisation:
         self.num_cv_repeats = num_cv_repeats
 
         if n_jobs == -1:
-            self.n_jobs = os.cpu_count()
+            self.n_jobs = cpu_count()
         else:
             self.n_jobs = n_jobs
 
-        self.objective = getattr(self, model_to_opt_func[model])
+        self.model_class = mname_to_mclass[model]
+        self.select_hyperparameters = getattr(self, model_to_selector[model])
 
         self.interupt = False
 
-        root_path = Path(Path(__file__).resolve()).parent.parent
-        self.db_storage_url = f"sqlite:///{root_path}/optuna.db"
+        if db_url is None:
+            root_path = Path(Path(__file__).resolve()).parent.parent
+            self.db_storage_url = f"sqlite:///{root_path}/optuna.db"
+        else:
+            self.db_storage_url = db_url
+
+        validation.check_valid_database_path(self.db_storage_url)
 
     def optimise_on_single(self, n_trials: int, study_name: str) -> None:
         """
@@ -122,12 +219,12 @@ class OptunaHyperparameterOptimisation:
 
         """
         study = optuna.load_study(study_name=study_name, storage=self.db_storage_url)
-        study.optimize(self.objective, n_trials=n_trials)
+        study.optimize(self.objective_func, n_trials=n_trials, n_jobs=1)
 
     def optimise_hyperparameters(
         self,
         study_name: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Initiate the hyperparameter search.
 
@@ -150,260 +247,213 @@ class OptunaHyperparameterOptimisation:
             direction="maximize",
             load_if_exists=True,
         )
-
-        # TO DO: try and remove the square brackets
-        Parallel(n_jobs=-1)(
-            [
-                delayed(self.optimise_on_single)(self.n_trials_per_job, study_name)
-                for _ in range(self.n_jobs)
-            ]
-        )
+        try:
+            # TO DO: try and remove the square brackets
+            Parallel(n_jobs=-1)(
+                [
+                    delayed(self.optimise_on_single)(self.n_trials_per_job, study_name)
+                    for _ in range(self.n_jobs)
+                ]
+            )
+        except KeyboardInterrupt:
+            print("Optimization interrupted by user.")
 
         best_trial = study.best_trial
         best_params = best_trial.user_attrs["all_params"]
+        best_params = jsonpickle.decode(best_params, keys=True)
 
         return best_params
 
-    def get_cv_performance(
-        self,
-        model: SVC | LGBMClassifier | RandomForestClassifier | XGBClassifier,
-    ) -> float:
+    def objective_func(self, trial: optuna.trial.Trial) -> float:
         """
-        Calculate the average cross-validation ROC-AUC of a model.
+        Objective function for the hyperparameter search.
+
+        Uses the search history to determine the next set of hyperparameters to try.
+        Then calculates the cross validation ROC-AUC score of the model with the
+        given hyperparameters.
 
         Parameters
         ----------
-        model : SVC | LGBMClassifier | RandomForestClassifier | XGBClassifier
-            Classification model.
+        trial : optuna.trial.Trial
+            An individual trial in the hyperparameter search.
 
         Returns
         -------
         float
-            Average cross-validation ROC-AUC score.
+            The cross validation ROC-AUC score of the model with the given
+            hyperparameters of the trial.
 
         """
+        params = self.select_hyperparameters(trial)
+        serialized_params = jsonpickle.encode(asdict(params), keys=True)
+        trial.set_user_attr("all_params", serialized_params)
+        clf = self.model_class(**asdict(params))
+
+        # Calculate the cross validation score
         scores = []
         for i in range(self.num_cv_repeats):
             kf = StratifiedKFold(n_splits=self.nfolds, shuffle=True, random_state=i)
             scores.extend(
                 cross_val_score(
-                    model, self.tfidf_scores, self.labels, cv=kf, scoring="roc_auc"
+                    clf, self.tfidf_scores, self.labels, cv=kf, scoring="roc_auc"
                 )
             )
-        average = np.mean(scores)
-        return average
+        return np.mean(scores)
 
-    def LGBM_objective(self, trial: optuna.trial.Trial) -> float:
+    def select_lgbm_hyperparameters(self, trial: optuna.trial.Trial) -> LGBMParams:
         """
         Select LightGBM hyperparameters for a given iteration in the search.
 
         Parameters
         ----------
         trial : optuna.trial.Trial
-            An individual trial in the hyperparameter search.
+            A trial in the hyperparameter search.
 
         Returns
         -------
-        float
-            The ROC-AUC score of the model with the given hyperparameters of the trial.
+        LGBMParams
+            The selected hyperparameters for the LightGBM model.
 
         """
-        if self.interupt:
-            return float("nan")
-
-        try:
-            param = {
-                "verbosity": -1,
-                "boosting_type": "gbdt",
-                "max_depth": 7,
-                "min_child_samples": 20,  # Must be more than this many samples in a leaf
-                "learning_rate": 0.33,
-                "num_leaves": 31,
-                "n_estimators": 500,
-                "subsample_for_bin": 20000,
-                "subsample": 1.0,
-                "objective": "binary",
-                "scale_pos_weight": 27,
-                "min_split_gain": 0,
-                "min_child_weight": 1e-3,
-                "reg_alpha": 0,  # L1
-                "reg_lambda": 0,  # L2
-            }
-
-            param["n_estimators"] = trial.suggest_int(
-                "n_estimators", 100, 3000, log=True
-            )
-            param["reg_alpha"] = trial.suggest_float("reg_alpha", 1e-5, 10, log=True)
-            param["reg_lambda"] = trial.suggest_float("reg_lambda", 1e-5, 10, log=True)
-            param["min_child_samples"] = trial.suggest_int("min_child_samples", 1, 30)
-            param["max_depth"] = trial.suggest_int("max_depth", 1, 15)
-            param["learning_rate"] = trial.suggest_float("learning_rate", 0.1, 0.6)
-            param["num_leaves"] = trial.suggest_int("num_leaves", 2, 50)
-            param["min_child_weight"] = trial.suggest_float(
+        return LGBMParams(
+            verbosity=-1,
+            boosting_type="gbdt",
+            max_depth=trial.suggest_int("max_depth", 1, 15),
+            min_child_samples=trial.suggest_int("min_child_samples", 1, 30),
+            learning_rate=trial.suggest_float("learning_rate", 0.1, 0.6),
+            num_leaves=trial.suggest_int("num_leaves", 2, 50),
+            n_estimators=trial.suggest_int("n_estimators", 100, 3000, log=True),
+            subsample_for_bin=20000,
+            subsample=1.0,
+            objective="binary",
+            scale_pos_weight=27,
+            min_split_gain=trial.suggest_float("min_split_gain", 1e-6, 10, log=True),
+            min_child_weight=trial.suggest_float(
                 "min_child_weight", 1e-6, 1e-1, log=True
-            )
-            param["min_split_gain"] = trial.suggest_float(
-                "min_split_gain", 1e-6, 10, log=True
-            )
+            ),
+            reg_alpha=trial.suggest_float("reg_alpha", 1e-5, 10, log=True),
+            reg_lambda=trial.suggest_float("reg_lambda", 1e-5, 10, log=True),
+        )
 
-            trial.set_user_attr("all_params", param)
-
-            clf = LGBMClassifier(**param)
-
-            performance = self.get_cv_performance(clf)
-
-            return performance
-
-        except KeyboardInterrupt:
-            self.interupt = True
-            return float("nan")
-
-    def XGB_objective(self, trial: optuna.trial.Trial) -> float:
+    def select_xgb_hyperparameters(self, trial: optuna.trial.Trial) -> XGBParams:
         """
         Select XGBoost hyperparameters for a given iteration in the search.
 
         Parameters
         ----------
         trial : optuna.trial.Trial
-            An individual trial in the hyperparameter search.
+            An individual trial in the hyperparameter search
 
         Returns
         -------
-        float
-            The ROC-AUC score of the model with the given hyperparameters of the trial.
+        XGBParams
+            The selected hyperparameters for the XGBoost model.
 
         """
-        if self.interupt:
-            return float("nan")
         # TO DO: sort params out to right format
-        param = {
-            "verbosity": 0,
-            "objective": "binary:logistic",
-            "eval_metric": "logloss",
-            "scale_pos_weight": 27,
-            "n_estimators": 1000,
-            "colsample_bytree": 1,
-            "n_jobs": 1,
-            "reg_lambda": trial.suggest_float("reg_lambda", 1e-4, 100, log=True),
-            "reg_alpha": trial.suggest_float("reg_alpha", 1e-4, 100, log=True),
-            "learning_rate": trial.suggest_float(
-                "learning_rate", 1e-2, 100, log=True
-            ),  # Same as eta
-            # "n_estimators": trial.suggest_int("n_estimators", 100000, 150000),
-            # "colsample_bytree": trial.suggest_float("colsample_bytree", 0.2, 1.0),
-            # "gamma": trial.suggest_float("gamma", 1e-12, 1e-5, log=True),
-            "max_depth": trial.suggest_int("max_depth", 1, 5),
-        }
-        try:
-            trial.set_user_attr("all_params", param)
+        return XGBParams(
+            verbosity=0,
+            objective="binary:logistic",
+            eval_metric="logloss",
+            scale_pos_weight=27,
+            n_estimators=1000,
+            colsample_bytree=1,
+            n_jobs=1,
+            reg_lambda=trial.suggest_float("reg_lambda", 1e-4, 100, log=True),
+            reg_alpha=trial.suggest_float("reg_alpha", 1e-4, 100, log=True),
+            learning_rate=trial.suggest_float("learning_rate", 1e-2, 1, log=True),
+            max_depth=trial.suggest_int("max_depth", 1, 5),
+        )
 
-            clf = XGBClassifier(**param)
-
-            performance = self.get_cv_performance(clf)
-
-            return performance
-
-        except KeyboardInterrupt:
-            self.interupt = True
-            return float("nan")
-
-    def SVC_objective(self, trial: optuna.trial.Trial) -> float:
+    def select_svc_hyperparameters(self, trial: optuna.trial.Trial) -> SVCParams:
         """
         Select SVC hyperparameters for a given iteration in the search.
 
         Parameters
         ----------
         trial : optuna.trial.Trial
-            An individual trial in the hyperparameter search.
+            An individual trial in the hyperparameter search
 
         Returns
         -------
-        float
-            The ROC-AUC score of the model with the given hyperparameters of the trial.
+        SVCParams
+            The selected hyperparameters for the SVC model.
 
         """
-        if self.interupt:
-            return float("nan")
+        # TO DO: Sort these params out
+        return SVCParams(
+            class_weight="balanced",
+            cache_size=1000,
+            probability=False,
+            C=trial.suggest_float("C", 1e-3, 10000, log=True),
+            kernel="rbf",
+            shrinking=True,
+            tol=1e-8,
+        )
 
-        try:
-            # TO DO: Sort these params out
-            param = {
-                "class_weight": "balanced",
-                "cache_size": 1000,
-                "probability": False,
-                "C": trial.suggest_float("C", 1e-3, 10000, log=True),
-                "kernel": "rbf",
-                "shrinking": False,
-                "tol": 1e-8,
-                # TO DO: FIND A BETTER WAY OF SETTING THIS
-                # "gamma": trial.suggest_float("gamma", 1e-9, 1e-2, log=True),
-            }
-
-            param["C"] = trial.suggest_float("C", 1e-3, 10000, log=True)
-
-            if param["kernel"] == "sigmoid":
-                param["coef0"] = trial.suggest_float("coef0", 1e-12, 100, log=True)
-
-            trial.set_user_attr("all_params", param)
-
-            clf = SVC(**param)
-
-            performance = self.get_cv_performance(clf)
-
-            return performance
-
-        except KeyboardInterrupt:
-            self.interupt = True
-            return float("nan")
-
-    def RandomForest_objective(self, trial: optuna.trial.Trial) -> float:
+    def select_rand_forest_hyperparameters(
+        self, trial: optuna.trial.Trial
+    ) -> RandForestParams:
         """
         Select RandomForest hyperparameters for a given iteration in the search.
 
         Parameters
         ----------
         trial : optuna.trial.Trial
-            An individual trial in the hyperparameter search.
+            An individual trial in the hyperparameter search
 
         Returns
         -------
-        float
-            The ROC-AUC score of the model with the given hyperparameters of the trial.
+        RandForestParams
+            The selected hyperparameters for the Random Forest model.
 
         """
-        if self.interupt:
-            return float("nan")
+        return RandForestParams(
+            verbose=0,
+            n_estimators=trial.suggest_int("n_estimators", 100, 1000),
+            criterion="gini",
+            n_jobs=1,
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.0,
+            max_features="sqrt",
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=True,
+            class_weight={1: 27, 0: 1},
+            ccp_alpha=0.0,
+            max_samples=None,
+            monotonic_cst=None,
+        )
 
-        try:
-            param = {
-                "verbose": 0,
-                "n_estimators": 100,
-                "criterion": "gini",
-                "n_jobs": 1,
-                "max_depth": None,
-                "min_samples_split": 2,
-                "min_samples_leaf": 1,
-                "min_weight_fraction_leaf": 0.0,
-                "max_features": "sqrt",
-                "max_leaf_nodes": None,
-                "min_impurity_decrease": 0.0,
-                "bootstrap": True,
-                "class_weight": {1: 27},
-                "ccp_alpha": 0.0,
-                "max_samples": None,
-                "monotonic_cst": None,
-            }
+    def delete_optuna_study(self, study_name: str) -> None:
+        """
+        Delete an optuna study from the database at self.db_storage_url.
 
-            param["n_estimators"] = trial.suggest_int("n_estimators", 100, 1000)
+        Parameters
+        ----------
+        study_name : str
+            Name of the study to delete.
 
-            trial.set_user_attr("all_params", param)
+        """
+        delete_optuna_study(self.db_storage_url, study_name)
 
-            clf = RandomForestClassifier(**param)
 
-            performance = self.get_cv_performance(clf)
+def delete_optuna_study(db_url: str, study_name: str) -> None:
+    """
+    If it exists, delete an optuna study from the database.
 
-            return performance
+    Parameters
+    ----------
+    db_url : str
+        URL to the database where the study is stored.
 
-        except KeyboardInterrupt:
-            self.interupt = True
-            return float("nan")
+    study_name : str
+        Name of the study to delete.
+
+    """
+    all_studies = optuna.study.get_all_study_summaries(storage=db_url)
+    study_names = [study.study_name for study in all_studies]
+    if study_name in study_names:
+        optuna.delete_study(study_name=study_name, storage=db_url)

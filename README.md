@@ -1,3 +1,7 @@
+![PyTest](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/pytest_tests.yml/badge.svg)
+![Ruff](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/ruff_test.yml/badge.svg)
+![MyPy](https://github.com/samjmolyneux/eppi-text-classification/actions/workflows/mypy_test.yml/badge.svg)
+
 # Installation
 Create a virtual environment.
 ```
@@ -11,41 +15,46 @@ python3 -m spacy download en_core_web_sm
 ```
 
 # Structure
+<!-- directory-structure-start -->
 ```
+.
 ├── README.md
 ├── data
-│   ├── processed
-│   └── raw
+│   └── raw
+│       └── debunking_review.tsv
 ├── eppi_text_classification
-│   ├── __init__.py
-│   ├── opt.py
-│   ├── plotly_confusion.py
-│   ├── plotly_roc.py
-│   ├── plots.py
-│   ├── predict.py
-│   ├── save_features_labels.py
-│   ├── shap_colors
-│   │   ├── __init__.py
-│   │   ├── _colorconv.py
-│   │   └── _colors.py
-│   ├── shap_plotter.py
-│   └── utils.py
+│   ├── __init__.py
+│   ├── opt.py
+│   ├── plotly_confusion.py
+│   ├── plotly_roc.py
+│   ├── plots.py
+│   ├── predict.py
+│   ├── save_features_labels.py
+│   ├── shap_colors
+│   │   ├── __init__.py
+│   │   ├── _colorconv.py
+│   │   └── _colors.py
+│   ├── shap_plotter.py
+│   ├── utils.py
+│   └── validation.py
 ├── notebooks
-│   ├── lgbm
-│   │   └── lgbm_binary.ipynb
-│   ├── random_forest
-│   │   └── random_forest_binary.ipynb
-│   ├── svm
-│   │   └── svm_binary.ipynb
-│   └── xgboost
-│       └── xgboost_binary.ipynb
+│   ├── lgbm
+│   │   └── lgbm_binary.ipynb
+│   ├── random_forest
+│   │   └── random_forest_binary.ipynb
+│   ├── svm
+│   │   └── svm_binary.ipynb
+│   └── xgboost
+│       └── xgboost_binary.ipynb
 ├── optuna.db
-└── pyproject.toml
+├── pyproject.toml
+├── setup.py
+├── tests
+│   ├── check_install.py
+│   └── test_00_smoke.py
+└── tox.ini
 ```
+<!-- directory-structure-end -->
 
 # Known Bugs
-
-### 1. Inaccurate log decision plot
-- Setting ShapPlotter.decision_plot() or ShapPlotter.single_decision_plot() with log_scale=True will result in an unaccurate decision plot.
-### 2. Functions from opt.py not running
-- Optimisation scripts still need hyperparmeter ranges tuned and whilst I'm making changes they may not run. 
+- Documentation not up to date. 

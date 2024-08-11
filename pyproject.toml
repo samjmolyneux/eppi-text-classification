@@ -6,7 +6,7 @@ requires = [
 ]
 
 [tool.setuptools]
-packages = ["eppi_text_classification"]
+packages = ["eppi_text_classification", "eppi_text_classification.shap_colors"]
 
 
 [project]
@@ -36,8 +36,18 @@ dependencies = [
     "matplotlib~=3.9.0",
     "shap~=0.45.1",
     "jupyter~=1.0.0",
+    "jsonpickle~=3.2.2",
+    "numpy<2.0.0"
 ]
 
+[project.optional-dependencies]
+test = [
+    "mypy~=1.10.1",
+    "ruff~=0.5.0",
+    "pytest~=8.2.2",
+    "tox~=4.15.1",
+    "pandas-stubs~=2.2.2.240603",
+]
 
 
 
@@ -53,38 +63,8 @@ dependencies = [
 [tool.ruff]
 extend-include = ["*.ipynb"]
 lint.select = ["ALL"]
-# lint.ignore = [   # ignore missing docs
-#     "D101",
-#     "D102",
-#     "D103",
-#     "D104",
-#     "D105",
-#     "D106",
-#     "D107",
-
-#     "D203",    #Docstring standards for datascience
-#     "D212",
-
-#     "T201",
-#     "T203",
-
-#     "COM812",
-#     "ISC001",
-
-#     "RET504", #Disables unessecary assignement before return
-
-#     "S106", #Checks for harcoded passwords in code
-
-#     "N803", #Checks if function parameters are lower caes
-
-#     #Maybe enable these for production
-#     "C408", #Dont use dict()
-#     "ANN201", #Return type for a function
-#     "ANN001", #Type for a function paramter
-#     "PD901" #Generic use of df
-#     ]
-
-lint.ignore = [   # ignore missing docs
+exclude = ["eppi_text_classification/shap_colors/*"]
+lint.ignore = [
 
     "D203",    #Docstring standards for datascience
     "D212",
@@ -99,7 +79,22 @@ lint.ignore = [   # ignore missing docs
 
     "S106", #Checks for harcoded passwords in code
 
+    "ANN101", #type hint for self
+    "ANN102", #type hint for cls
 
+    "PLR0913", #Too many function parameters
+
+    "N803", #Parameters should be lower case
+
+    "FBT001", #Booleans as function parameters
+    "FBT002",
+    
+
+    "C901", #Function complexity
+    "PLR0912", #Function complexity
+    "PLR0915", #Function complexity
+
+    "S301", #No unpickling, is unsafe
     #Maybe enable these for productionr
     "PD901" #Generic use of df
     ]
@@ -109,4 +104,45 @@ show-fixes = true
 docstring-code-format = true
 
 [tool.mypy]
-strict = true
+disable_error_code = [
+    #'no-untyped-call',
+    #'arg-type',
+    #'has-type',
+    #'operator',
+    #'type-arg',
+    #'var-annotated',
+    #'assignment',
+    #'operator',
+    #'no-untyped-def',
+    #'attr-defined',
+    'no-any-return',
+    'import-untyped'
+]
+
+warn_unused_configs = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+
+no_implicit_reexport = true
+strict_equality = true
+extra_checks = true
+
+[[tool.mypy.overrides]]
+module = ['eppi_text_classification.shap_colors.*']
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+disable_error_code = ['index', 'arg-type', 'type-var']
+
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
