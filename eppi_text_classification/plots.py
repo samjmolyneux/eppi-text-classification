@@ -22,16 +22,16 @@ def binary_train_valid_confusion_plot(
 
     Parameters
     ----------
-    y_train : Sequence
+    y_train : ArrayLike
         Truth labels for training data.
 
-    y_train_pred : Sequence
+    y_train_pred : ArrayLike
         Predicted labels for training data.
 
-    y_valid : Sequence
+    y_valid : ArrayLike
         Truth labels for validation data.
 
-    y_valid_pred : Sequence
+    y_valid_pred : ArrayLike
         Predicted labels for validation data.
 
     positive_label : str, optional

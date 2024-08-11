@@ -29,10 +29,10 @@ def get_raw_threshold(
     model : LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC
         A trained model.
 
-    X : np.ndarray
+    X : np.ndarray[float]
         Data to classifiy in the shape (samples, features).
 
-    y : np.ndarray
+    y : np.ndarray[int]
         True labels for the data.
 
     target_tpr : float[0, 1], optional
@@ -63,7 +63,7 @@ def raw_threshold_predict(
     model : LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC
         Classifier to make prediction with.
 
-    X : np.ndarray
+    X : np.ndarray[float]
         Samples to make predictions on.
 
     threshold : float
