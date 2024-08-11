@@ -29,16 +29,16 @@ def binary_train_valid_confusion_plotly(
 
     Parameters
     ----------
-    y_train : np.ndarray
+    y_train : ArrayLike
         The binary labels for the training data. (bool or int)
 
-    y_train_pred : np.ndarray
+    y_train_pred : ArrayLike
         Predictied binary labels for the training data. (bool or int)
 
-    y_val : np.ndarray
+    y_val : ArrayLike
         The binary labels for the validation data. (bool or int)
 
-    y_val_pred : np.ndarray
+    y_val_pred : ArrayLike
         _Predicted binary labels for the validation data. (bool or int)
 
     postive_label : str, optional
@@ -116,7 +116,7 @@ def add_confusion_trace(
     fig : go.Figure
         Figure to add a trace to.
 
-    cm : np.ndarray
+    cm : np.ndarray[int]
         Confusion matrix data to add to the figure.
 
     positive_label : str
@@ -178,10 +178,10 @@ def add_labels_to_confusion_trace(
     fig : go.Figure
         Figure to add labels to.
 
-    cm : np.ndarray
+    cm : np.ndarray[int]
         Confusion matrix data to add to the figure.
 
-    labels : list
+    labels : list[str]
         Labels for the confusion matrix.
 
     plot_index : int
@@ -258,7 +258,7 @@ def add_ticks_to_confusion(fig: go.Figure, labels: list[str], plot_index: int) -
     fig : go.Figure
         Figure to add ticks to.
 
-    labels : list
+    labels : list[str]
         Labels for the confusion matrix.
 
     plot_index : int
