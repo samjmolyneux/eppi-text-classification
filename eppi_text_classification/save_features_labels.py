@@ -51,7 +51,7 @@ def chunker(object_list: Sequence[Any], process_count: int) -> Iterator[Sequence
 
     Parameters
     ----------
-    object_list : Sequence
+    object_list : Sequence[int]
         Any sequence like object containing data to be processed.
 
     process_count : int
@@ -59,7 +59,7 @@ def chunker(object_list: Sequence[Any], process_count: int) -> Iterator[Sequence
 
     Returns
     -------
-    Iterator[list]
+    Iterator[Sequence]
         Iterator of chunks of the object_list.
 
     """
