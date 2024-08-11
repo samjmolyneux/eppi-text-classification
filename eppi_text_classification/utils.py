@@ -33,7 +33,7 @@ def get_tfidf_and_names(
 
     Returns
     -------
-    tuple[np.ndarray, list[str]]
+    tuple[np.ndarray[float], list[str]]
         A tuple of tfidf_scores (samples, scores) and feature_names (samples,).
 
     """
