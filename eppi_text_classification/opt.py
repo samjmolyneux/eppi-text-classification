@@ -440,7 +440,6 @@ class OptunaHyperparameterOptimisation:
         delete_optuna_study(self.db_storage_url, study_name)
 
 
-# TO DO: Do the documenation for the function below
 def delete_optuna_study(db_url: str, study_name: str) -> None:
     """
     If it exists, delete an optuna study from the database.
