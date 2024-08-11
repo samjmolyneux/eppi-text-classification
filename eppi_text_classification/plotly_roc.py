@@ -15,10 +15,10 @@ def plotly_roc(y_test: Sequence[int], y_test_pred_probs: Sequence[float]) -> Non
 
     Parameters
     ----------
-    y_test : Sequence
+    y_test : Sequence[int]
         Truth labels.
 
-    y_test_pred_probs : Sequence
+    y_test_pred_probs : Sequence[floats]
         Predicted labels.
 
     """
