@@ -1,12 +1,21 @@
 # Data
-/data/
+/data/raw/Cochrane-heart-reviews/
+/data/raw/hedges-all.tsv
+/data/raw/Oct2021_AllRecordsBib_citationns.tsv
+/data/raw/studytype_multiclass.tsv
+/data/processed/
+
+
+# Legact functions
+/legacy_funcs
 
 # Plots
 *.html
 
 # Specific files
-test.ipynb
-optuna.db
+prototyping_book.ipynb
+prototyping.py
+prototyping_txt.txt
 
 # Mac OS-specific storage files
 .DS_Store

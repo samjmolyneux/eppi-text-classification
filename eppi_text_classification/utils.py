@@ -1,15 +1,13 @@
 """Utility functions for the eppi_text_classification package."""
 
-from pathlib import Path
-
 import numpy as np
-import optuna
+from numpy.typing import NDArray
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def get_tfidf_and_names(
     word_features: list[str], min_df: int = 3, max_features: int = 75000
-) -> tuple[np.ndarray, list[str]]:
+) -> tuple[NDArray[np.float64], NDArray[np.str_]]:
     """
     Get the tfidf scores and their corresponing feature names.
 
@@ -35,7 +33,7 @@ def get_tfidf_and_names(
 
     Returns
     -------
-    tuple[np.ndarray, list[str]]
+    tuple[np.ndarray[float], list[str]]
         A tuple of tfidf_scores (samples, scores) and feature_names (samples,).
 
     """
@@ -53,19 +51,3 @@ def get_tfidf_and_names(
     feature_names = vectorizer.get_feature_names_out()
 
     return tfidf_scores, feature_names
-
-
-def delete_optuna_study(study_name: str) -> None:
-    """
-    Delete an optuna study from the database.
-
-    Parameters
-    ----------
-    study_name : str
-        Name of the study to delete.
-
-    """
-    root_path = Path(Path(__file__).resolve()).parent.parent
-    db_storage_url = f"sqlite:///{root_path}/optuna.db"
-
-    optuna.delete_study(study_name=study_name, storage=db_storage_url)
