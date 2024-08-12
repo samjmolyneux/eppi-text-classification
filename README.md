@@ -14,6 +14,11 @@ pip3 install -e .
 python3 -m spacy download en_core_web_sm
 ```
 
+If you wish to run tests, you will need to install the test dependencies.
+```
+pip3 install -e ".[test]" 
+```
+
 # Setup
 The workbench uses a database to track the hyperparameters and results of the hyperparameter search. To use this feature, you must have a database in an appropriate location.
 
