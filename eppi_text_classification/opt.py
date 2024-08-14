@@ -200,6 +200,8 @@ class OptunaHyperparameterOptimisation:
 
         validation.check_valid_database_path(self.db_storage_url)
 
+        self.positive_class_weight = labels.count(0) / labels.count(1)
+
     def optimise_on_single(self, n_trials: int, study_name: str) -> None:
         """
         Run the hyperparameter search for a single process.
@@ -326,7 +328,7 @@ class OptunaHyperparameterOptimisation:
             subsample_for_bin=20000,
             subsample=1.0,
             objective="binary",
-            scale_pos_weight=27,
+            scale_pos_weight=self.positive_class_weight,
             min_split_gain=trial.suggest_float("min_split_gain", 1e-6, 10, log=True),
             min_child_weight=trial.suggest_float(
                 "min_child_weight", 1e-6, 1e-1, log=True
@@ -355,7 +357,7 @@ class OptunaHyperparameterOptimisation:
             verbosity=0,
             objective="binary:logistic",
             eval_metric="logloss",
-            scale_pos_weight=27,
+            scale_pos_weight=self.positive_class_weight,
             n_estimators=1000,
             colsample_bytree=1,
             n_jobs=1,
@@ -382,7 +384,8 @@ class OptunaHyperparameterOptimisation:
         """
         # TO DO: Sort these params out
         return SVCParams(
-            class_weight="balanced",
+            # class_weight="balanced",
+            class_weight={1: self.positive_class_weight, 0: 1},
             cache_size=1000,
             probability=False,
             C=trial.suggest_float("C", 1e-3, 10000, log=True),
@@ -421,7 +424,7 @@ class OptunaHyperparameterOptimisation:
             max_leaf_nodes=None,
             min_impurity_decrease=0.0,
             bootstrap=True,
-            class_weight={1: 27, 0: 1},
+            class_weight={1: self.positive_class_weight, 0: 1},
             ccp_alpha=0.0,
             max_samples=None,
             monotonic_cst=None,
