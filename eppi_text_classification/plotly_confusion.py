@@ -319,3 +319,106 @@ def get_font_color(value: int, cm: NDArray[np.int_]) -> Literal["white", "dark b
         return "white"
 
     return "dark blue"
+
+
+def binary_train_valid_test_confusion_plotly(
+    y_train: ArrayLike,
+    y_train_pred: ArrayLike,
+    y_val: ArrayLike,
+    y_val_pred: ArrayLike,
+    y_test: ArrayLike,
+    y_test_pred: ArrayLike,
+    postive_label: str = "1",
+    negative_label: str = "0",
+) -> None:
+    """
+    Generate binary classification confusion matrix for train, validation and test data.
+
+    These plots can be saved to an html file.
+    The plots are interactive in the browser.
+    Change the output method at the bottom of the function.
+
+    Parameters
+    ----------
+    y_train : ArrayLike
+        The binary labels for the training data. (bool or int)
+
+    y_train_pred : ArrayLike
+        Predictied binary labels for the training data. (bool or int)
+
+    y_val : ArrayLike
+        The binary labels for the validation data. (bool or int)
+
+    y_val_pred : ArrayLike
+        _Predicted binary labels for the validation data. (bool or int)
+
+    y_test : ArrayLike
+        The binary labels for the test data. (bool or int)
+
+    y_test_pred : ArrayLike
+        Predictied binary labels for the test data. (bool or int)
+
+    postive_label : str, optional
+        The label for the positive class.
+        Alters the pos label displayed when hovering over confusion matrix with cursor.
+        By default "1".
+
+    negative_label : str, optional
+        The label for the negative class.
+        Alters the neg label displayed when hovering over confusion matrix with cursor.
+        By default "0".
+
+    """
+    labels = ["0", "1"]
+    cm1 = confusion_matrix(y_train, y_train_pred)
+    cm1 = np.array([[cm1[0, 1], cm1[0, 0]], [cm1[1, 1], cm1[1, 0]]])
+
+    cm2 = confusion_matrix(y_val, y_val_pred)
+    cm2 = np.array([[cm2[0, 1], cm2[0, 0]], [cm2[1, 1], cm2[1, 0]]])
+
+    cm3 = confusion_matrix(y_test, y_test_pred)
+    cm3 = np.array([[cm3[0, 1], cm3[0, 0]], [cm3[1, 1], cm3[1, 0]]])
+
+    fig = make_subplots(
+        rows=1,
+        cols=3,
+        subplot_titles=["Training Matrix", "Validation Matrix", "Testing Matrix"],
+        horizontal_spacing=0.15,
+    )
+
+    # Increase font size and height of titles
+    for annotation in fig["layout"]["annotations"]:
+        annotation["font"] = {"size": 18}
+        annotation["y"] = 1.03
+
+    fig.update_layout(
+        autosize=False,
+        width=1050,
+        height=400,
+    )
+
+    add_confusion_trace(fig, cm1, postive_label, negative_label, 1, 1)
+    add_confusion_trace(fig, cm2, postive_label, negative_label, 1, 2)
+    add_confusion_trace(fig, cm3, postive_label, negative_label, 1, 3)
+
+    add_labels_to_confusion_trace(fig, cm1, labels, plot_index=1)
+    add_labels_to_confusion_trace(fig, cm2, labels, plot_index=2)
+    add_labels_to_confusion_trace(fig, cm3, labels, plot_index=3)
+
+    add_lines_to_confusion(fig, 1)
+    add_lines_to_confusion(fig, 2)
+    add_lines_to_confusion(fig, 3)
+
+    add_ticks_to_confusion(fig, labels, 1)
+    add_ticks_to_confusion(fig, labels, 2)
+    add_ticks_to_confusion(fig, labels, 3)
+
+    # Save as html file
+    pio.write_html(
+        fig,
+        file="confusion_matrix.html",
+        auto_open=False,
+        include_plotlyjs="cdn",
+    )
+
+    fig.show()
