@@ -1,5 +1,5 @@
-from pathlib import Path
 import os
+from pathlib import Path
 
 import jsonpickle
 import matplotlib.pyplot as plt
@@ -41,7 +41,6 @@ def database_url() -> str:
     if "AML_CloudName" in os.environ:
         print("in")
         return f"sqlite:////mnt/tmp/optuna.db"
-    print("here")
     return f"sqlite:///{Path(__file__).parent.parent}/optuna.db"
 
 
@@ -292,6 +291,35 @@ def test_randforest_binary_optuna_runs(randforest_binary_best_params):
     assert randforest_binary_best_params is not None, "randforest best params are None"
 
 
+def test_scale_pos_weights(
+    svc_binary_best_params,
+    xgb_binary_best_params,
+    lgbm_binary_best_params,
+    randforest_binary_best_params,
+    labels,
+):
+    true_scale_pos_weight = labels.count(0) / labels.count(1)
+
+    assert (
+        svc_binary_best_params["class_weight"] == {0: 1, 1: true_scale_pos_weight}
+        or svc_binary_best_params["class_weight"] == "balanced"
+    ), "SVC scale_pos_weight is not correct"
+
+    assert (
+        xgb_binary_best_params["scale_pos_weight"] == true_scale_pos_weight
+    ), "XGBoost scale_pos_weight is not correct"
+
+    assert (
+        lgbm_binary_best_params["scale_pos_weight"] == true_scale_pos_weight
+    ), "LGBM scale_pos_weight is not correct"
+
+    assert (
+        randforest_binary_best_params["class_weight"]
+        == {0: 1, 1: true_scale_pos_weight}
+        or randforest_binary_best_params["class_weight"] == "balanced"
+    ), "Random Forest scale_pos_weight is not correct"
+
+
 def test_lgbm_binary_optuna_hyperparameter_optimisation(
     lgbm_binary_best_params, database_url
 ):
@@ -308,7 +336,7 @@ def test_lgbm_binary_optuna_hyperparameter_optimisation(
         "subsample_for_bin": int,
         "subsample": (float, int),
         "objective": str,
-        "scale_pos_weight": int,
+        "scale_pos_weight": (float, int),
         "min_split_gain": (float, int),
         "min_child_weight": (float, int),
         "reg_alpha": (float, int),
@@ -350,7 +378,7 @@ def test_xgb_binary_optuna_hyperparameter_optimisation(
         "verbosity": int,
         "objective": str,
         "eval_metric": str,
-        "scale_pos_weight": int,
+        "scale_pos_weight": (float, int),
         "n_estimators": int,
         "colsample_bytree": (float, int),
         "n_jobs": int,
@@ -389,7 +417,7 @@ def test_svc_binary_optuna_hyperparameter_optimisation(
 ):
     "Test to ensure the SVC hyperparameters are correct"
     expected_types = {
-        "class_weight": (str, dict[int, float]),
+        "class_weight": (str, dict),
         "cache_size": int,
         "probability": bool,
         "C": (float, int),
