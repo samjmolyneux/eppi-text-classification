@@ -45,7 +45,7 @@ class LGBMParams:
     subsample_for_bin: int = 20000
     subsample: float = 1.0
     objective: str = "binary"
-    scale_pos_weight: int = 27
+    scale_pos_weight: int | float = 27
     min_split_gain: float = 0
     min_child_weight: float = 1e-3
     reg_alpha: float = 0
@@ -59,7 +59,7 @@ class XGBParams:
     verbosity: int = 0
     objective: str = "binary:logistic"
     eval_metric: str = "logloss"
-    scale_pos_weight: int = 1
+    scale_pos_weight: int | float = 1
     n_estimators: int = 1000
     colsample_bytree: float = 1.0
     n_jobs: int = 1
@@ -73,7 +73,7 @@ class XGBParams:
 class SVCParams:
     """Dataclass for SVC hyperparameters."""
 
-    class_weight: str = "balanced"
+    class_weight: str | dict[int, float | int] = "balanced"
     cache_size: int = 1000
     probability: bool = False
     C: float = 1.0
@@ -99,7 +99,7 @@ class RandForestParams:
     max_leaf_nodes: int | None = None
     min_impurity_decrease: float = 0.0
     bootstrap: bool = True
-    class_weight: dict[int, int] = field(default_factory=lambda: {1: 27, 0: 1})
+    class_weight: dict[int, int | float] = field(default_factory=lambda: {1: 27, 0: 1})
     ccp_alpha: float = 0.0
     max_samples: int | None = None
     monotonic_cst: int | None = None
