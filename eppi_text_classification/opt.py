@@ -192,15 +192,32 @@ class OptunaHyperparameterOptimisation:
 
         self.interupt = False
 
+        self.setup_database(db_url)
+
+        self.positive_class_weight = labels.count(0) / labels.count(1)
+
+    def setup_database(self, db_url: str | None) -> None:
+        """
+        Set up the database for the hyperparameter search.
+
+        Parameters
+        ----------
+        db_url :
+            URL to the database to store the hyperparameter search history.
+
+        """
         if db_url is None:
             root_path = Path(Path(__file__).resolve()).parent.parent
             self.db_storage_url = f"sqlite:///{root_path}/optuna.db"
         else:
             self.db_storage_url = db_url
 
-        validation.check_valid_database_path(self.db_storage_url)
+        validation.check_valid_database_url(self.db_storage_url)
 
-        self.positive_class_weight = labels.count(0) / labels.count(1)
+        # If a database does not exist, it will be created by optuna.
+
+        # TO DO: LOG OR PRINT THE THE PATH HERE.
+        print(self.db_storage_url)
 
     def optimise_on_single(self, n_trials: int, study_name: str) -> None:
         """
