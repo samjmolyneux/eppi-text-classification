@@ -175,7 +175,7 @@ def ytest(Xtrain_Xtest_ytrain_ytest):
 
 def test_optuna_db_path(database_url):
     """Test to ensure the database path is correct."""
-    validation.check_valid_database_path(database_url)
+    validation.check_valid_database_url(database_url)
 
 
 def test_delete_optuna_study(database_url):
