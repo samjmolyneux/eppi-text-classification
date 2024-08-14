@@ -384,7 +384,6 @@ class OptunaHyperparameterOptimisation:
         """
         # TO DO: Sort these params out
         return SVCParams(
-            # class_weight="balanced",
             class_weight={1: self.positive_class_weight, 0: 1},
             cache_size=1000,
             probability=False,
