@@ -1,7 +1,5 @@
 """For performing run time validation of eppi_text_classification package."""
 
-from pathlib import Path
-
 valid_models = ("LGBMClassifier", "RandomForestClassifier", "SVC", "XGBClassifier")
 
 
@@ -39,7 +37,7 @@ class InvalidDatabasePathError(Exception):
         super().__init__(f"No database found at {path}")
 
 
-def check_valid_database_path(database_url: str) -> None:
+def check_valid_database_url(database_url: str) -> None:
     """
     Check if there is a database for the given database_url.
 
@@ -50,10 +48,12 @@ def check_valid_database_path(database_url: str) -> None:
 
     Raises
     ------
-    InvalidDatabasePathError
-        Throws if there is no data at the given path.
+    ValueError
+        Throws if the database path is bad.
 
     """
     database_path = database_url.split(":///", maxsplit=1)[1]
-    if not Path(database_path).exists():
-        raise InvalidDatabasePathError(database_path)
+    if database_path.__contains__("site-packages"):
+        msg = """It appears that you are trying to store the database in site-packages.
+        This may lead to errors."""
+        raise ValueError(msg)
