@@ -1,5 +1,7 @@
 """For performing run time validation of eppi_text_classification package."""
 
+import warnings
+
 valid_models = ("LGBMClassifier", "RandomForestClassifier", "SVC", "XGBClassifier")
 
 
@@ -56,4 +58,8 @@ def check_valid_database_url(database_url: str) -> None:
     if database_path.__contains__("site-packages"):
         msg = """It appears that you are trying to store the database in site-packages.
         This may lead to errors."""
-        raise ValueError(msg)
+        warnings.warn(msg, UserWarning, stacklevel=2)
+    if database_path.__contains__("/shared/"):
+        msg = """It appears that you may be trying to store the database in a shared
+        directory. Using shared file systems may lead to SQLite Lock errors."""
+        warnings.warn(msg, UserWarning, stacklevel=2)
