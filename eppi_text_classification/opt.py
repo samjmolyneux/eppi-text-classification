@@ -4,20 +4,22 @@ from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import jsonpickle
 import numpy as np
 import optuna
 from joblib import Parallel, delayed
 from lightgbm import LGBMClassifier
-from numpy.typing import NDArray
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
 from . import validation
+
+if TYPE_CHECKING:
+    from scipy.sparse import csr_matrix
 
 # Considerations: Will the database work correctly in deployment?
 # Considerations: Need a way to handle the interupts
@@ -125,7 +127,7 @@ class OptunaHyperparameterOptimisation:
 
     def __init__(
         self,
-        tfidf_scores: NDArray[np.float64],
+        tfidf_scores: "csr_matrix",
         labels: Sequence[int],
         model: str,
         n_trials_per_job: int = 200,
@@ -139,7 +141,7 @@ class OptunaHyperparameterOptimisation:
 
         Parameters
         ----------
-        tfidf_scores : np.ndarray
+        tfidf_scores : csr_matrix
             Tfidf scores for the text data, shape (n_samples, n_features).
 
         labels : Sequence[int]
