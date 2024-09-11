@@ -1,13 +1,20 @@
 """For generating the plotly interactive ROC curve."""
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import plotly.express as px
 from sklearn.metrics import auc, roc_curve
 
+if TYPE_CHECKING:
+    import numpy as np
+    from numpy.typing import NDArray
 
-def plotly_roc(y_test: Sequence[int], y_test_pred_probs: Sequence[float]) -> None:
+
+def plotly_roc(
+    y_test: Sequence[int], y_test_pred_probs: "NDArray[np.float64 | np.float32]"
+) -> None:
     """
     Create an interactive ROC curve using plotly.
 

@@ -1,5 +1,6 @@
 """For plotting the SHAP values of a model's features."""
 
+import warnings
 from typing import TYPE_CHECKING
 
 import matplotlib.lines as mlines
@@ -10,7 +11,9 @@ from matplotlib import cm
 from matplotlib.axes import Axes
 from matplotlib.text import Text
 from numpy.typing import NDArray
+from scipy.sparse import csr_matrix
 
+from . import predict_scores
 from . import shap_colors as colors
 
 if TYPE_CHECKING:
@@ -56,9 +59,9 @@ class DecisionPlot:
         self,
         expected_value: float,
         threshold: float,
-        shap_values: NDArray[np.float64],
-        X_test: NDArray[np.float64],
-        feature_names: list[str],
+        shap_values: csr_matrix,
+        X_test: csr_matrix,
+        feature_names: NDArray[np.str_],
         num_display: int,
         log_scale: bool,
     ) -> None:
@@ -73,10 +76,10 @@ class DecisionPlot:
         threshold : float
             Decision threshold for the model output.
 
-        shap_values : NDArray[np.float64]
+        shap_values : csr_matrix
             SHAP values for the model's features. (#Samples, #Features)
 
-        X_test : NDArray[np.float64]
+        X_test : csr_matrix
             Data used for calculating SHAP values. (#Samples, #Features)
 
         feature_names : list[str]
@@ -108,20 +111,34 @@ class DecisionPlot:
         plt.savefig(filename)
 
     def _make_plot(self) -> None:
-        shap.decision_plot(
-            self.expected_value,
-            self.shap_values,
-            self.X_test,
-            feature_names=self.feature_names,
-            feature_display_range=slice(-1, -self.num_display, -1),
-            ignore_warnings=True,
-            show=False,
-        )
+        # Create a decision plot
+        X_test = self.X_test.toarray()
+        shap_values = self.shap_values.toarray()
+
+        # Create decision plot, ignoring unproblematic warnings from the shap package
+        with warnings.catch_warnings():
+            ignore_unproblematic_warnings_from_decision_plot()
+            shap.decision_plot(
+                base_value=self.expected_value,
+                shap_values=shap_values,
+                features=X_test,
+                feature_names=self.feature_names,
+                feature_display_range=slice(-1, -self.num_display, -1),
+                ignore_warnings=True,
+                show=False,
+            )
+
+        # Adjust for our use case
         ax = plt.gca()
         if self.log_scale:
             self._legacy_log_decision_changes(ax, self.threshold)
         else:
             self._legacy_decision_changes(ax, self.threshold)
+
+        # Handle case that all shap values are zero
+        num_of_non_zero_shap_values = np.count_nonzero(shap_values)
+        if num_of_non_zero_shap_values == 0:
+            add_warning_to_plot_that_all_shap_values_are_zero(ax)
 
     def _legacy_decision_changes(self, ax: Axes, threshold: float) -> None:
         """
@@ -148,21 +165,9 @@ class DecisionPlot:
         ax.spines["top"].set_visible(False)
         ax.xaxis.set_ticks_position("bottom")
 
-        ax.axvline(x=threshold, color="black", zorder=1000)
-        threshold_line = mlines.Line2D([], [], color="black", label="Threshold")
-        ax.legend(handles=[threshold_line], loc="best")
+        add_new_threshold_line_to_decision_plot(ax, threshold)
 
-        text_y_position = ax.get_ylim()[1] + 0.4  # Slightly above the top
-        ax.text(
-            threshold,
-            text_y_position,
-            f"{threshold:.3}",
-            verticalalignment="top",
-            horizontalalignment="left",
-            zorder=1001,
-        )
-
-        # Adjusts x-axis to include the threshold line on the plot.
+        # Adjust x-axis to include the new threshold line on the plot.
         x_lims = ax.get_xlim()
         if threshold < x_lims[0]:
             ax.set_xlim(left=(threshold - 0.1 * (x_lims[1] - x_lims[0])))
@@ -208,18 +213,7 @@ class DecisionPlot:
         ax.xaxis.set_ticks_position("bottom")
 
         # Add new threshold line
-        ax.axvline(x=0, color="black", zorder=1000)
-        threshold_line = mlines.Line2D([], [], color="black", label="Threshold")
-        ax.legend(handles=[threshold_line], loc="best")
-        text_y_position = ax.get_ylim()[1] + 0.4  # Slightly above the top
-        ax.text(
-            0,
-            text_y_position,
-            f"{threshold:.3} (actual)",
-            verticalalignment="top",
-            horizontalalignment="left",
-            zorder=1001,
-        )
+        add_new_threshold_line_to_decision_plot(ax, 0)
 
         # Transform x-axis to include the threshold line on the plot
         x_lims = ax.get_xlim()
@@ -234,13 +228,13 @@ class DecisionPlot:
             and line.get_color() != "black"  # New threshold line
         ]
 
-        # Transform x-axis to log scale
+        # Transform x-axis to log scale if there are non-zero values
         x_data = np.array([], dtype=np.float64)
         for line in plot_lines:
             x_data = np.append(x_data, line.get_xdata())
-        # TO DO: Ask around to see if there is a better way of doing this.
-        non_zero_xmin = np.min(np.abs(x_data[x_data != 0]))
-        plt.xscale("symlog", linthresh=non_zero_xmin, linscale=1)
+        if np.count_nonzero(x_data) > 0:
+            non_zero_xmin = np.min(np.abs(x_data[x_data != 0]))
+            plt.xscale("symlog", linthresh=non_zero_xmin, linscale=1)
 
         # Removes the old text if there is a single observation.
         # TO DO: TRANSFORM THE TEXT.
@@ -251,6 +245,9 @@ class DecisionPlot:
             for text in text_elements:
                 text.set_visible(False)
 
+        # Remove x tick labels near to origin to prevent clutter
+        remove_tick_labels_adjacent_to_origin(ax)
+
         ax.set_xlabel("Model output value relative to threshold")
 
 
@@ -259,9 +256,9 @@ class DotPlot:
 
     def __init__(
         self,
-        shap_values: NDArray[np.float64],
-        X_test: NDArray[np.float64],
-        feature_names: list[str],
+        shap_values: csr_matrix,
+        X_test: csr_matrix,
+        feature_names: NDArray[np.str_],
         num_display: int,
         log_scale: bool,
         plot_zero: bool,
@@ -269,10 +266,10 @@ class DotPlot:
         """
         Initialize the DotPlot object.
 
-        shap_values : NDArray[np.float64]
+        shap_values : csr_matrix
             SHAP values for the model's features. (#Samples, #Features).
 
-        X_test : NDArray[np.float64]
+        X_test : csr_matrix
             Data used for calculating SHAP values. (#Samples, #Features)
 
         feature_names : list[str]
@@ -307,8 +304,8 @@ class DotPlot:
 
     def _make_plot(self) -> None:
         summary_new(
-            self.shap_values,
-            self.X_test,
+            shap_values=self.shap_values,
+            features=self.X_test,
             feature_names=self.feature_names,
             max_display=self.num_display,
             color_bar_label="tfidf value",
@@ -324,25 +321,25 @@ class BarPlot:
 
     def __init__(
         self,
-        shap_values: NDArray[np.float64],
-        X_test: NDArray[np.float64],
-        feature_names: list[str],
+        shap_values: csr_matrix,
+        X_test: csr_matrix,
+        feature_names: NDArray[np.str_],
         num_display: int,
     ) -> None:
         """
         Initialize the Barplot object.
 
-        shap_values : NDArray[np.float64]
+        shap_values : csr_matrix
             SHAP values for the model's features. (#Samples, #Features).
 
-        X_test : NDArray[np.float64]
+        X_test : csr_matrix
             Data used for calculating SHAP values. (#Samples, #Features)
 
         feature_names : list[str]
             List of feature names corresponding to columns in X_test. (#Features,)
 
         num_display : int
-            Number of features to display in the plot, from most important to least.∫
+            Number of features to display in the plot, from most important to least.
 
         """
         self.shap_values = shap_values
@@ -362,8 +359,8 @@ class BarPlot:
 
     def _make_plot(self) -> None:
         summary_new(
-            self.shap_values,
-            self.X_test,
+            shap_values=self.shap_values,
+            features=self.X_test,
             feature_names=self.feature_names,
             plot_type="bar",
             max_display=self.num_display,
@@ -382,49 +379,73 @@ class ShapPlotter:
     def __init__(
         self,
         model: "LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC",
-        X_test: NDArray[np.float64],
-        feature_names: list[str],
+        X_test: csr_matrix,
+        feature_names: NDArray[np.str_],
         tree_path_dependent: bool = False,
         kernel_nsamples: int | str = "auto",
+        tree_explainer_working: bool = False,
     ) -> None:
         """
         Initialize the ShapPlotter object.
+
+        There are two potential explainers to use, the tree explainer and the kernel.
+        The tree explainer is currently broken and so the tree_explainer_working flag
+        should be set to false. Also, the tree_path_dependent flag has no affect when
+        the tree explainer is broken.
+
+        The sparsity for the kernel explainer is also currently not working as intended.
+        I will be using a pull request to change the package. In the mean time, X_test
+        will be limited to 5GB of memory.
 
         Parameters
         ----------
         model : LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC
             Model to calculate SHAP values.
 
-        X_test : NDArray[np.float64]
+        X_test : csr_matrix
             Data to use on model for calculating SHAP values. (#Samples, #Features)
 
         feature_names : list[str]
             List of feature names corresponding to columns in X_test. (#Features,)
 
         tree_path_dependent : bool, optional
-            Wether to calculate tree-path dependent SHAP values (Ignore X_test).
+            This varible does nothing if the tree_explainer is not working.
+            When using the tree explainer, this variable determines wether to calculate
+            tree-path dependent SHAP values (Ignore X_test).
             By default False
 
         kernel_nsamples : int | str, optional
+            This variable only has an affect when using the kernel explainer.
             The number of samples to use for approximating the SHAP values when using
             the kernel explainer. When auto, nsamples = 2 * X.shape[1] + 2048.
             By default "auto".
 
+        tree_explainer_working : bool, optional
+            Temporary flag to check if the tree explainer is working or not.
+            Should be deleted once the tree explainer is fixed for sparse matrices.
+
         """
+        check_size_xtest_not_too_large(X_test)
         self.model = model
         self.X_test = X_test
         self.feature_names = feature_names
         self.tree_path_dependent = tree_path_dependent
         self.kernel_nsamples = kernel_nsamples
 
-        self.background_data = np.zeros(shape=(1, X_test.shape[-1]))
+        self.background_data = csr_matrix((1, X_test.shape[-1]))
 
-        self.shap_values: NDArray[np.float64]
+        self.shap_values: csr_matrix
         self.expected_value: float
 
         # Setup the explantation for plotting
-        model_name = self.model.__class__.__name__
-        perform_explanation_func = getattr(self, f"{model_name.lower()}_setup", None)
+        if tree_explainer_working:
+            model_name = self.model.__class__.__name__
+            perform_explanation_func = getattr(
+                self, f"{model_name.lower()}_setup", None
+            )
+        else:
+            perform_explanation_func = self.temporary_setup_for_kernel
+
         if perform_explanation_func is None:
             msg = f"No setup function for model type {model_name}"
             raise ValueError(msg)
@@ -574,6 +595,28 @@ class ShapPlotter:
         )
         self.expected_value = self.explainer.expected_value
 
+    def temporary_setup_for_kernel(self) -> None:
+        """
+        Set up ShapPlotter for models with kernel explainer.
+
+        This is only to be used temporarily until the treeExplainer is fixed for sparse
+        matrices.
+        """
+        # Set up the explainer object
+        self.explainer = shap.KernelExplainer(
+            self.temporary_prediction_wrapper_for_kernel_explainer, self.background_data
+        )
+
+        # Run the explaination and ignore the warnings
+        with warnings.catch_warnings():
+            ignore_unproblematic_warnings_from_kernel_explainer()
+
+            shap_values = self.explainer.shap_values(
+                self.X_test, nsamples=self.kernel_nsamples, l1_reg="aic", silent=True
+            )
+        self.shap_values = csr_matrix(shap_values)
+        self.expected_value = self.explainer.expected_value
+
     def setup_tree_explainer(self) -> None:
         """General method to set up tree explainer for tree-based models."""
         if not self.tree_path_dependent:
@@ -590,13 +633,46 @@ class ShapPlotter:
                 feature_perturbation="tree_path_dependent",
             )
 
+    def temporary_prediction_wrapper_for_kernel_explainer(
+        self, X: csr_matrix
+    ) -> NDArray[np.float64] | NDArray[np.float32]:
+        """
+        Temporary function to make predictions for the kernel explainer.
 
-# TO DO: Test against legacy code
+        This function is only to be used temporarily until the treeExplainer is fixed
+        for sparse matrices.
+
+        Parameters
+        ----------
+        X : csr_matrix
+            Data to make predictions on.
+
+        Returns
+        -------
+        NDArray[np.float64]
+            Predictions for X.
+
+        """
+        scores = predict_scores(self.model, X)
+        return scores
+
+
+def check_size_xtest_not_too_large(dataset: csr_matrix) -> None:
+    """Check the size of the dataset for the SHAP plotter."""
+    if len(dataset.shape) != 2:
+        msg = f"Dataset must have two dimensions, but got {dataset.shape}."
+        raise ValueError(msg)
+    if dataset.shape[0] > 2500:
+        msg = f"""We have temporarily limited the size of the dataset to 2500 samples.
+        You have used {dataset.shape[0]} samples."""
+        raise MemoryError(msg)
+
+
 # TO DO: separate into two functions for dot and bars
 def summary_new(
-    shap_values: NDArray[np.float64],
-    features: NDArray[np.float64],
-    feature_names: list[str],
+    shap_values: csr_matrix,
+    features: csr_matrix,
+    feature_names: NDArray[np.str_],
     plot_type: str,
     max_display: int = 10,
     alpha: float = 1,
@@ -618,10 +694,10 @@ def summary_new(
 
     Parameters
     ----------
-    shap_values : NDArray[np.float64]
+    shap_values : csr_matrix
         SHAP values for the model's features. (#Samples, #Features)
 
-    features : NDArray[np.float64]
+    features : csr_matrix
         Data to use on model for calculating SHAP values. (#Samples, #Features)
 
     feature_names : NDArray[np.str_]
@@ -669,6 +745,11 @@ def summary_new(
         Parameter that controls the spread of points vertically within a feature.
 
     """
+    shap_values = shap_values.toarray()
+    features = features.toarray()
+
+    num_of_non_zero_shap_values = np.count_nonzero(shap_values)
+
     color = colors.blue_rgb
 
     rasterize_threshold = 500
@@ -677,7 +758,7 @@ def summary_new(
     feature_order = np.argsort(np.sum(np.abs(shap_values), axis=0))
     feature_order = feature_order[-min(max_display, len(feature_order)) :]
 
-    if use_log_scale:
+    if use_log_scale and num_of_non_zero_shap_values > 0:
         temp_feats = shap_values[:, feature_order]
         min_non_zero_by_magnitude = np.min(np.abs(temp_feats[temp_feats != 0]))
         plt.xscale("symlog", linthresh=min_non_zero_by_magnitude, linscale=1)
@@ -855,15 +936,95 @@ def summary_new(
         plt.xlabel(plot_labels["VALUE"], fontsize=13)
     plt.tight_layout()
 
+    if num_of_non_zero_shap_values == 0:
+        add_warning_to_plot_that_all_shap_values_are_zero(plt.gca())
+
     # Delete the ticks closest to zero if using log scale
     if plot_type == "dot" and use_log_scale:
-        x_ticks = plt.gca().xaxis.get_major_ticks()
+        remove_tick_labels_adjacent_to_origin(plt.gca())
 
-        for i, tick in enumerate(x_ticks):
-            if (
-                (tick.label1.get_text() == r"$\mathdefault{0}$")
-                and i > 0
-                and i < len(x_ticks) - 1
-            ):
-                x_ticks[i - 1].label1.set_visible(False)
-                x_ticks[i + 1].label1.set_visible(False)
+
+def add_warning_to_plot_that_all_shap_values_are_zero(ax: Axes) -> None:
+    """Add a warning to the plot that all shap values are zero."""
+    warning_message = """All SHAP values are zero. This means removing words from
+     this data does not affect the model output."""
+    ax.set_title(
+        warning_message,
+        color="red",
+        fontsize=12,
+        fontweight="bold",
+    )
+
+
+def remove_tick_labels_adjacent_to_origin(ax: Axes) -> None:
+    """Remove the x-axis tick labels closest to origin to prevent overlap."""
+    x_ticks = ax.xaxis.get_major_ticks()
+    x_ticks_locs = ax.xaxis.get_ticklocs()
+    for i, loc in enumerate(x_ticks_locs):
+        if (loc == 0) and i > 0 and i < len(x_ticks) - 1:
+            x_ticks[i - 1].label1.set_visible(False)
+            x_ticks[i + 1].label1.set_visible(False)
+
+
+def add_new_threshold_line_to_decision_plot(ax: Axes, threshold: float) -> None:
+    """Add a new threshold line to the decision plot."""
+    ax.axvline(x=threshold, color="black", zorder=1000)
+    threshold_line = mlines.Line2D([], [], color="black", label="Threshold")
+    ax.legend(handles=[threshold_line], loc="best")
+    text_y_position = ax.get_ylim()[1] + 0.4  # Slightly above the top
+    ax.text(
+        threshold,
+        text_y_position,
+        f"{threshold:.3f}",
+        verticalalignment="top",
+        horizontalalignment="left",
+        zorder=1001,
+    )
+
+
+def ignore_unproblematic_warnings_from_kernel_explainer() -> None:
+    """
+    Ignore warnings from kernel explainer that do not affect the output.
+
+    Each warning is thrown due to some problem within the kernel explainer that has not
+    been fixed. To remove these warnings, we require a pull request to the shap package.
+    """
+    # LGBM throws this warning when kernel explainer tries to predict with a lil_matrix
+    warnings.filterwarnings(
+        "ignore",
+        category=UserWarning,
+        message="Converting data to scipy sparse matrix.",
+    )
+    # Xgbost throws this warning when kernel explainer predicts with a lil_matrix
+    warnings.filterwarnings(
+        "ignore",
+        category=UserWarning,
+        message=(
+            "Unknown data type: <class 'scipy.sparse._lil.lil_matrix'>, "
+            "trying to convert it to csr_matrix"
+        ),
+    )
+    # Numpy throws this when kernel explainer tries to run a regression on uniform data
+    warnings.filterwarnings(
+        "ignore",
+        category=RuntimeWarning,
+        message="divide by zero encountered in log",
+    )
+    # Numpy throws this when kernel explainer tries to run a regression on uniform data
+    warnings.filterwarnings(
+        "ignore",
+        category=RuntimeWarning,
+        message="invalid value encountered in divide",
+    )
+
+
+def ignore_unproblematic_warnings_from_decision_plot() -> None:
+    """Ignore warnings from decision plot that do not affect the output."""
+    warnings.filterwarnings(
+        "ignore",
+        category=UserWarning,
+        message=(
+            "Attempting to set identical low and high xlims makes transformation "
+            "singular; automatically expanding."
+        ),
+    )

@@ -113,7 +113,7 @@ def process_chunk(texts: Sequence[str]) -> list[list[str]]:
 
 def process_column(
     texts: Sequence[str],
-    process_count: int = system_num_processes,
+    num_processes: int = system_num_processes,
 ) -> list[list[str]]:
     """
     Process a column of text data. E.g abstracts or titles.
@@ -126,9 +126,9 @@ def process_column(
     texts : Sequence[str] | pd.Series
         Any sequence like object containing strings.
 
-    process_count : int, optional
+    num_processes : int, optional
         Number of processes to use when processing the data.
-        By default equialent to system_num_processes.
+        By default is system_num_processes, which uses all available processes.
 
     Returns
     -------
@@ -137,17 +137,23 @@ def process_column(
         and stop words removed.
 
     """
+    # Joblib has a bug when num_processes is -1, we catch this case here
+    if num_processes == -1:
+        num_processes = system_num_processes
+
+    print(f"number of processes: {num_processes}")
     tasks = (
         delayed(process_chunk)(chunk)
-        for chunk in chunker(texts, process_count=process_count)
+        for chunk in chunker(texts, process_count=num_processes)
     )
-    result = Parallel(n_jobs=process_count, backend="loky")(tasks)
+    result = Parallel(n_jobs=num_processes, backend="loky")(tasks)
     return flatten(result)
 
 
 def get_features(
     abstract_column: Sequence[str],
     title_column: Sequence[str],
+    num_processes: int = system_num_processes,
 ) -> list[str]:
     """
     Get the word features for a given abstract and title column.
@@ -167,14 +173,18 @@ def get_features(
     title_column : Sequence[str]
         A sequence of strings containing titles.
 
+    num_processes : int, optional
+        Number of processes to use when processing the data.
+        By default is system_num_processes, which uses all available processes.
+
     Returns
     -------
     list[str]
         A list of processed word features for each data point.
 
     """
-    abstracts = process_column(abstract_column)
-    titles = process_column(title_column)
+    abstracts = process_column(abstract_column, num_processes=num_processes)
+    titles = process_column(title_column, num_processes=num_processes)
     features = []
     for abstract, title in zip(abstracts, titles, strict=True):
         words = [f"t_{word}" for word in title] + [f"a_{word}" for word in abstract]
@@ -209,6 +219,7 @@ def get_features_and_labels(
     title_key: str = "title",
     abstract_key: str = "abstract",
     y_key: str = "included",
+    num_processes: int = system_num_processes,
 ) -> tuple[list[str], list[int]]:
     """
     Get the title and abstract word features and labels from a dataframe.
@@ -227,6 +238,10 @@ def get_features_and_labels(
     y_key : str, optional
         Dataframe column key for the label column, by default "included"
 
+    num_processes : int, optional
+        Number of processes to use when processing the data.
+        By default is system_num_processes, which uses all available processes.
+
     Returns
     -------
     tuple[list[str], list[int]]
@@ -237,7 +252,11 @@ def get_features_and_labels(
     df[abstract_key] = df[abstract_key].astype(str)
     df[title_key] = df[title_key].astype(str)
 
-    word_features = get_features(df[abstract_key].to_list(), df[title_key].to_list())
+    word_features = get_features(
+        abstract_column=df[abstract_key].to_list(),
+        title_column=df[title_key].to_list(),
+        num_processes=num_processes,
+    )
 
     labels = get_labels(df[y_key].to_list())
 
