@@ -96,7 +96,11 @@ lint.ignore = [
 
     "S301", #No unpickling, is unsafe
     #Maybe enable these for productionr
-    "PD901" #Generic use of df
+    "PD901", #Generic use of df
+
+    "PLR2004", #Magic numbers 
+
+    "N806" #Variables not in lower case  
     ]
 show-fixes = true
 
