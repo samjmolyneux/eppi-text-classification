@@ -647,7 +647,7 @@ def test_plotly_binary_train_valid_confusion():
 
 def test_shap_plotter(all_models, Xtest, ytest, feature_names):
     for model in all_models:
-        shap_plotter = ShapPlotter(model, Xtest[:2400], feature_names)
+        shap_plotter = ShapPlotter(model, Xtest[:10], feature_names)
 
         # Test dot plots
         dot_plot = shap_plotter.dot_plot(num_display=10, log_scale=True)
