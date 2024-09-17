@@ -213,11 +213,13 @@ def test_load_data(raw_df):
 def test_get_features_and_labels(features_and_labels):
     """Test to ensure features and labels are returned properly."""
     features, labels = features_and_labels
-    assert len(features) == len(labels), "Features and labels are not the same length"
+    assert (
+        len(features) == labels.shape[0]
+    ), "Features and labels are not the same length"
     assert isinstance(features, list), "Features are not a list"
-    assert isinstance(labels, list), "Labels are not a list"
+    assert isinstance(labels, np.ndarray), "Labels are not a np.ndarray"
     assert isinstance(features[0], str), "Features are not strings"
-    assert isinstance(labels[0], int), "Labels are not integers"
+    assert labels.dtype == int, "Labels are not integers"
 
 
 def test_get_tfidf_and_names(tfidf_and_names):
@@ -306,8 +308,9 @@ def test_scale_pos_weights(
     randforest_binary_best_params,
     labels,
 ):
-    true_scale_pos_weight = labels.count(0) / labels.count(1)
-
+    true_scale_pos_weight = np.count_nonzero(labels == 0) / np.count_nonzero(
+        labels == 1
+    )
     assert (
         svc_binary_best_params["class_weight"] == {0: 1, 1: true_scale_pos_weight}
         or svc_binary_best_params["class_weight"] == "balanced"

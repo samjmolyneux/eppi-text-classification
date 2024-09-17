@@ -15,6 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
+from numpy.typing import NDArray
 
 from . import validation
 
@@ -129,7 +130,7 @@ class OptunaHyperparameterOptimisation:
     def __init__(
         self,
         tfidf_scores: "csr_matrix",
-        labels: Sequence[int],
+        labels: NDArray[np.int64],
         model: str,
         n_trials_per_job: int = 200,
         n_jobs: int = -1,
@@ -197,7 +198,10 @@ class OptunaHyperparameterOptimisation:
 
         self.setup_database(db_url)
 
-        self.positive_class_weight = labels.count(0) / labels.count(1)
+        self.positive_class_weight = np.count_nonzero(labels == 0) / np.count_nonzero(
+            labels == 1
+        )
+        print(f"Positive class weight: {self.positive_class_weight}")
 
     def setup_database(self, db_url: str | None) -> None:
         """

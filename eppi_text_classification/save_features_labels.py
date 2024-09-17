@@ -195,7 +195,7 @@ def get_features(
 
 
 # TO DO: Get working for all data types
-def get_labels(label_column: Sequence[int | str]) -> list[int]:
+def get_labels(label_column: Sequence[int | str]) -> NDArray[np.int64]:
     """
     Turn all labels into integers.
 
@@ -206,11 +206,11 @@ def get_labels(label_column: Sequence[int | str]) -> list[int]:
 
     Returns
     -------
-    list[int]
-        List of labels in integer format.
+    NDArray[np.int64]:
+        Array of labels in integer format.
 
     """
-    labels = [int(label) for label in label_column]
+    labels = np.array([int(label) for label in label_column], dtype=int)
     return labels
 
 
@@ -220,7 +220,7 @@ def get_features_and_labels(
     abstract_key: str = "abstract",
     y_key: str = "included",
     num_processes: int = system_num_processes,
-) -> tuple[list[str], list[int]]:
+) -> tuple[list[str], NDArray[np.int64]]:
     """
     Get the title and abstract word features and labels from a dataframe.
 
@@ -244,7 +244,7 @@ def get_features_and_labels(
 
     Returns
     -------
-    tuple[list[str], list[int]]
+    tuple[list[str],  NDArray[np.int64]]
         A tuple of word features followed by labels.
 
     """
