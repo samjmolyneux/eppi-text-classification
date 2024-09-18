@@ -1,6 +1,5 @@
 """Methods for optimsing hyperparameters for models."""
 
-from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -11,11 +10,11 @@ import numpy as np
 import optuna
 from joblib import Parallel, delayed
 from lightgbm import LGBMClassifier
+from numpy.typing import NDArray
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
-from numpy.typing import NDArray
 
 from . import validation
 
