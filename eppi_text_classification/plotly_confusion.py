@@ -19,6 +19,7 @@ def binary_train_valid_confusion_plotly(
     y_val_pred: ArrayLike,
     postive_label: str = "1",
     negative_label: str = "0",
+    save_path: str | None = None,
 ) -> None:
     """
     Generate a binary classification confusion matrix for training and validation data.
@@ -50,6 +51,9 @@ def binary_train_valid_confusion_plotly(
         The label for the negative class.
         Alters the neg label displayed when hovering over confusion matrix with cursor.
         By default "0".
+
+    save_path : str, optional
+        Path to save the plotly figure as an html file.
 
     """
     labels = ["0", "1"]
@@ -97,7 +101,10 @@ def binary_train_valid_confusion_plotly(
         include_plotlyjs="cdn",
     )
 
-    fig.show()
+    if save_path:
+        fig.write_html(save_path)
+    else:
+        fig.show()
 
 
 def add_confusion_trace(
@@ -330,6 +337,7 @@ def binary_train_valid_test_confusion_plotly(
     y_test_pred: ArrayLike,
     postive_label: str = "1",
     negative_label: str = "0",
+    save_path: str | None = None,
 ) -> None:
     """
     Generate binary classification confusion matrix for train, validation and test data.
@@ -367,6 +375,9 @@ def binary_train_valid_test_confusion_plotly(
         The label for the negative class.
         Alters the neg label displayed when hovering over confusion matrix with cursor.
         By default "0".
+
+    save_path : str, optional
+        Path to save the plotly figure as an html file.
 
     """
     labels = ["0", "1"]
@@ -421,4 +432,7 @@ def binary_train_valid_test_confusion_plotly(
         include_plotlyjs="cdn",
     )
 
-    fig.show()
+    if save_path:
+        fig.write_html(save_path)
+    else:
+        fig.show()

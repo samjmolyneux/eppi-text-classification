@@ -33,6 +33,14 @@ def load_json_at_directory(directory_path: str) -> dict[str, Any]:
     return dict_from_json
 
 
+def load_value_from_json_at_directory(directory_path: str) -> dict[str, Any]:
+    """Load value json from directory with single file."""
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    with file_path.open() as file:
+        value = json.load(file)
+    return value
+
+
 def load_csr_at_directory(directory_path: str) -> "csr_matrix":
     """Load csr matrix from directory with single file."""
     file_path = Path(directory_path) / os.listdir(directory_path)[0]
