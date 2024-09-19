@@ -13,7 +13,9 @@ if TYPE_CHECKING:
 
 
 def plotly_roc(
-    y_test: Sequence[int], y_test_pred_probs: "NDArray[np.float64 | np.float32]"
+    y_test: Sequence[int],
+    y_test_pred_probs: "NDArray[np.float64 | np.float32]",
+    save_path: str | None = None,
 ) -> None:
     """
     Create an interactive ROC curve using plotly.
@@ -27,6 +29,9 @@ def plotly_roc(
 
     y_test_pred_probs : Sequence[floats]
         Predicted labels.
+
+    save_path : str, optional
+        Path to save the plotly figure as an html file.
 
     """
     fpr, tpr, thresholds = roc_curve(y_test, y_test_pred_probs)
@@ -59,4 +64,7 @@ def plotly_roc(
         title={"text": f"ROC Curve (AUC={roc_auc:.4f})", "x": 0.5, "xanchor": "center"}
     )
 
-    fig.show()
+    if save_path:
+        fig.write_html(save_path)
+    else:
+        fig.show()
