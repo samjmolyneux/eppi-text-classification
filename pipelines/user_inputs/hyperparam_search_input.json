@@ -1,0 +1,1 @@
+{"model_name": "LGBMClassifier", "num_trials_per_job": 3, "n_folds": 3, "num_cv_repeats": 1}
