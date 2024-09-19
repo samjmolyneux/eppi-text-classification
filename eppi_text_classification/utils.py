@@ -3,11 +3,12 @@
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import joblib
 import jsonpickle
 import numpy as np
+from numpy.typing import NDArray
 from scipy.sparse import load_npz
 
 if TYPE_CHECKING:
@@ -18,29 +19,29 @@ if TYPE_CHECKING:
     from xgboost import XGBClassifier
 
 
-def load_np_array_at_directory(directory_path: str) -> np.ndarray:
+def load_np_array_at_directory(directory_path: str) -> NDArray[Any]:
     """Load numpy array from directory with single file."""
-    file_list = os.listdir(directory_path)
-    return np.load(file_list[0])
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    return np.load(file_path)
 
 
-def load_json_at_directory(directory_path: str) -> dict:
+def load_json_at_directory(directory_path: str) -> dict[str, Any]:
     """Load json from directory with single file."""
-    file_list = os.listdir(directory_path)
-    with Path(file_list[0]).open() as file:
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    with file_path.open() as file:
         dict_from_json = jsonpickle.decode(json.load(file))
     return dict_from_json
 
 
 def load_csr_at_directory(directory_path: str) -> "csr_matrix":
     """Load csr matrix from directory with single file."""
-    file_list = os.listdir(directory_path)
-    return load_npz(file_list[0])
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    return load_npz(file_path)
 
 
 def load_joblib_model_at_directory(
     directory_path: str,
 ) -> "LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC":
     """Load joblib model from directory with single file."""
-    file_list = os.listdir(directory_path)
-    return joblib.load(file_list[0])
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    return joblib.load(file_path)
