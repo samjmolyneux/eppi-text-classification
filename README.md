@@ -60,6 +60,7 @@ optimiser = OptunaHyperparameterOptimisation(
 │   │   ├── _colorconv.py
 │   │   └── _colors.py
 │   ├── shap_plotter.py
+│   ├── utils.py
 │   └── validation.py
 ├── notebooks
 │   ├── lgbm
