@@ -72,6 +72,37 @@ optimiser = OptunaHyperparameterOptimisation(
 │   └── xgboost
 │       └── xgboost_binary.ipynb
 ├── optuna.db
+├── pipelines
+│   ├── components
+│   │   ├── get_threshold
+│   │   │   └── get_threshold.py
+│   │   ├── hyperparameter_search
+│   │   │   └── optuna_search.py
+│   │   ├── plotly_confusion
+│   │   │   └── plotly_confusion.py
+│   │   ├── plotly_roc
+│   │   │   └── plotly_roc.py
+│   │   ├── predict_scores
+│   │   │   └── predict_scores.py
+│   │   ├── process_data
+│   │   │   └── data_prep.py
+│   │   ├── split_data
+│   │   │   └── split_data.py
+│   │   ├── threshold_predict
+│   │   │   └── threshold_predict.py
+│   │   ├── train_model
+│   │   │   └── train_model.py
+│   │   └── view_html_image
+│   │       └── view_html_image.py
+│   ├── create_first_pipeline.ipynb
+│   ├── dependencies
+│   │   ├── conda.yaml
+│   │   └── display_image_env.yaml
+│   └── user_inputs
+│       ├── float_1.json
+│       ├── hyperparam_search_input.json
+│       ├── test_size_025.json
+│       └── test_size_05.json
 ├── pyproject.toml
 ├── setup.py
 ├── tests
