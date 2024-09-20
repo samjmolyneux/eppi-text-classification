@@ -236,14 +236,16 @@ class DecisionPlot:
             non_zero_xmin = np.min(np.abs(x_data[x_data != 0]))
             plt.xscale("symlog", linthresh=non_zero_xmin, linscale=1)
 
-        # Removes the old text if there is a single observation.
-        # TO DO: TRANSFORM THE TEXT.
+        # Naive transformation to prevent feature labels landing on y_tick labels
         if len(plot_lines) == 1:
             text_elements = [
                 child for child in ax.get_children() if isinstance(child, Text)
             ]
-            for text in text_elements:
-                text.set_visible(False)
+            for text, x in zip(text_elements, x_data, strict=False):
+                if text.get_position()[0] != 0:
+                    text.set_x(x=x)
+                    old_text = text.get_text()
+                    text.set_text(f"              {old_text}")
 
         # Remove x tick labels near to origin to prevent clutter
         remove_tick_labels_adjacent_to_origin(ax)
