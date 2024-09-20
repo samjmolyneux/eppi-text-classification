@@ -2,6 +2,7 @@
 
 import json
 import os
+import pickle
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -19,10 +20,10 @@ if TYPE_CHECKING:
     from xgboost import XGBClassifier
 
 
-def load_np_array_at_directory(directory_path: str) -> NDArray[Any]:
+def load_np_array_at_directory(directory_path: str, allow_pickle=False) -> NDArray[Any]:
     """Load numpy array from directory with single file."""
     file_path = Path(directory_path) / os.listdir(directory_path)[0]
-    return np.load(file_path)
+    return np.load(file_path, allow_pickle=allow_pickle)
 
 
 def load_json_at_directory(directory_path: str) -> dict[str, Any]:
@@ -53,3 +54,10 @@ def load_joblib_model_at_directory(
     """Load joblib model from directory with single file."""
     file_path = Path(directory_path) / os.listdir(directory_path)[0]
     return joblib.load(file_path)
+
+
+def load_pickle_object_at_directory(directory_path: str) -> Any:
+    """Load pickle object from directory with single file."""
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    with file_path.open("rb") as file:
+        return pickle.load(file)
