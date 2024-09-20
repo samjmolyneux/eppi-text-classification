@@ -1,10 +1,16 @@
 import argparse
-import os
 import json
+import os
+
 import jsonpickle
 import numpy as np
 from scipy.sparse import load_npz, save_npz
 from sklearn.model_selection import train_test_split
+
+from eppi_text_classification.utils import (
+    load_csr_at_directory,
+    load_np_array_at_directory,
+)
 
 
 def main():
@@ -47,8 +53,8 @@ def main():
         help="path to y_test",
     )
     args = parser.parse_args()
-    tfidf_scores = load_npz(os.path.join(args.tfidf_scores, "tfidf_scores.npz"))
-    labels = np.load(os.path.join(args.labels, "labels.npy"))
+    tfidf_scores = load_csr_at_directory(args.tfidf_scores)
+    labels = load_np_array_at_directory(args.labels)
     with open(args.test_size, "r") as file:
         test_size = float(json.load(file))
 

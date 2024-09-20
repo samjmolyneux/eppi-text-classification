@@ -9,7 +9,6 @@ from eppi_text_classification import raw_threshold_predict
 from eppi_text_classification.utils import (
     load_csr_at_directory,
     load_joblib_model_at_directory,
-    load_np_array_at_directory,
     load_value_from_json_at_directory,
 )
 

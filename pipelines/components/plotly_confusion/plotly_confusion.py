@@ -53,8 +53,6 @@ def main():
     y_train_pred = load_np_array_at_directory(args.y_train_pred)
     y_val = load_np_array_at_directory(args.y_val)
     y_val_pred = load_np_array_at_directory(args.y_val_pred)
-    y_test = load_np_array_at_directory(args.y_test)
-    y_test_pred = load_np_array_at_directory(args.y_test_pred)
 
     save_path = Path(args.confusion_plot) / "confusion_plot.html"
 
@@ -69,6 +67,8 @@ def main():
             save_path=save_path,
         )
     else:
+        y_test = load_np_array_at_directory(args.y_test)
+        y_test_pred = load_np_array_at_directory(args.y_test_pred)
         binary_train_valid_test_confusion_plotly(
             y_train,
             y_train_pred,

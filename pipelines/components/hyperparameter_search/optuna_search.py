@@ -1,14 +1,15 @@
 import argparse
-import os
-from dataclasses import asdict
-
 import json
-import jsonpickle
-import numpy as np
-import pandas as pd
-from scipy.sparse import load_npz
+import os
 import time
+
+import jsonpickle
+
 from eppi_text_classification import OptunaHyperparameterOptimisation
+from eppi_text_classification.utils import (
+    load_csr_at_directory,
+    load_np_array_at_directory,
+)
 
 
 def main():
@@ -43,9 +44,9 @@ def main():
     )
     args = parser.parse_args()
 
-    tfidf_scores = load_npz(os.path.join(args.tfidf_scores, "tfidf_scores.npz"))
-    labels = np.load(os.path.join(args.labels, "labels.npy"))
-    with open(args.search_parameters, 'r') as file:
+    tfidf_scores = load_csr_at_directory(args.tfidf_scores)
+    labels = load_np_array_at_directory(args.labels)
+    with open(args.search_parameters, "r") as file:
         json_search_parameters = file.read()
     kwargs = jsonpickle.decode(json_search_parameters)
 
@@ -53,7 +54,7 @@ def main():
     print(f"optuna_db_path: {optuna_db_path}")
 
     # with open("/mnt/optuna.db", 'w') as f:
-    #     pass  
+    #     pass
 
     model_name = kwargs["model_name"]
     num_trials_per_job = kwargs["num_trials_per_job"]
@@ -88,6 +89,7 @@ def main():
     best_param_path = os.path.join(args.best_params, "model_params.json")
     with open(best_param_path, "w") as f:
         json.dump(best_params, f)
+
 
 if __name__ == "__main__":
     main()
