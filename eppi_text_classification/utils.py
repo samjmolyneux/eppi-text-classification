@@ -20,7 +20,9 @@ if TYPE_CHECKING:
     from xgboost import XGBClassifier
 
 
-def load_np_array_at_directory(directory_path: str, allow_pickle=False) -> NDArray[Any]:
+def load_np_array_at_directory(
+    directory_path: str, allow_pickle: bool = False
+) -> NDArray[Any]:
     """Load numpy array from directory with single file."""
     file_path = Path(directory_path) / os.listdir(directory_path)[0]
     return np.load(file_path, allow_pickle=allow_pickle)
