@@ -32,8 +32,8 @@ def load_json_at_directory(directory_path: str) -> dict[str, Any]:
     """Load json from directory with single file."""
     file_path = Path(directory_path) / os.listdir(directory_path)[0]
     with file_path.open() as file:
-        dict_from_json = jsonpickle.decode(json.load(file))
-    return dict_from_json
+        from_json = jsonpickle.decode(json.load(file))
+    return from_json
 
 
 def load_value_from_json_at_directory(directory_path: str) -> dict[str, Any]:

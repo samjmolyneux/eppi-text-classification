@@ -8,11 +8,12 @@ from .plotly_confusion import (
 from .plotly_roc import plotly_roc
 from .plots import binary_train_valid_confusion_plot
 from .predict import get_raw_threshold, predict_scores, raw_threshold_predict
-from .save_features_labels import get_features_and_labels, get_tfidf_and_names
+from .save_features_labels import get_features, get_labels, get_tfidf_and_names
 from .shap_plotter import ShapPlotter
 
 __all__ = [
-    "get_features_and_labels",
+    "get_features",
+    "get_labels",
     "get_tfidf_and_names",
     "OptunaHyperparameterOptimisation",
     "binary_train_valid_confusion_plotly",

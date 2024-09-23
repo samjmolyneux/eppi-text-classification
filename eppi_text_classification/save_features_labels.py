@@ -150,13 +150,47 @@ def process_column(
     return flatten(result)
 
 
+def get_labels(
+    df: "pd.DataFrame",
+    label_column_name: str = "included",
+    positive_class_value: str | float = 1,
+) -> NDArray[np.int8]:
+    """
+    Turn all labels into integers.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe containing the labels.
+
+    label_column_name : str, optional
+        The column name containing the labels, by default "included".
+
+    positive_class_value : str | float, optional
+        The value in the label column that represents the positive class.
+        By default 1.
+
+    Returns
+    -------
+    NDArray[np.int8]:
+        Array of labels in integer format.
+
+    """
+    labels = (
+        df[label_column_name].apply(lambda x: 1 if x == positive_class_value else 0)
+    ).to_numpy(dtype=np.int8)
+
+    return labels
+
+
 def get_features(
-    abstract_column: Sequence[str],
-    title_column: Sequence[str],
+    df: "pd.DataFrame",
+    title_key: str = "title",
+    abstract_key: str = "abstract",
     num_processes: int = system_num_processes,
 ) -> list[str]:
     """
-    Get the word features for a given abstract and title column.
+    Get the title and abstract word features.
 
     The function processes the abstract and title columns in parallel,
     removing stop words and punctuation and lemmatizing the text.
@@ -164,65 +198,6 @@ def get_features(
     to get the word features. To distinguish between title and abstract words,
     a_ is added to the start of each abstract word and t_ to the start of
     each title word.
-
-    Parameters
-    ----------
-    abstract_column : Sequence[str] | pd.Series
-        A sequence of strings containing abstracts.
-
-    title_column : Sequence[str]
-        A sequence of strings containing titles.
-
-    num_processes : int, optional
-        Number of processes to use when processing the data.
-        By default is system_num_processes, which uses all available processes.
-
-    Returns
-    -------
-    list[str]
-        A list of processed word features for each data point.
-
-    """
-    abstracts = process_column(abstract_column, num_processes=num_processes)
-    titles = process_column(title_column, num_processes=num_processes)
-    features = []
-    for abstract, title in zip(abstracts, titles, strict=True):
-        words = [f"t_{word}" for word in title] + [f"a_{word}" for word in abstract]
-        string = " ".join(words)
-        features.append(string)
-
-    return features
-
-
-# TO DO: Get working for all data types
-def get_labels(label_column: Sequence[int | str]) -> NDArray[np.int64]:
-    """
-    Turn all labels into integers.
-
-    Parameters
-    ----------
-    label_column : Sequence
-        Sequence of labels.
-
-    Returns
-    -------
-    NDArray[np.int64]:
-        Array of labels in integer format.
-
-    """
-    labels = np.array([int(label) for label in label_column], dtype=int)
-    return labels
-
-
-def get_features_and_labels(
-    df: "pd.DataFrame",
-    title_key: str = "title",
-    abstract_key: str = "abstract",
-    y_key: str = "included",
-    num_processes: int = system_num_processes,
-) -> tuple[list[str], NDArray[np.int64]]:
-    """
-    Get the title and abstract word features and labels from a dataframe.
 
     Parameters
     ----------
@@ -235,32 +210,28 @@ def get_features_and_labels(
     abstract_key : str, optional
         Dataframe column key for the abstract column, by default "abstract".
 
-    y_key : str, optional
-        Dataframe column key for the label column, by default "included"
-
     num_processes : int, optional
         Number of processes to use when processing the data.
         By default is system_num_processes, which uses all available processes.
 
     Returns
     -------
-    tuple[list[str],  NDArray[np.int64]]
-        A tuple of word features followed by labels.
+    list[str]
+       The word features.
 
     """
     df = df.dropna(subset=[title_key, abstract_key], how="all")
-    df[abstract_key] = df[abstract_key].astype(str)
-    df[title_key] = df[title_key].astype(str)
+    abstract_column = df[abstract_key].astype(str).to_list()
+    title_column = df[title_key].astype(str).to_list()
 
-    word_features = get_features(
-        abstract_column=df[abstract_key].to_list(),
-        title_column=df[title_key].to_list(),
-        num_processes=num_processes,
-    )
-
-    labels = get_labels(df[y_key].to_list())
-
-    return word_features, labels
+    abstracts = process_column(abstract_column, num_processes=num_processes)
+    titles = process_column(title_column, num_processes=num_processes)
+    word_features = []
+    for abstract, title in zip(abstracts, titles, strict=True):
+        words = [f"t_{word}" for word in title] + [f"a_{word}" for word in abstract]
+        string = " ".join(words)
+        word_features.append(string)
+    return word_features
 
 
 def get_tfidf_and_names(
