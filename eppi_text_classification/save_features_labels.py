@@ -1,16 +1,18 @@
 """Save word features and there associated labels."""
 
 from collections.abc import Iterator, Sequence
+from multiprocessing import cpu_count
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 import spacy
 from joblib import Parallel, delayed
+from numpy.typing import NDArray
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 if TYPE_CHECKING:
     import pandas as pd
-
-
-from multiprocessing import cpu_count
+    from scipy.sparse import csr_matrix
 
 # Considerations: Setting the joblib backend,
 #                Choosing spacy model,
@@ -111,7 +113,7 @@ def process_chunk(texts: Sequence[str]) -> list[list[str]]:
 
 def process_column(
     texts: Sequence[str],
-    process_count: int = system_num_processes,
+    num_processes: int = system_num_processes,
 ) -> list[list[str]]:
     """
     Process a column of text data. E.g abstracts or titles.
@@ -124,9 +126,9 @@ def process_column(
     texts : Sequence[str] | pd.Series
         Any sequence like object containing strings.
 
-    process_count : int, optional
+    num_processes : int, optional
         Number of processes to use when processing the data.
-        By default equialent to system_num_processes.
+        By default is system_num_processes, which uses all available processes.
 
     Returns
     -------
@@ -135,20 +137,60 @@ def process_column(
         and stop words removed.
 
     """
+    # Joblib has a bug when num_processes is -1, we catch this case here
+    if num_processes == -1:
+        num_processes = system_num_processes
+
+    print(f"number of processes: {num_processes}")
     tasks = (
         delayed(process_chunk)(chunk)
-        for chunk in chunker(texts, process_count=process_count)
+        for chunk in chunker(texts, process_count=num_processes)
     )
-    result = Parallel(n_jobs=process_count, backend="loky")(tasks)
+    result = Parallel(n_jobs=num_processes, backend="loky")(tasks)
     return flatten(result)
 
 
+def get_labels(
+    df: "pd.DataFrame",
+    label_column_name: str = "included",
+    positive_class_value: str | float = 1,
+) -> NDArray[np.int8]:
+    """
+    Turn all labels into integers.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe containing the labels.
+
+    label_column_name : str, optional
+        The column name containing the labels, by default "included".
+
+    positive_class_value : str | float, optional
+        The value in the label column that represents the positive class.
+        By default 1.
+
+    Returns
+    -------
+    NDArray[np.int8]:
+        Array of labels in integer format.
+
+    """
+    labels = (
+        df[label_column_name].apply(lambda x: 1 if x == positive_class_value else 0)
+    ).to_numpy(dtype=np.int8)
+
+    return labels
+
+
 def get_features(
-    abstract_column: Sequence[str],
-    title_column: Sequence[str],
+    df: "pd.DataFrame",
+    title_key: str = "title",
+    abstract_key: str = "abstract",
+    num_processes: int = system_num_processes,
 ) -> list[str]:
     """
-    Get the word features for a given abstract and title column.
+    Get the title and abstract word features.
 
     The function processes the abstract and title columns in parallel,
     removing stop words and punctuation and lemmatizing the text.
@@ -156,60 +198,6 @@ def get_features(
     to get the word features. To distinguish between title and abstract words,
     a_ is added to the start of each abstract word and t_ to the start of
     each title word.
-
-    Parameters
-    ----------
-    abstract_column : Sequence[str] | pd.Series
-        A sequence of strings containing abstracts.
-
-    title_column : Sequence[str]
-        A sequence of strings containing titles.
-
-    Returns
-    -------
-    list[str]
-        A list of processed word features for each data point.
-
-    """
-    abstracts = process_column(abstract_column)
-    titles = process_column(title_column)
-    features = []
-    for abstract, title in zip(abstracts, titles, strict=True):
-        words = [f"t_{word}" for word in title] + [f"a_{word}" for word in abstract]
-        string = " ".join(words)
-        features.append(string)
-
-    return features
-
-
-# TO DO: Get working for all data types
-def get_labels(label_column: Sequence[int | str]) -> list[int]:
-    """
-    Turn all labels into integers.
-
-    Parameters
-    ----------
-    label_column : Sequence
-        Sequence of labels.
-
-    Returns
-    -------
-    list[int]
-        List of labels in integer format.
-
-    """
-    labels = [int(label) for label in label_column]
-    return labels
-
-
-def get_features_and_labels(
-    df: "pd.DataFrame",
-    title_key: str = "title",
-    abstract_key: str = "abstract",
-    y_key: str = "included",
-) -> tuple[list[str], list[int]]:
-    """
-    Get the title and abstract word features and labels from a dataframe.
 
     Parameters
     ----------
@@ -222,21 +210,72 @@ def get_features_and_labels(
     abstract_key : str, optional
         Dataframe column key for the abstract column, by default "abstract".
 
-    y_key : str, optional
-        Dataframe column key for the label column, by default "included"
+    num_processes : int, optional
+        Number of processes to use when processing the data.
+        By default is system_num_processes, which uses all available processes.
 
     Returns
     -------
-    tuple[list[str], list[int]]
-        A tuple of word features followed by labels.
+    list[str]
+       The word features.
 
     """
     df = df.dropna(subset=[title_key, abstract_key], how="all")
-    df[abstract_key] = df[abstract_key].astype(str)
-    df[title_key] = df[title_key].astype(str)
+    abstract_column = df[abstract_key].astype(str).to_list()
+    title_column = df[title_key].astype(str).to_list()
 
-    word_features = get_features(df[abstract_key].to_list(), df[title_key].to_list())
+    abstracts = process_column(abstract_column, num_processes=num_processes)
+    titles = process_column(title_column, num_processes=num_processes)
+    word_features = []
+    for abstract, title in zip(abstracts, titles, strict=True):
+        words = [f"t_{word}" for word in title] + [f"a_{word}" for word in abstract]
+        string = " ".join(words)
+        word_features.append(string)
+    return word_features
 
-    labels = get_labels(df[y_key].to_list())
 
-    return word_features, labels
+def get_tfidf_and_names(
+    word_features: list[str], min_df: int = 3, max_features: int = 75000
+) -> tuple["csr_matrix", NDArray[np.str_]]:
+    """
+    Get the tfidf scores and their corresponing feature names.
+
+    This function assumes that the word_features are preprocessed.
+    The TfidfVectorizer uses a non-whitespace token pattern, and as a result
+    will do no processing or removal of punctuation or stop words.
+
+    Parameters
+    ----------
+    word_features : list[str]
+        List of preprocessed texts.
+
+    min_df : int, optional
+        Minimum document frequency. A given word feature must occur this many times
+        throughout word_features to be included in the tfidf_scores. By default 3
+
+    max_features : int, optional
+        The maximum number of word features that vectorizer will create tfidf_scores
+        for. See
+        https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html
+        for details.
+        By default 75000
+
+    Returns
+    -------
+    tuple[np.ndarray[float], list[str]]
+        A tuple of tfidf_scores (samples, scores) and feature_names (samples,).
+
+    """
+    vectorizer = TfidfVectorizer(
+        ngram_range=(1, 3),
+        max_features=max_features,
+        min_df=min_df,
+        strip_accents="unicode",
+        token_pattern=r"(?u)\S+",  # Match any non-whitespace character
+    )
+
+    tfidf_scores = vectorizer.fit_transform(word_features)
+
+    feature_names = vectorizer.get_feature_names_out()
+
+    return tfidf_scores, feature_names

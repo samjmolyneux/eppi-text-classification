@@ -1,5 +1,7 @@
 """Universal functions for making model predictions."""
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 from lightgbm import LGBMClassifier
 from numpy.typing import NDArray
@@ -10,10 +12,13 @@ from xgboost import XGBClassifier
 
 from .validation import InvalidModelError
 
+if TYPE_CHECKING:
+    from scipy.sparse import csr_matrix
+
 
 def get_raw_threshold(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
-    X: NDArray[np.float64],
+    X: "csr_matrix",
     y: NDArray[np.int_],
     target_tpr: float = 1,
 ) -> np.float32 | np.float64:
@@ -52,7 +57,7 @@ def get_raw_threshold(
 
 def raw_threshold_predict(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
-    X: NDArray[np.float64],
+    X: "csr_matrix",
     threshold: float,
 ) -> NDArray[np.int_]:
     """
@@ -81,7 +86,7 @@ def raw_threshold_predict(
 
 def predict_scores(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
-    X: NDArray[np.float64],
+    X: "csr_matrix",
 ) -> NDArray[np.float64] | NDArray[np.float32]:
     """
     Make raw score predictions for a binary classifier.

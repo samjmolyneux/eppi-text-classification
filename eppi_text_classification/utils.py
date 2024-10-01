@@ -1,53 +1,65 @@
-"""Utility functions for the eppi_text_classification package."""
+"""Utility functions for azure ml."""
 
+import json
+import os
+import pickle
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+import joblib
+import jsonpickle
 import numpy as np
 from numpy.typing import NDArray
-from sklearn.feature_extraction.text import TfidfVectorizer
+from scipy.sparse import load_npz
+
+if TYPE_CHECKING:
+    from lightgbm import LGBMClassifier
+    from scipy.sparse import csr_matrix
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.svm import SVC
+    from xgboost import XGBClassifier
 
 
-def get_tfidf_and_names(
-    word_features: list[str], min_df: int = 3, max_features: int = 75000
-) -> tuple[NDArray[np.float64], NDArray[np.str_]]:
-    """
-    Get the tfidf scores and their corresponing feature names.
+def load_np_array_at_directory(
+    directory_path: str, allow_pickle: bool = False
+) -> NDArray[Any]:
+    """Load numpy array from directory with single file."""
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    return np.load(file_path, allow_pickle=allow_pickle)
 
-    This function assumes that the word_features are preprocessed.
-    The TfidfVectorizer uses a non-whitespace token pattern, and as a result
-    will do no processing or removal of punctuation or stop words.
 
-    Parameters
-    ----------
-    word_features : list[str]
-        List of preprocessed texts.
+def load_json_at_directory(directory_path: str) -> dict[str, Any]:
+    """Load json from directory with single file."""
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    with file_path.open() as file:
+        from_json = jsonpickle.decode(json.load(file))
+    return from_json
 
-    min_df : int, optional
-        Minimum document frequency. A given word feature must occur this many times
-        throughout word_features to be included in the tfidf_scores. By default 3
 
-    max_features : int, optional
-        The maximum number of word features that vectorizer will create tfidf_scores
-        for. See
-        https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html
-        for details.
-        By default 75000
+def load_value_from_json_at_directory(directory_path: str) -> dict[str, Any]:
+    """Load value json from directory with single file."""
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    with file_path.open() as file:
+        value = json.load(file)
+    return value
 
-    Returns
-    -------
-    tuple[np.ndarray[float], list[str]]
-        A tuple of tfidf_scores (samples, scores) and feature_names (samples,).
 
-    """
-    vectorizer = TfidfVectorizer(
-        ngram_range=(1, 3),
-        max_features=max_features,
-        min_df=min_df,
-        strip_accents="unicode",
-        token_pattern=r"(?u)\S+",  # Match any non-whitespace character
-    )
+def load_csr_at_directory(directory_path: str) -> "csr_matrix":
+    """Load csr matrix from directory with single file."""
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    return load_npz(file_path)
 
-    tfidf_scores = vectorizer.fit_transform(word_features)
-    tfidf_scores = tfidf_scores.toarray()
 
-    feature_names = vectorizer.get_feature_names_out()
+def load_joblib_model_at_directory(
+    directory_path: str,
+) -> "LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC":
+    """Load joblib model from directory with single file."""
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    return joblib.load(file_path)
 
-    return tfidf_scores, feature_names
+
+def load_pickle_object_at_directory(directory_path: str) -> Any:
+    """Load pickle object from directory with single file."""
+    file_path = Path(directory_path) / os.listdir(directory_path)[0]
+    with file_path.open("rb") as file:
+        return pickle.load(file)

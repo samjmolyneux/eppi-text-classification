@@ -1,10 +1,9 @@
 """Methods for optimsing hyperparameters for models."""
 
-from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import jsonpickle
 import numpy as np
@@ -18,6 +17,9 @@ from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
 from . import validation
+
+if TYPE_CHECKING:
+    from scipy.sparse import csr_matrix
 
 # Considerations: Will the database work correctly in deployment?
 # Considerations: Need a way to handle the interupts
@@ -50,6 +52,7 @@ class LGBMParams:
     min_child_weight: float = 1e-3
     reg_alpha: float = 0
     reg_lambda: float = 0
+    n_jobs: int = 1
 
 
 @dataclass
@@ -125,8 +128,8 @@ class OptunaHyperparameterOptimisation:
 
     def __init__(
         self,
-        tfidf_scores: NDArray[np.float64],
-        labels: Sequence[int],
+        tfidf_scores: "csr_matrix",
+        labels: NDArray[np.int64],
         model: str,
         n_trials_per_job: int = 200,
         n_jobs: int = -1,
@@ -139,7 +142,7 @@ class OptunaHyperparameterOptimisation:
 
         Parameters
         ----------
-        tfidf_scores : np.ndarray
+        tfidf_scores : csr_matrix
             Tfidf scores for the text data, shape (n_samples, n_features).
 
         labels : Sequence[int]
@@ -194,7 +197,10 @@ class OptunaHyperparameterOptimisation:
 
         self.setup_database(db_url)
 
-        self.positive_class_weight = labels.count(0) / labels.count(1)
+        self.positive_class_weight = np.count_nonzero(labels == 0) / np.count_nonzero(
+            labels == 1
+        )
+        print(f"Positive class weight: {self.positive_class_weight}")
 
     def setup_database(self, db_url: str | None) -> None:
         """
@@ -268,7 +274,7 @@ class OptunaHyperparameterOptimisation:
         )
         try:
             # TO DO: try and remove the square brackets
-            Parallel(n_jobs=-1)(
+            Parallel(n_jobs=self.n_jobs)(
                 [
                     delayed(self.optimise_on_single)(self.n_trials_per_job, study_name)
                     for _ in range(self.n_jobs)
@@ -352,6 +358,7 @@ class OptunaHyperparameterOptimisation:
             ),
             reg_alpha=trial.suggest_float("reg_alpha", 1e-5, 10, log=True),
             reg_lambda=trial.suggest_float("reg_lambda", 1e-5, 10, log=True),
+            n_jobs=1,
         )
 
     def select_xgb_hyperparameters(self, trial: optuna.trial.Trial) -> XGBParams:

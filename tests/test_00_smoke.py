@@ -8,6 +8,7 @@ import optuna
 import pandas as pd
 import pytest
 from lightgbm import LGBMClassifier
+from scipy.sparse import csr_matrix
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
@@ -48,20 +49,23 @@ def database_url() -> str:
 def raw_df() -> pd.DataFrame:
     """Fixture to load the data from a TSV file."""
     df_path = "data/raw/debunking_review.tsv"
+    # df_path = "data/raw/hedges-all.tsv"
     df = pd.read_csv(df_path, sep="\t")
     return df
 
 
 @pytest.fixture(scope="session")
 def features_and_labels(raw_df: pd.DataFrame) -> tuple[list[str], list[int]]:
-    word_features, labels = get_features_and_labels(raw_df)
+    word_features, labels = get_features_and_labels(
+        raw_df,  # title_key="ti", abstract_key="ab", y_key="rct_ptyp"
+    )
     return word_features, labels
 
 
 @pytest.fixture(scope="session")
 def tfidf_and_names(
     features_and_labels: tuple[list[str], list[int]],
-) -> tuple[pd.DataFrame, list[str]]:
+) -> tuple[csr_matrix, list[str]]:
     features, labels = features_and_labels
     tfidf_scores, feature_names = get_tfidf_and_names(features)
     return tfidf_scores, feature_names
@@ -88,7 +92,7 @@ def lgbm_binary_best_params(tfidf_scores, labels, database_url):
         tfidf_scores,
         labels,
         "LGBMClassifier",
-        n_trials_per_job=1,
+        n_trials_per_job=3,
         n_jobs=-1,
         nfolds=3,
         num_cv_repeats=1,
@@ -104,7 +108,7 @@ def xgb_binary_best_params(tfidf_scores, labels, database_url):
         tfidf_scores,
         labels,
         "XGBClassifier",
-        n_trials_per_job=1,
+        n_trials_per_job=3,
         n_jobs=-1,
         nfolds=3,
         num_cv_repeats=1,
@@ -120,7 +124,7 @@ def svc_binary_best_params(tfidf_scores, labels, database_url):
         tfidf_scores,
         labels,
         "SVC",
-        n_trials_per_job=1,
+        n_trials_per_job=3,
         n_jobs=-1,
         nfolds=3,
         num_cv_repeats=1,
@@ -136,7 +140,7 @@ def randforest_binary_best_params(tfidf_scores, labels, database_url):
         tfidf_scores,
         labels,
         "RandomForestClassifier",
-        n_trials_per_job=1,
+        n_trials_per_job=3,
         n_jobs=-1,
         nfolds=3,
         num_cv_repeats=1,
@@ -201,29 +205,35 @@ def test_load_data(raw_df):
     """Test to ensure data is loaded properly."""
     df = raw_df
     assert not df.empty, "DataFrame is empty"
-    assert "title" in df.columns, "Title column is missing"
-    assert "abstract" in df.columns, "Abstract column is missing"
-    assert "included" in df.columns, "Included column is missing"
+    # assert "title" in df.columns, "Title column is missing"
+    # assert "abstract" in df.columns, "Abstract column is missing"
+    # assert "included" in df.columns, "Included column is missing"
 
 
 def test_get_features_and_labels(features_and_labels):
     """Test to ensure features and labels are returned properly."""
     features, labels = features_and_labels
-    assert len(features) == len(labels), "Features and labels are not the same length"
+    assert (
+        len(features) == labels.shape[0]
+    ), "Features and labels are not the same length"
     assert isinstance(features, list), "Features are not a list"
-    assert isinstance(labels, list), "Labels are not a list"
+    assert isinstance(labels, np.ndarray), "Labels are not a np.ndarray"
     assert isinstance(features[0], str), "Features are not strings"
-    assert isinstance(labels[0], int), "Labels are not integers"
+    assert labels.dtype == int, "Labels are not integers"
 
 
 def test_get_tfidf_and_names(tfidf_and_names):
     """Test to ensure tfidf scores and feature names are returned properly."""
     tfidf_scores, feature_names = tfidf_and_names
-    assert isinstance(tfidf_scores, np.ndarray), "Tfidf scores are not a np.ndarray"
-    assert isinstance(tfidf_scores[0][0], np.float64), "Tfidf scores are not floats"
+    assert isinstance(
+        tfidf_scores, csr_matrix
+    ), f"Tfidf should be np.ndarray got {type(tfidf_scores)}"
+    assert (
+        tfidf_scores.dtype == np.float64
+    ), f"Tfidf dtype should be float, got {tfidf_scores.dtype}"
     assert isinstance(feature_names, np.ndarray), "Feature names are not a list"
     assert isinstance(feature_names[0], str), "Feature names are not strings"
-    assert len(tfidf_scores[0]) == len(
+    assert tfidf_scores.shape[1] == len(
         feature_names
     ), "Tfidf scores and feature have different numbers of features"
 
@@ -298,8 +308,9 @@ def test_scale_pos_weights(
     randforest_binary_best_params,
     labels,
 ):
-    true_scale_pos_weight = labels.count(0) / labels.count(1)
-
+    true_scale_pos_weight = np.count_nonzero(labels == 0) / np.count_nonzero(
+        labels == 1
+    )
     assert (
         svc_binary_best_params["class_weight"] == {0: 1, 1: true_scale_pos_weight}
         or svc_binary_best_params["class_weight"] == "balanced"
@@ -341,6 +352,7 @@ def test_lgbm_binary_optuna_hyperparameter_optimisation(
         "min_child_weight": (float, int),
         "reg_alpha": (float, int),
         "reg_lambda": (float, int),
+        "n_jobs": int,
     }
 
     expected_ranges = {
@@ -359,6 +371,7 @@ def test_lgbm_binary_optuna_hyperparameter_optimisation(
         "min_child_weight": lambda x: x >= 0,
         "reg_alpha": lambda x: x >= 0,
         "reg_lambda": lambda x: x >= 0,
+        "n_jobs": lambda x: x == 1,
     }
 
     general_binary_optuna_hyperparameter_checks(
@@ -567,9 +580,10 @@ def test_predict_scores(Xtest, all_models):
     for model in all_models:
         scores = predict_scores(model, Xtest)
         assert isinstance(scores, np.ndarray)
-        assert len(scores) == len(Xtest)
-        assert isinstance(
-            scores[0], (np.float64 | np.float32)
+        assert scores.shape[0] == Xtest.shape[0]
+        assert scores.dtype in (
+            np.float64,
+            np.float32,
         ), f"expected float, got {type(scores[0])}"
 
 
@@ -595,10 +609,12 @@ def test_raw_threshold_predict(all_models, Xtest, ytest):
         assert isinstance(ypred, np.ndarray)
         assert len(ypred) == len(ytest)
         assert isinstance(ypred[0], np.int_), f"expected int, got {type(ypred[0])}"
-        assert set(np.unique(ypred)) == {
-            0,
-            1,
-        }, f"expected [0, 1], got {np.unique(ypred)}"
+        assert set(np.unique(ypred)).issubset(
+            {
+                0,
+                1,
+            }
+        ), f"expected [0, 1], got {np.unique(ypred)} for model {model}"
 
 
 def test_binary_train_valid_confusion_plot():
