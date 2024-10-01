@@ -49,6 +49,7 @@ optimiser = OptunaHyperparameterOptimisation(
 │       └── debunking_review.tsv
 ├── eppi_text_classification
 │   ├── __init__.py
+│   ├── hyperparameter_schemas.py
 │   ├── opt.py
 │   ├── plotly_confusion.py
 │   ├── plotly_roc.py
@@ -86,6 +87,12 @@ optimiser = OptunaHyperparameterOptimisation(
 │   │   │   └── create_shapplotter.py
 │   │   ├── dot_plot
 │   │   │   └── dot_plot.py
+│   │   ├── get_labels
+│   │   │   └── get_labels.py
+│   │   ├── get_labels_file
+│   │   │   └── get_labels.py
+│   │   ├── get_tfidf_and_feature_names
+│   │   │   └── get_tfidf_and_feature_names.py
 │   │   ├── get_threshold
 │   │   │   └── get_threshold.py
 │   │   ├── hyperparameter_search
@@ -115,12 +122,17 @@ optimiser = OptunaHyperparameterOptimisation(
 │   │   ├── conda.yaml
 │   │   └── display_image_env.yaml
 │   └── user_inputs
+│       ├── abstract_column_name.json
 │       ├── false.json
 │       ├── float_1.json
 │       ├── float_10.json
 │       ├── hyperparam_search_input.json
+│       ├── label_column.json
+│       ├── label_column_name.json
+│       ├── positive_class_value.json
 │       ├── test_size_025.json
-│       └── test_size_05.json
+│       ├── test_size_05.json
+│       └── title_column_name.json
 ├── pyproject.toml
 ├── setup.py
 ├── tests
