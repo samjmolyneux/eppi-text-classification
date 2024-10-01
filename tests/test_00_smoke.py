@@ -17,7 +17,8 @@ from xgboost import XGBClassifier
 from eppi_text_classification import (
     OptunaHyperparameterOptimisation,
     binary_train_valid_confusion_plotly,
-    get_features_and_labels,
+    get_features,
+    get_labels,
     get_tfidf_and_names,
     validation,
 )
@@ -55,18 +56,22 @@ def raw_df() -> pd.DataFrame:
 
 
 @pytest.fixture(scope="session")
-def features_and_labels(raw_df: pd.DataFrame) -> tuple[list[str], list[int]]:
-    word_features, labels = get_features_and_labels(
-        raw_df,  # title_key="ti", abstract_key="ab", y_key="rct_ptyp"
+def features(raw_df: pd.DataFrame) -> list[str]:
+    word_features = get_features(
+        raw_df,  # title_key="ti", abstract_key="ab"
     )
-    return word_features, labels
+    return word_features
+
+
+@pytest.fixture(scope="session")
+def labels(raw_df: pd.DataFrame):
+    return get_labels(raw_df, label_column_name="included", positive_class_value=1)
 
 
 @pytest.fixture(scope="session")
 def tfidf_and_names(
-    features_and_labels: tuple[list[str], list[int]],
+    features: list[int],
 ) -> tuple[csr_matrix, list[str]]:
-    features, labels = features_and_labels
     tfidf_scores, feature_names = get_tfidf_and_names(features)
     return tfidf_scores, feature_names
 
@@ -79,11 +84,6 @@ def tfidf_scores(tfidf_and_names):
 @pytest.fixture(scope="session")
 def feature_names(tfidf_and_names):
     return tfidf_and_names[1]
-
-
-@pytest.fixture(scope="session")
-def labels(features_and_labels):
-    return features_and_labels[1]
 
 
 @pytest.fixture(scope="session")
@@ -210,16 +210,15 @@ def test_load_data(raw_df):
     # assert "included" in df.columns, "Included column is missing"
 
 
-def test_get_features_and_labels(features_and_labels):
+def test_get_features_and_labels(features, labels):
     """Test to ensure features and labels are returned properly."""
-    features, labels = features_and_labels
     assert (
         len(features) == labels.shape[0]
     ), "Features and labels are not the same length"
     assert isinstance(features, list), "Features are not a list"
     assert isinstance(labels, np.ndarray), "Labels are not a np.ndarray"
     assert isinstance(features[0], str), "Features are not strings"
-    assert labels.dtype == int, "Labels are not integers"
+    assert labels.dtype == np.int8, "Labels are not integers"
 
 
 def test_get_tfidf_and_names(tfidf_and_names):
