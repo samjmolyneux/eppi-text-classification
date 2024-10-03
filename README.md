@@ -117,7 +117,6 @@ optimiser = OptunaHyperparameterOptimisation(
 │   │   │   └── train_model.py
 │   │   └── view_html_image
 │   │       └── view_html_image.py
-│   ├── create_first_pipeline.ipynb
 │   ├── dependencies
 │   │   ├── conda.yaml
 │   │   └── display_image_env.yaml
