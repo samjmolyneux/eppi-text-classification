@@ -795,6 +795,7 @@ class OptunaHyperparameterOptimisation:
         self.shm_array_shape = array.shape
         shm.close()
 
+    # Getter instead of a property to make it clear that this is going on under the hood
     def get_shared_memory_best_cv_scores(self):
         existing_shm = multiprocessing.shared_memory.SharedMemory(name=self.shm_name)
         current_best_scores = np.ndarray(
@@ -873,6 +874,7 @@ class OptunaHyperparameterOptimisation:
     def should_we_prune(self, trial, scores):
         current_best_scores = self.get_shared_memory_best_cv_scores()
 
+        # Written this strange way because I think it improves readability
         if self.use_worse_than_first_two_pruner:
             should_prune = self.worse_than_first_two_prune(current_best_scores, scores)
             if should_prune:
