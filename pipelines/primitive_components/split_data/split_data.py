@@ -55,8 +55,7 @@ def main():
     args = parser.parse_args()
     tfidf_scores = load_csr_at_directory(args.tfidf_scores)
     labels = load_np_array_at_directory(args.labels)
-    with open(args.test_size, "r") as file:
-        test_size = float(json.load(file))
+    test_size = args.test_size
 
     print(f"test_size: {test_size}")
     X_train, X_test, y_train, y_test = train_test_split(

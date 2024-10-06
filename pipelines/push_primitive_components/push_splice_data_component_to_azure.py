@@ -15,7 +15,7 @@ splice_data_component = command(
     description=("Splice data for csr matrix for classifier workbench"),
     inputs={
         "data": Input(type="uri_folder"),
-        "num_rows": Input(type="uri_folder"),
+        "num_rows": Input(type="integer"),
     },
     outputs={
         "spliced_data": Output(type="uri_folder", mode="rw_mount"),
@@ -31,7 +31,9 @@ splice_data_component = command(
 )
 
 # Now we register the component to the workspace
-splice_data_component = ml_client.create_or_update(splice_data_component.component)
+splice_data_component = ml_client.create_or_update(
+    splice_data_component.component, version="prim_1.0"
+)
 
 # Create (register) the component in your workspace
 print(

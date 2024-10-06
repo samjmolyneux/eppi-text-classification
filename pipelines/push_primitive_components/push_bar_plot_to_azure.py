@@ -1,5 +1,3 @@
-import os
-
 from azure.ai.ml import Input, Output, command
 from load_azure_ml import get_azure_ml_client, get_current_package_env
 
@@ -17,7 +15,7 @@ create_bar_plot_component = command(
         "shap_values": Input(type="uri_folder"),
         "X": Input(type="uri_folder"),
         "feature_names": Input(type="uri_folder"),
-        "num_display": Input(type="uri_folder"),
+        "num_display": Input(type="integer", default=10),
     },
     outputs={
         "bar_plot": Output(type="uri_folder", mode="rw_mount"),
@@ -36,7 +34,7 @@ create_bar_plot_component = command(
 
 # Now we register the component to the workspace
 create_bar_plot_component = ml_client.create_or_update(
-    create_bar_plot_component.component
+    create_bar_plot_component.component, version="prim1.0" 
 )
 
 # Create (register) the component in your workspace

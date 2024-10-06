@@ -35,7 +35,7 @@ predict_probabilities_component = command(
 
 # Now we register the component to the workspace
 predict_probabilities_component = ml_client.create_or_update(
-    predict_probabilities_component.component
+    predict_probabilities_component.component, version="prim_1.0"
 )
 
 # Create (register) the component in your workspace

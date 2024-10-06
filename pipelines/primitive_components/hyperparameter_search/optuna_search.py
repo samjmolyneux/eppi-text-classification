@@ -34,7 +34,7 @@ def main():
     )
     parser.add_argument(
         "--num_trials_per_job", #Needs to be changed with env update
-        type=str,
+        type=int,
         help="path to search parameters for the optuna search",
     )
     parser.add_argument(
@@ -45,7 +45,7 @@ def main():
     )
     parser.add_argument(
         "--num_cv_repeats",
-        type=str,
+        type=int,
         help="number of times to repeat cross-validation for averaging scores",
         default=1,
     )

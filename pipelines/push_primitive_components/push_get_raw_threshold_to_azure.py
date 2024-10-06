@@ -19,7 +19,7 @@ get_threshold_component = command(
         "y": Input(type="uri_folder"),
         "X": Input(type="uri_folder"),
         "model": Input(type="uri_folder"),
-        "target_tpr": Input(type="uri_folder"),
+        "target_tpr": Input(type="string"),
     },
     outputs={
         "threshold": Output(type="uri_folder", mode="rw_mount"),
@@ -37,7 +37,9 @@ get_threshold_component = command(
 )
 
 # Now we register the component to the workspace
-get_threshold_component = ml_client.create_or_update(get_threshold_component.component)
+get_threshold_component = ml_client.create_or_update(
+    get_threshold_component.component, version="prim_1.0"
+)
 
 # Create (register) the component in your workspace
 print(

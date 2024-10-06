@@ -34,9 +34,8 @@ calculate_shap_values_component = command(
     environment=f"{pipeline_job_env.name}:{pipeline_job_env.version}",
 )
 
-# Now we register the component to the workspace
 calculate_shap_values_component = ml_client.create_or_update(
-    calculate_shap_values_component.component
+    calculate_shap_values_component.component, version="prim_1.0"
 )
 
 # Create (register) the component in your workspace

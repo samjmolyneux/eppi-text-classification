@@ -35,7 +35,9 @@ train_model_component = command(
 )
 
 # Now we register the component to the workspace
-train_model_component = ml_client.create_or_update(train_model_component.component)
+train_model_component = ml_client.create_or_update(
+    train_model_component.component, version="prim_1.0"
+)
 
 # Create (register) the component in your workspace
 print(

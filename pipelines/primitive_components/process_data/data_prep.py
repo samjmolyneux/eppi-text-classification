@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import time
 import numpy as np
 import pandas as pd
 from scipy.sparse import save_npz
@@ -32,9 +33,12 @@ def main():
 
     df = pd.read_csv(args.data, sep="\t")
 
+    start = time.time()
     word_features, labels = get_features_and_labels(df)
+    print(f"time taken: {time.time()-start}")
     tfidf_scores, feature_names = get_tfidf_and_names(word_features)
 
+    print("additional_check")
     print(f"labels: {args.labels}")
     print(f"feature_names: {args.feature_names}")
     print(f"tfidf_scores: {args.tfidf_scores}")

@@ -19,8 +19,8 @@ create_decision_plot_component = command(
         "shap_values": Input(type="uri_folder"),
         "X": Input(type="uri_folder"),
         "feature_names": Input(type="uri_folder"),
-        "num_display": Input(type="uri_folder"),
-        "log_scale": Input(type="uri_folder"),
+        "num_display": Input(type="integer", default=10),
+        "log_scale": Input(type="boolean", default=False),
     },
     outputs={
         "decision_plot": Output(type="uri_folder", mode="rw_mount"),
@@ -40,9 +40,8 @@ create_decision_plot_component = command(
     environment=f"{pipeline_job_env.name}:{pipeline_job_env.version}",
 )
 
-# Now we register the component to the workspace
 create_decision_plot_component = ml_client.create_or_update(
-    create_decision_plot_component.component
+    create_decision_plot_component.component, version="prim_1.0"
 )
 
 # Create (register) the component in your workspace

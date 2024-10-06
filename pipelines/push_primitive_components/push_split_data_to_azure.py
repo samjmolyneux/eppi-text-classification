@@ -1,5 +1,4 @@
 import os
-
 from azure.ai.ml import Input, Output, command
 from load_azure_ml import get_azure_ml_client, get_current_package_env
 
@@ -18,7 +17,7 @@ split_data_component = command(
     inputs={
         "labels": Input(type="uri_folder"),
         "tfidf_scores": Input(type="uri_folder"),
-        "test_size": Input(type="uri_file"),
+        "test_size": Input(type="number"),
     },
     outputs={
         "X_train": Output(type="uri_folder", mode="rw_mount"),
@@ -41,7 +40,9 @@ split_data_component = command(
 )
 
 # Now we register the component to the workspace
-split_data_component = ml_client.create_or_update(split_data_component.component)
+split_data_component = ml_client.create_or_update(
+    split_data_component.component, version="prim_1.1"
+)
 
 # Create (register) the component in your workspace
 print(

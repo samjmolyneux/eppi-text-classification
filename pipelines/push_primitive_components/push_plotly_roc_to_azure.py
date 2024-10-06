@@ -31,7 +31,9 @@ plotly_roc_component = command(
 )
 
 # Now we register the component to the workspace
-plotly_roc_component = ml_client.create_or_update(plotly_roc_component.component)
+plotly_roc_component = ml_client.create_or_update(
+    plotly_roc_component.component, version="prim_1.0"
+)
 
 # Create (register) the component in your workspace
 print(

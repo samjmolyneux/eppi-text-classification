@@ -19,7 +19,10 @@ hyperparameter_search_component = command(
     inputs={
         "labels": Input(type="uri_folder"),
         "tfidf_scores": Input(type="uri_folder"),
-        "search_parameters": Input(type="uri_file"),
+        "model_name": Input(type="string"),
+        "num_trials_per_job": Input(type="integer"),
+        "n_folds": Input(type="integer", default=3),
+        "num_cv_repeats": Input(type="integer", default=1),
     },
     outputs={
         "best_params": Output(type="uri_folder", mode="rw_mount"),
@@ -30,7 +33,10 @@ hyperparameter_search_component = command(
     command="""python optuna_search.py \
             --labels ${{inputs.labels}} \
             --tfidf_scores ${{inputs.tfidf_scores}} \
-            --search_parameters ${{inputs.search_parameters}} \
+            --model_name ${{inputs.model_name}} \
+            --num_trials_per_job ${{inputs.num_trials_per_job}} \
+            --n_folds ${{inputs.n_folds}} \
+            --num_cv_repeats ${{inputs.num_cv_repeats}} \
             --best_params ${{outputs.best_params}} \
             --search_db ${{outputs.search_db}} \
             """,
@@ -39,7 +45,7 @@ hyperparameter_search_component = command(
 
 # Now we register the component to the workspace
 hyperparameter_search_component = ml_client.create_or_update(
-    hyperparameter_search_component.component
+    hyperparameter_search_component.component, version="prim_1.2"
 )
 
 # Create (register) the component in your workspace

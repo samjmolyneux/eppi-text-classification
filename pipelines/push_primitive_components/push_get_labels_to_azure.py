@@ -7,7 +7,7 @@ ml_client = get_azure_ml_client()
 
 pipeline_job_env = get_current_package_env(ml_client)
 
-get_labels_file = "./../primitive_components/get_labels_file"
+get_labels_file = "./../primitive_components/get_labels"
 
 
 get_labels_component = command(
@@ -18,8 +18,8 @@ get_labels_component = command(
     ),
     inputs={
         "data": Input(type="uri_file"),
-        "label_column_name": Input(type="uri_file"),
-        "positive_class_value": Input(type="uri_file"),
+        "label_column_name": Input(type="string", default="included"),
+        "positive_class_value": Input(type="string", default="1"),
     },
     outputs={
         "labels": Output(type="uri_folder", mode="rw_mount"),
@@ -36,7 +36,9 @@ get_labels_component = command(
 )
 
 # Now we register the component to the workspace
-get_labels_component = ml_client.create_or_update(get_labels_component.component)
+get_labels_component = ml_client.create_or_update(
+    get_labels_component.component, version="prim_1.2"
+)
 
 # Create (register) the component in your workspace
 print(

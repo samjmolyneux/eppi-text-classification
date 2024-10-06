@@ -17,9 +17,9 @@ create_dot_plot_component = command(
         "shap_values": Input(type="uri_folder"),
         "X": Input(type="uri_folder"),
         "feature_names": Input(type="uri_folder"),
-        "num_display": Input(type="uri_folder"),
-        "log_scale": Input(type="uri_folder"),
-        "plot_zero": Input(type="uri_folder"),
+        "num_display": Input(type="integer", default=10),
+        "log_scale": Input(type="boolean", default=False),
+        "plot_zero": Input(type="boolean", default=False),
     },
     outputs={
         "dot_plot": Output(type="uri_folder", mode="rw_mount"),
@@ -40,7 +40,7 @@ create_dot_plot_component = command(
 
 # Now we register the component to the workspace
 create_dot_plot_component = ml_client.create_or_update(
-    create_dot_plot_component.component
+    create_dot_plot_component.component, version="prim_1.0"
 )
 
 # Create (register) the component in your workspace

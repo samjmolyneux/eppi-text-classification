@@ -33,7 +33,9 @@ threshold_predict = command(
 )
 
 # Now we register the component to the workspace
-threshold_predict = ml_client.create_or_update(threshold_predict.component)
+threshold_predict = ml_client.create_or_update(
+    threshold_predict.component, version="prim_1.0"
+)
 
 # Create (register) the component in your workspace
 print(

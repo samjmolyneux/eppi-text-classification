@@ -15,8 +15,8 @@ get_tfidf_and_feature_names_component = command(
     description="Get tfidf and feature names for eppi classifier workbench",
     inputs={
         "data": Input(type="uri_file"),
-        "title_header": Input(type="uri_file"),
-        "abstract_header": Input(type="uri_file"),
+        "title_header": Input(type="string", default="title"),
+        "abstract_header": Input(type="string", default="abstract"),
     },
     outputs={
         "feature_names": Output(type="uri_folder", mode="rw_mount"),
@@ -36,7 +36,7 @@ get_tfidf_and_feature_names_component = command(
 
 # Now we register the component to the workspace
 get_tfidf_and_feature_names_component = ml_client.create_or_update(
-    get_tfidf_and_feature_names_component.component
+    get_tfidf_and_feature_names_component.component, version="prim_1.1"
 )
 
 # Create (register) the component in your workspace

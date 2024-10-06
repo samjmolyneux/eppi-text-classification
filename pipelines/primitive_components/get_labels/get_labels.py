@@ -17,13 +17,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, help="path to input dataframe")
     parser.add_argument(
-        "label_column_name",
+        "--label_column_name",
         type=str,
         help="column name of the labels",
         default="included"
     )
     parser.add_argument(
-        "positive_class_value",
+        "--positive_class_value",
         type=str,
         help="path to the value of the positive class",
         default="1"
