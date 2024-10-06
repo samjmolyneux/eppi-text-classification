@@ -74,6 +74,7 @@ optimiser = OptunaHyperparameterOptimisation(
 │       └── xgboost_binary.ipynb
 ├── optuna.db
 ├── pipelines
+│   ├── change_file_names.py
 │   ├── components
 │   │   ├── calculate_shap_values
 │   │   │   └── calculate_shap_values.py
@@ -117,9 +118,30 @@ optimiser = OptunaHyperparameterOptimisation(
 │   │   │   └── train_model.py
 │   │   └── view_html_image
 │   │       └── view_html_image.py
+│   ├── create_first_pipeline.ipynb
 │   ├── dependencies
 │   │   ├── conda.yaml
 │   │   └── display_image_env.yaml
+│   ├── load_azure_ml.py
+│   ├── push_bar_plot_to_azure.py
+│   ├── push_create_shap_plotter_to_azure.py
+│   ├── push_debunking_to_az_to_azure.py
+│   ├── push_decision_plot_to_azure.py
+│   ├── push_dot_plot_to_azure.py
+│   ├── push_get_labels_to_azure.py
+│   ├── push_get_raw_threshold_to_azure.py
+│   ├── push_get_tfidf_and_feature_names_to_azure.py
+│   ├── push_hyperparam_search_to_azure.py
+│   ├── push_mlflow_env_to_az_to_azure.py
+│   ├── push_package_env_to_az_to_azure.py
+│   ├── push_plotly_confusion_to_azure.py
+│   ├── push_plotly_roc_to_azure.py
+│   ├── push_predict_scores_to_azure.py
+│   ├── push_splice_data_component_to_azure.py
+│   ├── push_split_data_to_azure.py
+│   ├── push_threshold_predict_to_azure.py
+│   ├── push_train_model_to_azure.py
+│   ├── push_view_html_image_to_azure.py
 │   └── user_inputs
 │       ├── abstract_column_name.json
 │       ├── false.json
