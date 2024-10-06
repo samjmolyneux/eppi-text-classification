@@ -33,15 +33,12 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
-from . import validation
+from eppi_text_classification import validation
 
-# ss = _LazyImport("scipy.stats")
 
 if TYPE_CHECKING:
     from scipy.sparse import csr_matrix
 
-# Considerations: Will the database work correctly in deployment?
-# Considerations: Need a way to handle the interupts
 # Considerations: The cache size needs setting for the SVC
 # Considerations: Should not use SVC for large datasets
 
@@ -269,10 +266,6 @@ class OptunaHyperparameterOptimisation:
             or self.use_worse_than_first_two_pruner
         )
 
-        # We are multiprocessing, so must set up a manager to share when to stop
-        manager = multiprocessing.Manager()
-        self.stopping_event = manager.Event()
-
         if n_jobs == -1:
             self.n_jobs = cpu_count()
         else:
@@ -281,7 +274,6 @@ class OptunaHyperparameterOptimisation:
         self.model_class = model_name_to_model_class[model_name]
         self.select_hyperparameters = getattr(self, model_name_to_selector[model_name])
 
-        self.setup_database(db_url)
 
         self.final_hyperparameter_search_ranges = (
             self.define_hyperparameter_search_ranges(
@@ -294,27 +286,6 @@ class OptunaHyperparameterOptimisation:
         )
         print(f"Positive class weight: {self.positive_class_weight}")
 
-    def setup_database(self, db_url: str | None) -> None:
-        """
-        Set up the database for the hyperparameter search.
-
-        Parameters
-        ----------
-        db_url :
-            URL to the database to store the hyperparameter search history.
-
-        """
-        if db_url is None:
-            root_path = Path(Path(__file__).resolve()).parent.parent
-            self.db_storage_url = f"sqlite:///{root_path}/optuna.db"
-        else:
-            self.db_storage_url = db_url
-
-        validation.check_valid_database_url(self.db_storage_url)
-
-        # If a database does not exist, it will be created by optuna.
-
-        print(self.db_storage_url)
 
     def define_hyperparameter_search_ranges(
         self,
@@ -351,36 +322,6 @@ class OptunaHyperparameterOptimisation:
             final_ranges[key] = user_selected_ranges.get(key=key, default=default_value)
         return final_ranges
 
-    def optimise_on_single(self, study_name: str) -> None:
-        """
-        Run the hyperparameter search for a single process.
-
-        For a hyperaparameter search, given by study_name,
-        controls the hyperparmeter optimisation search for a single process.
-        This method will not start a new study, but will add an additional process
-        to search the hyperparmeter space of an existing study.
-
-        Parameters
-        ----------
-        study_name : str
-            Name of the study. This is what tracks our hyperparameter search.
-
-        """
-        study = optuna.load_study(study_name=study_name, storage=self.db_storage_url)
-
-        callbacks = self.create_search_callbacks()
-
-        study.optimize(
-            self.objective_func,
-            n_jobs=1,
-            timeout=self.timeout,
-            callbacks=callbacks,
-        )
-
-        # One process has finished, set the stopping event to stop all other processes
-        # Another process could break the stopping condition, leading to
-        # a search on fewer processes.
-        self.stopping_event.set()
 
     def optimise_hyperparameters(
         self,
@@ -402,9 +343,10 @@ class OptunaHyperparameterOptimisation:
             during the search. Key: hyperparameter name, value: hyperparameter value.
 
         """
-        if self.use_pruner:
-            # A pruner must be able to share the best scores between processes
-            self.create_best_cv_scores_shared_memory()
+
+#        if self.use_pruner:
+#            # A pruner must be able to share the best scores between processes
+#            self.create_best_cv_scores_shared_memory()
 
         study = optuna.create_study(
             study_name=study_name,
@@ -412,24 +354,23 @@ class OptunaHyperparameterOptimisation:
             direction="maximize",
             load_if_exists=True,
         )
-        try:
-            # TO DO: try and remove the square brackets
-            Parallel(n_jobs=self.n_jobs)(
-                [
-                    delayed(self.optimise_on_single)(study_name)
-                    for _ in range(self.n_jobs)
-                ]
-            )
-        except KeyboardInterrupt:
-            print("Optimization interrupted by user.")
+
+        callbacks = self.create_search_callbacks()
+
+        study.optimize(
+            self.objective_func,
+            n_jobs=self.n_jobs,
+            timeout=self.timeout,
+            callbacks=callbacks,
+        )
 
         best_trial = study.best_trial
         best_params = best_trial.user_attrs["all_params"]
-        best_params = jsonpickle.decode(best_params, keys=True)
+#        best_params = jsonpickle.decode(best_params, keys=True)
 
-        if self.use_pruner:
-            # Once the search is complete, we must clean up the shared memory
-            self.delete_best_cv_scores_shared_memory()
+#        if self.use_pruner:
+#            # Once the search is complete, we must clean up the shared memory
+#            self.delete_best_cv_scores_shared_memory()
 
         return best_params
 
@@ -454,37 +395,11 @@ class OptunaHyperparameterOptimisation:
 
         """
         params = self.select_hyperparameters(trial)
-        serialized_params = jsonpickle.encode(asdict(params), keys=True)
-        trial.set_user_attr("all_params", serialized_params)
-        clf = self.model_class(**asdict(params))
+#        serialized_params = jsonpickle.encode(asdict(params), keys=True)
+        trial.set_user_attr("all_params", params)
 
-        # Calculate the cross validation score
-        scores = []
-        for i in range(self.num_cv_repeats):
-            kf = StratifiedKFold(n_splits=self.nfolds, shuffle=True, random_state=i)
-
-            for fold_idx, (train_idx, val_idx) in enumerate(
-                kf.split(self.tfidf_scores, self.labels)
-            ):
-                X_train = self.tfidf_scores[train_idx]
-                X_val = self.tfidf_scores[val_idx]
-
-                y_train = self.labels[train_idx]
-                y_val = self.labels[val_idx]
-
-                clf.fit(X_train, y_train)
-
-                y_val_pred = _predict_scores(clf, X_val)
-
-                auc = roc_auc_score(y_val, y_val_pred)
-                scores.append(auc)
-
-                # Prune if need to
-                if self.use_pruner:
-                    should_prune = self.should_we_prune(trial, scores)
-                    if should_prune:
-                        print(f"Pruned trial with scores: {scores}")
-                        return np.mean(scores)
+        # PROBABLY WANT TO PUSH THIS TO ANOTHER vm HERE WITH THE BEST SCORES  
+        run_on_vm(self.tfidf_scores, self.labels, params, self.num_cv_repeats, self.nfolds)
 
         # Early terminator uses variance of reported scores to calculate error
         if self.use_early_terminator:
@@ -493,8 +408,8 @@ class OptunaHyperparameterOptimisation:
         print(f"Finished trial with scores: {scores}")
 
         # Update the shared memory with the best scores
-        if self.use_pruner:
-            self.update_shared_memory_best_cv_scores(scores)
+#        if self.use_pruner:
+#            self.update_shared_memory_best_cv_scores(scores)
 
         return np.mean(scores)
 
@@ -722,39 +637,8 @@ class OptunaHyperparameterOptimisation:
             ),
         )
 
-    def delete_optuna_study(self, study_name: str) -> None:
-        """
-        Delete an optuna study from the database at self.db_storage_url.
-
-        Parameters
-        ----------
-        study_name : str
-            Name of the study to delete.
-
-        """
-        delete_optuna_study(self.db_storage_url, study_name)
-
-    def optimisation_process_completed_callback(self, study, trial):
-        """
-        Stop all processes when one process stops searching.
-
-        To run the optuna search, we spawn mulitple processes.
-        In order to implement early stopping we use callbacks from optuna.
-        These callbacks call study.stop(), which only stops trials spawned
-        by the current process. This means that if one of the trials from the other
-        processes breaks the early stopping condition, the search will not stop.
-        This can result in a hyperparameter search with a single process running.
-        To combat this, we use this callback to end all processes when one process calls
-        study.stop().
-
-        """
-        if self.stopping_event.is_set():
-            print("Ending process, stopping_event set.")
-            study.stop()
-
     def create_search_callbacks(self) -> list:
         callbacks = []
-        callbacks.append(self.optimisation_process_completed_callback)
 
         # Include the correct callbacks, based on user input, for stopping search
         if self.max_stagnation_iterations is not None:
@@ -888,25 +772,6 @@ class OptunaHyperparameterOptimisation:
         return False
 
 
-def delete_optuna_study(db_url: str, study_name: str) -> None:
-    """
-    If it exists, delete an optuna study from the database.
-
-    Parameters
-    ----------
-    db_url : str
-        URL to the database where the study is stored.
-
-    study_name : str
-        Name of the study to delete.
-
-    """
-    all_studies = optuna.study.get_all_study_summaries(storage=db_url)
-    study_names = [study.study_name for study in all_studies]
-    if study_name in study_names:
-        optuna.delete_study(study_name=study_name, storage=db_url)
-
-
 def _predict_scores(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
     X: "csr_matrix",
@@ -918,3 +783,37 @@ def _predict_scores(
     if isinstance(model, RandomForestClassifier):
         return model.predict_proba(X)[:, 1]
     return model.decision_function(X)
+
+
+def run_on_vm(tfidf_scores, labels, params, num_cv_repeats, nfolds)
+    clf = model_class(**asdict(params))
+
+    scores = []
+    for i in range(num_cv_repeats):
+        kf = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=i)
+
+        for fold_idx, (train_idx, val_idx) in enumerate(
+            kf.split(tfidf_scores, labels)
+        ):
+            X_train = tfidf_scores[train_idx]
+            X_val = tfidf_scores[val_idx]
+
+            y_train = labels[train_idx]
+            y_val = labels[val_idx]
+
+            clf.fit(X_train, y_train)
+
+            y_val_pred = _predict_scores(clf, X_val)
+
+            auc = roc_auc_score(y_val, y_val_pred)
+            scores.append(auc)
+
+            # Prune if need to
+#                if self.use_pruner:
+#                    should_prune = self.should_we_prune(trial, scores)
+#                    if should_prune:
+#                        print(f"Pruned trial with scores: {scores}")
+#                        return np.mean(scores)
+
+    return np.mean(scores)
+

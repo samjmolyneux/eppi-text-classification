@@ -63,3 +63,20 @@ def load_pickle_object_at_directory(directory_path: str) -> Any:
     file_path = Path(directory_path) / os.listdir(directory_path)[0]
     with file_path.open("rb") as file:
         return pickle.load(file)
+
+
+def parse_multiple_types(value):
+    # Try to convert to int
+    try:
+        return int(value)
+    except ValueError:
+        pass
+
+    # Try to convert to float
+    try:
+        return float(value)
+    except ValueError:
+        pass
+
+    # Return as string if neither int nor float
+    return value

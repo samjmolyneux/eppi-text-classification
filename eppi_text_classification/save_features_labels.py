@@ -10,6 +10,8 @@ from joblib import Parallel, delayed
 from numpy.typing import NDArray
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+from .utils import parse_multiple_types
+
 if TYPE_CHECKING:
     import pandas as pd
     from scipy.sparse import csr_matrix
@@ -176,6 +178,7 @@ def get_labels(
         Array of labels in integer format.
 
     """
+    positive_class_value = parse_multiple_types(positive_class_value)
     labels = (
         df[label_column_name].apply(lambda x: 1 if x == positive_class_value else 0)
     ).to_numpy(dtype=np.int8)
