@@ -348,7 +348,8 @@ class OptunaHyperparameterOptimisation:
 
         final_ranges = {}
         for key, default_value in default_ranges.items():
-            final_ranges[key] = user_selected_ranges.get(key=key, default=default_value)
+            final_ranges[key] = user_selected_ranges.get(key, default_value)
+        print(final_ranges)
         return final_ranges
 
     def optimise_on_single(self, study_name: str) -> None:
