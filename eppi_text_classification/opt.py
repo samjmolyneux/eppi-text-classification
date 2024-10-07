@@ -142,7 +142,7 @@ default_lgbm_hyperparameter_ranges = {
     "min_child_samples": {"low": 1, "high": 30, "log": False},
     "learning_rate": {"low": 0.1, "high": 0.6, "log": False},
     "num_leaves": {"low": 2, "high": 50, "log": False},
-    "n_estimators": {"low": 100, "high": 3000, "log": False},
+    "n_estimators": {"low": 100, "high": 1000, "log": False},
     "min_split_gain": {"low": 1e-6, "high": 10, "log": True},
     "min_child_weight": {"low": 1e-6, "high": 1e-1, "log": True},
     "reg_alpha": {"low": 1e-5, "high": 10, "log": True},
