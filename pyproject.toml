@@ -37,7 +37,8 @@ dependencies = [
     "shap~=0.45.1",
     "jupyter~=1.0.0",
     "jsonpickle~=3.2.2",
-    "numpy<2.0.0"
+    "numpy<2.0.0",
+    "torch~=2.4.1",
 ]
 
 [project.optional-dependencies]
