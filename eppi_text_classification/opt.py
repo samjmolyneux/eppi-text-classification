@@ -277,6 +277,7 @@ class OptunaHyperparameterOptimisation:
             self.n_jobs = cpu_count()
         else:
             self.n_jobs = n_jobs
+        print(f"Number of processes: {self.n_jobs}")
 
         self.model_class = model_name_to_model_class[model_name]
         self.select_hyperparameters = getattr(self, model_name_to_selector[model_name])
