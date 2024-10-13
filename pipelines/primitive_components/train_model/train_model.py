@@ -52,10 +52,6 @@ def main():
     X_train = load_csr_at_directory(args.X_train)
     y_train = load_np_array_at_directory(args.y_train)
     model_parameters = load_json_at_directory(args.model_parameters)
-    # model_params_path = os.path.join(args.model_parameters, "model_params.json")
-    # with open(model_params_path, "r") as file:
-    #     json_model_parameters = json.load(file)
-    # model_parameters = jsonpickle.decode(json_model_parameters)
 
     model_class = mname_to_mclass[model_parameters.pop("model_name")]
     model = model_class(**model_parameters)

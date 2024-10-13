@@ -13,7 +13,6 @@ def get_azure_ml_client():
         credential.get_token("https://management.azure.com/.default")
     except Exception as ex:
         # Fall back to InteractiveBrowserCredential in case DefaultAzureCredential not work
-        print("We are doing interactive")
         credential = InteractiveBrowserCredential()
 
     if (
@@ -57,6 +56,6 @@ def get_mlflow_env(ml_client: MLClient):
 
 def get_temp_env(ml_client: MLClient):
     # Retrieve an existing environment from the workspace
-    env_name = "temp-eppi-env"
+    env_name = ""
     env_version = "0.1.0"  # Specify the version of the environment
     return ml_client.environments.get(name=env_name, version=env_version)
