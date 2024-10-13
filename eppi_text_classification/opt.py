@@ -1,8 +1,8 @@
 """Methods for optimsing hyperparameters for models."""
 
-import multiprocessing
 from dataclasses import asdict, dataclass, field
 from multiprocessing import cpu_count
+from multiprocessing.shared_memory import SharedMemory
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -275,8 +275,7 @@ class OptunaHyperparameterOptimisation:
         )
 
         # We are multiprocessing, so must set up a manager to share when to stop
-        manager = multiprocessing.Manager()
-        self.stopping_event = manager.Event()
+        self.create_stopping_event_shared_memory()
 
         if n_jobs == -1:
             self.n_jobs = cpu_count()
@@ -387,7 +386,7 @@ class OptunaHyperparameterOptimisation:
         # One process has finished, set the stopping event to stop all other processes
         # Another process could break the stopping condition, leading to
         # a search on fewer processes.
-        self.stopping_event.set()
+        self.set_stopping_event()
 
     def optimise_hyperparameters(
         self,
@@ -438,6 +437,9 @@ class OptunaHyperparameterOptimisation:
             # Once the search is complete, we must clean up the shared memory
             self.delete_best_cv_scores_shared_memory()
 
+        # We have shared memory to manage stopping needs to be removed
+        self.delete_stopping_event_shared_memory()
+
         return best_params
 
     def objective_func(self, trial: optuna.trial.Trial) -> float:
@@ -470,7 +472,7 @@ class OptunaHyperparameterOptimisation:
         for i in range(self.num_cv_repeats):
             kf = StratifiedKFold(n_splits=self.nfolds, shuffle=True, random_state=i)
 
-            for fold_idx, (train_idx, val_idx) in enumerate(
+            for _, (train_idx, val_idx) in enumerate(
                 kf.split(self.tfidf_scores, self.labels)
             ):
                 X_train = self.tfidf_scores[train_idx]
@@ -755,7 +757,7 @@ class OptunaHyperparameterOptimisation:
         study.stop().
 
         """
-        if self.stopping_event.is_set():
+        if self.is_stopping_event_set():
             print("Ending process, stopping_event set.")
             study.stop()
 
@@ -793,9 +795,35 @@ class OptunaHyperparameterOptimisation:
 
         return callbacks
 
+    def create_stopping_event_shared_memory(self) -> None:
+        shm = SharedMemory(create=True, size=np.bool_(False).nbytes)
+        stopping_event = np.ndarray((1,), dtype=np.bool_, buffer=shm.buf)
+        stopping_event[0] = False
+        self.stopping_shm_name = shm.name
+        shm.close()
+
+    def set_stopping_event(self):
+        existing_shm = SharedMemory(name=self.stopping_shm_name)
+        stopping_event = np.ndarray((1,), dtype=np.bool_, buffer=existing_shm.buf)
+        stopping_event[0] = True
+        existing_shm.close()
+
+    def delete_stopping_event_shared_memory(self) -> None:
+        existing_shm = SharedMemory(name=self.stopping_shm_name)
+        existing_shm.close()
+        existing_shm.unlink()
+
+    def is_stopping_event_set(self):
+        existing_shm = SharedMemory(name=self.stopping_shm_name)
+        stopping_event = np.ndarray((1,), dtype=np.bool_, buffer=existing_shm.buf)
+        stopping_event_set_bool = stopping_event[0]
+        existing_shm.close()
+
+        return stopping_event_set_bool
+
     def create_best_cv_scores_shared_memory(self) -> None:
         array = np.zeros(self.num_cv_repeats * self.nfolds, dtype=np.float32)
-        shm = multiprocessing.shared_memory.SharedMemory(create=True, size=array.nbytes)
+        shm = SharedMemory(create=True, size=array.nbytes)
         best_scores = np.ndarray(array.shape, dtype=array.dtype, buffer=shm.buf)
         best_scores[:] = array
         self.shm_name = shm.name
@@ -804,7 +832,7 @@ class OptunaHyperparameterOptimisation:
 
     # Getter instead of a property to make it clear that this is going on under the hood
     def get_shared_memory_best_cv_scores(self):
-        existing_shm = multiprocessing.shared_memory.SharedMemory(name=self.shm_name)
+        existing_shm = SharedMemory(name=self.shm_name)
         current_best_scores = np.ndarray(
             self.shm_array_shape, dtype=np.float32, buffer=existing_shm.buf
         )
@@ -813,7 +841,7 @@ class OptunaHyperparameterOptimisation:
         return current_best_scores
 
     def update_shared_memory_best_cv_scores(self, scores):
-        existing_shm = multiprocessing.shared_memory.SharedMemory(name=self.shm_name)
+        existing_shm = SharedMemory(name=self.shm_name)
         current_best_scores = np.ndarray(
             self.shm_array_shape, dtype=np.float32, buffer=existing_shm.buf
         )
@@ -822,7 +850,8 @@ class OptunaHyperparameterOptimisation:
         existing_shm.close()
 
     def delete_best_cv_scores_shared_memory(self) -> None:
-        existing_shm = multiprocessing.shared_memory.SharedMemory(name=self.shm_name)
+        existing_shm = SharedMemory(name=self.shm_name)
+        existing_shm.close()
         existing_shm.unlink()
 
     def wilcoxon_prune(
