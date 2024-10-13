@@ -131,6 +131,7 @@ class RandForestParams:
 # LLIMIT DEFAULT MAX N_ESTIMSTORS TO ABOIUT 1000
 
 default_xgb_hyperparameter_ranges = {
+    "n_estimators": {"low": 100, "high": 1000, "log": False},
     "reg_lambda": {"low": 1e-4, "high": 100, "log": True},
     "reg_alpha": {"low": 1e-4, "high": 100, "log": True},
     "learning_rate": {"low": 1e-2, "high": 1, "log": True},
@@ -150,7 +151,9 @@ default_lgbm_hyperparameter_ranges = {
 }
 
 default_svc_hyperparameter_ranges = {
-    "C": {"low": 1e-3, "high": 10000, "log": True},
+    "C": {"low": 1e-3, "high": 100000, "log": True},
+    # HOW to do or categoriical? for if we want scale?
+    # "gamma": {"low": 1e-7, "high": 1000, "log": True},
 }
 
 default_rand_forest_hyperparameter_ranges = {
@@ -201,6 +204,8 @@ class OptunaHyperparameterOptimisation:
     ) -> None:
         """
         Build a new hyperparameter optimisation engine.
+
+        This object must be called with a main guard.
 
         Parameters
         ----------
