@@ -53,119 +53,91 @@ if TYPE_CHECKING:
 # URGENT TO DO: MAKE SURE ALL THE MODELS A SINGLE CORE
 
 
-@dataclass
-class LGBMParams:
-    """Dataclass for LightGBM hyperparameters."""
-
-    verbosity: int = -1
-    boosting_type: str = "gbdt"
-    max_depth: int = 7
-    min_child_samples: int = 20
-    learning_rate: float = 0.33
-    num_leaves: int = 31
-    n_estimators: int = 500
-    subsample_for_bin: int = 20000
-    subsample: float = 1.0
-    objective: str = "binary"
-    scale_pos_weight: int | float = 27
-    min_split_gain: float = 0
-    min_child_weight: float = 1e-3
-    reg_alpha: float = 0
-    reg_lambda: float = 0
-    n_jobs: int = 1
-
-
-@dataclass
-class XGBParams:
-    """Dataclass for XGBoost hyperparameters."""
-
-    verbosity: int = 0
-    objective: str = "binary:logistic"
-    eval_metric: str = "logloss"
-    scale_pos_weight: int | float = 1
-    n_estimators: int = 1000
-    colsample_bytree: float = 1.0
-    n_jobs: int = 1
-    reg_lambda: float = 0.0
-    reg_alpha: float = 0.0
-    learning_rate: float = 0.01
-    max_depth: int = 1
-
-
-@dataclass
-class SVCParams:
-    """Dataclass for SVC hyperparameters."""
-
-    class_weight: str | dict[int, float | int] = "balanced"
-    cache_size: int = 1000
-    probability: bool = False
-    C: float = 1.0
-    kernel: str = "rbf"
-    shrinking: bool = True
-    tol: float = 1e-3
-    gamma: str | float = "scale"
-
-
-@dataclass
-class RandForestParams:
-    """Dataclass for RandomForest hyperparameters."""
-
-    verbose: int = 0
-    n_estimators: int = 100
-    criterion: str = "gini"
-    n_jobs: int = 1
-    max_depth: int | None = None
-    min_samples_split: int = 2
-    min_samples_leaf: int = 1
-    min_weight_fraction_leaf: float = 0.0
-    max_features: str = "sqrt"
-    max_leaf_nodes: int | None = None
-    min_impurity_decrease: float = 0.0
-    bootstrap: bool = True
-    class_weight: dict[int, int | float] = field(default_factory=lambda: {1: 27, 0: 1})
-    ccp_alpha: float = 0.0
-    max_samples: int | None = None
-    monotonic_cst: int | None = None
-
-
 # LLIMIT DEFAULT MAX N_ESTIMSTORS TO ABOIUT 1000
 
-default_xgb_hyperparameter_ranges = {
-    "n_estimators": {"low": 100, "high": 1000, "log": False, "suggest_type": "int"},
-    "reg_lambda": {"low": 1e-4, "high": 100, "log": True, "suggest_type": "float"},
-    "reg_alpha": {"low": 1e-4, "high": 100, "log": True, "suggest_type": "float"},
-    "learning_rate": {"low": 1e-2, "high": 1, "log": True, "suggest_type": "float"},
-    "max_depth": {"low": 1, "high": 5, "log": False, "suggest_type": "int"},
-}
+# Verbosity, objective, n_jobs and scale_pos_weight cannot be changed
 
-default_lgbm_hyperparameter_ranges = {
-    "max_depth": {"low": 1, "high": 15, "log": False, "suggest_type": "int"},
-    "min_child_samples": {"low": 1, "high": 30, "log": False, "suggest_type": "int"},
-    "learning_rate": {"low": 0.1, "high": 0.6, "log": False, "suggest_type": "float"},
-    "num_leaves": {"low": 2, "high": 50, "log": False, "suggest_type": "int"},
-    "n_estimators": {"low": 100, "high": 1000, "log": False, "suggest_type": "int"},
-    "min_split_gain": {"low": 1e-6, "high": 10, "log": True, "suggest_type": "float"},
-    "min_child_weight": {
-        "low": 1e-6,
-        "high": 1e-1,
-        "log": True,
-        "suggest_type": "float",
+default_hyperparameter_ranges = {
+    "SVC": {
+        "suggest_float": {
+            "C": {"low": 1e-3, "high": 100000, "log": True},
+            "gamma": {"low": 1e-7, "high": 1000, "log": True},
+        },
+        "singular": {
+            "cache_size": 1000,
+            "kernel": "rbf",
+            "shrinking": True,
+            "tol": 1e-5,
+        },
     },
-    "reg_alpha": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
-    "reg_lambda": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
+    "XGBClassifier": {
+        "suggest_int": {
+            "n_estimators": {"low": 100, "high": 1000, "log": False},
+            "max_depth": {"low": 1, "high": 5, "log": False},
+        },
+        "suggest_float": {
+            "reg_lambda": {"low": 1e-4, "high": 100, "log": True},
+            "reg_alpha": {"low": 1e-4, "high": 100, "log": True},
+            "learning_rate": {"low": 1e-2, "high": 1, "log": True},
+        },
+        "singular": {
+            "colsample_bytree": 1.0,
+        },
+    },
+    "LGBMClassifier": {
+        "suggest_int": {
+            "max_depth": {"low": 1, "high": 15, "log": False},
+            "min_child_samples": {"low": 1, "high": 30, "log": False},
+            "num_leaves": {"low": 2, "high": 50, "log": False},
+            "n_estimators": {"low": 100, "high": 1000, "log": False},
+            "subsample_for_bin": {"low": 20000, "high": 20000},
+        },
+        "suggest_float": {
+            "learning_rate": {"low": 0.1, "high": 0.6, "log": False},
+            "min_split_gain": {"low": 1e-6, "high": 10, "log": True},
+            "min_child_weight": {
+                "low": 1e-6,
+                "high": 1e-1,
+                "log": True,
+            },
+            "reg_alpha": {"low": 1e-5, "high": 10, "log": True},
+            "reg_lambda": {"low": 1e-5, "high": 10, "log": True},
+        },
+        "singular": {
+            "subsample": 1.0,
+            "boosting_type": "gbdt",
+        },
+    },
+    "RandomForestClassifier": {
+        "suggest_int": {
+            "n_estimators": {
+                "low": 100,
+                "high": 1000,
+                "log": False,
+                "data_type": "float",
+            },
+        },
+        "singular": {
+            "criterion": "gini",
+            "max_depth": None,
+            "max_features": "sqrt",
+            "max_leaf_nodes": None,
+            "bootstrap": True,
+            "max_samples": None,
+            "monotonic_cst": None,
+            "min_samples_split": 2,
+            "min_samples_leaf": 1,
+            "min_weight_fraction_leaf": 0,
+            "min_impurity_decrease": 0,
+            "ccp_alpha": 0,
+        },
+        # "Categorical" : { {param: [categories...]}
+    },
 }
 
-default_svc_hyperparameter_ranges = {
-    "C": {"low": 1e-3, "high": 100000, "log": True, "suggest_type": "float"},
-    # HOW to do or categoriical? for if we want scale?
-    "gamma": {"low": 1e-7, "high": 1000, "log": True, "suggest_type": "float"},
-}
-
-default_rand_forest_hyperparameter_ranges = {
-    "n_estimators": {"low": 100, "high": 1000, "log": False, "suggest_type": "float"},
-}
-
-dependent_params = {}  # INCLUDE all params
+# Verbosity, objective, n_jobs, probability and scale_pos_weight cannot be changed
+# Verbosity, objective, n_jobs and class_weight cannot be changed
+# Verbosity, objective, n_jobs and class_weight cannot be changed
 
 
 model_name_to_model_class = {
@@ -180,13 +152,6 @@ model_name_to_selector = {
     "LGBMClassifier": "select_lgbm_hyperparameters",
     "RandomForestClassifier": "select_rand_forest_hyperparameters",
     "XGBClassifier": "select_xgb_hyperparameters",
-}
-
-model_name_to_hyperparameter_ranges = {
-    "SVC": default_svc_hyperparameter_ranges,
-    "LGBMClassifier": default_lgbm_hyperparameter_ranges,
-    "RandomForestClassifier": default_rand_forest_hyperparameter_ranges,
-    "XGBClassifier": default_xgb_hyperparameter_ranges,
 }
 
 
@@ -354,14 +319,20 @@ class OptunaHyperparameterOptimisation:
             Hyperparameter ranges for the model.
 
         """
-        default_ranges = model_name_to_hyperparameter_ranges[model_name]
+        # NEED TO MAKE IT WORK WITH NEW SCHEMA
+        default_ranges = default_hyperparameter_ranges[model_name]
 
         if user_selected_ranges is None:
             return default_ranges
 
         final_ranges = {}
-        for key, default_value in default_ranges.items():
-            final_ranges[key] = user_selected_ranges.get(key, default_value)
+        for suggest_type, hyperparameter_ranges in default_ranges.items():
+            for param, param_default_range in hyperparameter_ranges.items():
+                final_ranges[suggest_type][param] = user_selected_ranges.get(
+                    param,
+                    param_default_range,
+                )
+
         print(final_ranges)
         return final_ranges
 
@@ -471,9 +442,9 @@ class OptunaHyperparameterOptimisation:
 
         """
         params = self.select_hyperparameters(trial)
-        serialized_params = jsonpickle.encode(asdict(params), keys=True)
+        serialized_params = jsonpickle.encode(params, keys=True)
         trial.set_user_attr("all_params", serialized_params)
-        clf = self.model_class(**asdict(params))
+        clf = self.model_class(**params)
 
         # Calculate the cross validation score
         scores = []
@@ -515,7 +486,7 @@ class OptunaHyperparameterOptimisation:
 
         return np.mean(scores)
 
-    def select_lgbm_hyperparameters(self, trial: optuna.trial.Trial) -> LGBMParams:
+    def select_lgbm_hyperparameters(self, trial: optuna.trial.Trial) -> dict:
         """
         Select LightGBM hyperparameters for a given iteration in the search.
 
@@ -534,18 +505,16 @@ class OptunaHyperparameterOptimisation:
             trial, self.final_hyperparameter_search_ranges
         )
 
-        return LGBMParams(
-            verbosity=-1,
-            boosting_type="gbdt",
-            subsample_for_bin=20000,
-            subsample=1.0,
-            objective="binary",
-            scale_pos_weight=self.positive_class_weight,
-            n_jobs=1,
+        return {
+            "verbosity": -1,
+            "subsample": 1.0,
+            "objective": "binary",
+            "scale_pos_weight": self.positive_class_weight,
+            "n_jobs": 1,
             **params,
-        )
+        }
 
-    def select_xgb_hyperparameters(self, trial: optuna.trial.Trial) -> XGBParams:
+    def select_xgb_hyperparameters(self, trial: optuna.trial.Trial) -> dict[str, Any]:
         """
         Select XGBoost hyperparameters for a given iteration in the search.
 
@@ -566,17 +535,17 @@ class OptunaHyperparameterOptimisation:
             trial, self.final_hyperparameter_search_ranges
         )
 
-        return XGBParams(
-            verbosity=0,
-            objective="binary:logistic",
-            eval_metric="logloss",
-            scale_pos_weight=self.positive_class_weight,
-            colsample_bytree=1,
-            n_jobs=1,
+        return {
+            "verbosity": 0,
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "scale_pos_weight": self.positive_class_weight,
+            "colsample_bytree": 1,
+            "n_jobs": 1,
             **params,
-        )
+        }
 
-    def select_svc_hyperparameters(self, trial: optuna.trial.Trial) -> SVCParams:
+    def select_svc_hyperparameters(self, trial: optuna.trial.Trial) -> dict[str, Any]:
         """
         Select SVC hyperparameters for a given iteration in the search.
 
@@ -596,19 +565,15 @@ class OptunaHyperparameterOptimisation:
         )
 
         # TO DO: Sort these params out
-        return SVCParams(
-            class_weight={1: self.positive_class_weight, 0: 1},
-            cache_size=1000,
-            probability=False,
-            kernel="rbf",
-            shrinking=True,
-            tol=1e-8,
+        return {
+            "class_weight": {1: self.positive_class_weight, 0: 1},
+            "probability": False,
             **params,
-        )
+        }
 
     def select_rand_forest_hyperparameters(
         self, trial: optuna.trial.Trial
-    ) -> RandForestParams:
+    ) -> dict[str, Any]:
         """
         Select RandomForest hyperparameters for a given iteration in the search.
 
@@ -627,24 +592,12 @@ class OptunaHyperparameterOptimisation:
             trial, self.final_hyperparameter_search_ranges
         )
 
-        return RandForestParams(
-            verbose=0,
-            criterion="gini",
-            n_jobs=1,
-            max_depth=None,
-            min_samples_split=2,
-            min_samples_leaf=1,
-            min_weight_fraction_leaf=0.0,
-            max_features="sqrt",
-            max_leaf_nodes=None,
-            min_impurity_decrease=0.0,
-            bootstrap=True,
-            class_weight={1: self.positive_class_weight, 0: 1},
-            ccp_alpha=0.0,
-            max_samples=None,
-            monotonic_cst=None,
+        return {
+            "verbose": 0,
+            "n_jobs": 1,
+            "class_weight": {1: self.positive_class_weight, 0: 1},
             **params,
-        )
+        }
 
     def delete_optuna_study(self, study_name: str) -> None:
         """
@@ -841,23 +794,36 @@ class OptunaHyperparameterOptimisation:
     def suggest_hyperparams_from_ranges(
         self,
         trial,
-        hyperparameter_ranges: dict[str, dict],
+        hyperparameter_search_dict: dict[str, dict],
     ) -> dict[str, Any]:
         hyperparameter_values = {}
-        for param, range_dict in hyperparameter_ranges.items():
-            if range_dict["suggest_type"] == "int":
-                hyperparameter_values[param] = trial.suggest_int(
+        for suggest_type, hyperparameter_ranges in hyperparameter_search_dict.items():
+            if suggest_type == "singular":
+                hyperparameter_values.update(hyperparameter_ranges)
+
+            elif suggest_type == "suggest_int":
+                for param, params_range in hyperparameter_ranges.items():
+                    hyperparameter_values[param] = trial.suggest_int(
+                        name=param,
+                        low=params_range["low"],
+                        high=params_range["high"],
+                    )
+
+            elif suggest_type == "suggest_float":
+                for param, params_range in hyperparameter_ranges.items():
+                    hyperparameter_values[param] = trial.suggest_float(
+                        name=param,
+                        low=params_range["low"],
+                        high=params_range["high"],
+                        log=params_range["log"],
+                    )
+            # TO DO: Test this
+            if suggest_type == "categorical":
+                hyperparameter_values[param] = trial.suggest_categorical(
                     name=param,
-                    low=range_dict["low"],
-                    high=range_dict["high"],
+                    choices=params_range["categories"],
                 )
-            elif range_dict["suggest_type"] == "float":
-                hyperparameter_values[param] = trial.suggest_float(
-                    name=param,
-                    low=range_dict["low"],
-                    high=range_dict["high"],
-                    log=range_dict["log"],
-                )
+
         return hyperparameter_values
 
 
