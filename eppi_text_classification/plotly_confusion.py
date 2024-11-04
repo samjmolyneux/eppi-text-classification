@@ -57,10 +57,10 @@ def binary_train_valid_confusion_plotly(
 
     """
     labels = ["0", "1"]
-    cm1 = confusion_matrix(y_train, y_train_pred)
+    cm1 = confusion_matrix(y_train, y_train_pred, labels=[0, 1])
     cm1 = np.array([[cm1[0, 1], cm1[0, 0]], [cm1[1, 1], cm1[1, 0]]])
 
-    cm2 = confusion_matrix(y_val, y_val_pred)
+    cm2 = confusion_matrix(y_val, y_val_pred, labels=[0, 1])
     cm2 = np.array([[cm2[0, 1], cm2[0, 0]], [cm2[1, 1], cm2[1, 0]]])
 
     fig = make_subplots(
@@ -381,13 +381,13 @@ def binary_train_valid_test_confusion_plotly(
 
     """
     labels = ["0", "1"]
-    cm1 = confusion_matrix(y_train, y_train_pred)
+    cm1 = confusion_matrix(y_train, y_train_pred, labels=[0, 1])
     cm1 = np.array([[cm1[0, 1], cm1[0, 0]], [cm1[1, 1], cm1[1, 0]]])
 
-    cm2 = confusion_matrix(y_val, y_val_pred)
+    cm2 = confusion_matrix(y_val, y_val_pred, labels=[0, 1])
     cm2 = np.array([[cm2[0, 1], cm2[0, 0]], [cm2[1, 1], cm2[1, 0]]])
 
-    cm3 = confusion_matrix(y_test, y_test_pred)
+    cm3 = confusion_matrix(y_test, y_test_pred, labels=[0, 1])
     cm3 = np.array([[cm3[0, 1], cm3[0, 0]], [cm3[1, 1], cm3[1, 0]]])
 
     fig = make_subplots(
