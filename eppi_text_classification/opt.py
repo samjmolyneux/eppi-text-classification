@@ -564,7 +564,7 @@ class OptunaHyperparameterOptimisation:
         # num_grad_quant_bins, quant_train_renwew_leaf, stochastic_rounding,
         # max_bin_by_feature, is_enable_sparse, enable_bundle, use_missing,
         # zero_as_missing, pre_partition, use_two_round_loading, header,
-        # label_column, weight_column, group_column, ignore_column, 
+        # label_column, weight_column, group_column, ignore_column,
         # categegorical_feature, forcedbins_filename, save_binary,
         # precise_float_parser, parser_config_file
         return {
@@ -912,53 +912,62 @@ class OptunaHyperparameterOptimisation:
         self,
         trial,
         hyperparameter_search_dict: dict[str, dict],
-        already_assgined_params: None | dict = None,
     ) -> dict[str, Any]:
         final_hyperparameter_values = {}
-        for param, param_range_dict in hyperparameter_search_dict.items():
-            # Need to check if the param is dependent on any other params
-            # If it is, we need to check that the parent param has been assigned to a
-            # value that means that this param should be set, if not, this param should
-            # not be set
-            if param in model_hyperparameter_dependencies[self.model_name]:
-                params_dependencies = model_hyperparameter_dependencies[
+        unassigned_hyperparams = set(hyperparameter_search_dict.keys())
+        progress_made = True
+
+        while progress_made is True:
+            progress_made = False
+            # We cast to list because we will be removing elements from the set
+            for hyperparameter in list(unassigned_hyperparams):
+                param_dependencies_dict = model_hyperparameter_dependencies[
                     self.model_name
-                ][param]
+                ].get(hyperparameter, [])
 
-                for parent_param, eligible_values in params_dependencies.items():
-                    if parent_param not in already_assgined_params:
-                        continue
-                    parent_param_assigned_value = already_assgined_params[parent_param]
-                    if parent_param_assigned_value not in eligible_values:
-                        continue
+                # We can set the param if all dependent keys are set correctly
+                if all(
+                    final_hyperparameter_values[dependency] in valid_values
+                    for dependency, valid_values in param_dependencies_dict.items()
+                ):
+                    param_range_dict = hyperparameter_search_dict[hyperparameter]
 
-            # Otherwise, this param should be set, because it is either not dependent on
-            # other params or the parent params have been assigned values that mean this
-            # param should be set
-            if param_range_dict["suggest_type"] == "singular":
-                final_hyperparameter_values[param] = param_range_dict["value"]
+                    # Otherwise, this param should be set, because it is either not dependent on
+                    # other params or the parent params have been assigned values that mean this
+                    # param should be set
+                    if param_range_dict["suggest_type"] == "singular":
+                        final_hyperparameter_values[hyperparameter] = param_range_dict[
+                            "value"
+                        ]
 
-            elif param_range_dict["suggest_type"] == "int":
-                final_hyperparameter_values[param] = trial.suggest_int(
-                    name=param,
-                    low=param_range_dict["low"],
-                    high=param_range_dict["high"],
-                    log=param_range_dict["log"],
-                )
+                    elif param_range_dict["suggest_type"] == "int":
+                        final_hyperparameter_values[hyperparameter] = trial.suggest_int(
+                            name=hyperparameter,
+                            low=param_range_dict["low"],
+                            high=param_range_dict["high"],
+                            log=param_range_dict["log"],
+                        )
 
-            elif param_range_dict["suggest_type"] == "float":
-                final_hyperparameter_values[param] = trial.suggest_float(
-                    name=param,
-                    low=param_range_dict["low"],
-                    high=param_range_dict["high"],
-                    log=param_range_dict["log"],
-                )
-            # TO DO: Test this
-            elif param_range_dict["suggest_type"] == "categorical":
-                final_hyperparameter_values[param] = trial.suggest_categorical(
-                    name=param,
-                    choices=param_range_dict["choices"],
-                )
+                    elif param_range_dict["suggest_type"] == "float":
+                        final_hyperparameter_values[hyperparameter] = (
+                            trial.suggest_float(
+                                name=hyperparameter,
+                                low=param_range_dict["low"],
+                                high=param_range_dict["high"],
+                                log=param_range_dict["log"],
+                            )
+                        )
+                    # TO DO: Test this
+                    elif param_range_dict["suggest_type"] == "categorical":
+                        final_hyperparameter_values[hyperparameter] = (
+                            trial.suggest_categorical(
+                                name=hyperparameter,
+                                choices=param_range_dict["choices"],
+                            )
+                        )
+
+                    unassigned_hyperparams.remove(hyperparameter)
+                    progress_made = True
 
         return final_hyperparameter_values
 
