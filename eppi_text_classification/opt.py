@@ -59,6 +59,7 @@ if TYPE_CHECKING:
 # Verbosity, objective, n_jobs and scale_pos_weight cannot be changed
 
 default_hyperparameter_ranges = {
+    # TO DO: change default to linear
     "SVC": {
         # INTS
         # FLOATS
@@ -80,6 +81,9 @@ default_hyperparameter_ranges = {
         "reg_alpha": {"low": 1e-4, "high": 100, "log": True, "suggest_type": "float"},
         "learning_rate": {"low": 1e-2, "high": 1, "log": True, "suggest_type": "float"},
         # SINGULAR
+        "booster": {"value": "gbtree", "suggest_type": "singular"},
+        "tree_method": {"value": "approx", "suggest_type": "singular"},
+        "feature_selector": {"value": "cyclic", "suggest_type": "singular"},
         # CATEGORICAL
     },
     "LGBMClassifier": {
@@ -115,8 +119,11 @@ default_hyperparameter_ranges = {
         "reg_alpha": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
         "reg_lambda": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
         # SINGULAR
-        "subsample": {"value": 1.0, "suggest_type": "singular"},
+        "data_sample_strategy": {"value": "bagging", "suggest_type": "singular"},
         "boosting_type": {"value": "gbdt", "suggest_type": "singular"},
+        "tree_learner": {"value": "serial", "suggest_type": "singular"},
+        "use_quantized_grad": {"value": False, "suggest_type": "singular"},
+        "subsample": {"value": 1.0, "suggest_type": "singular"},
         "subsample_for_bin": {"value": 20000, "suggest_type": "singular"},
         # CATEGORICAL
     },
@@ -133,7 +140,7 @@ default_hyperparameter_ranges = {
         "max_depth": {"value": None, "suggest_type": "singular"},
         "max_features": {"value": "sqrt", "suggest_type": "singular"},
         "max_leaf_nodes": {"value": None, "suggest_type": "singular"},
-        "bootstrap": {"value": False, "suggest_type": "singular"},
+        "bootstrap": {"value": True, "suggest_type": "singular"},
         "max_samples": {"value": None, "suggest_type": "singular"},
         "monotonic_cst": {"value": None, "suggest_type": "singular"},
         "min_samples_split": {"value": 2, "suggest_type": "singular"},
@@ -159,6 +166,7 @@ model_hyperparameter_dependencies = {
         "gamma": {"booster": ["gbtree", "dart"]},
         "max_depth": {"booster": ["gbtree", "dart"]},
         "min_child_weight": {"booster": ["gbtree", "dart"]},
+        "subsample": {"booster": ["gbtree", "dart"]},
         "max_delta_step": {"booster": ["gbtree", "dart"]},
         "tree_method": {"booster": ["gbtree", "dart"]},
         "grow_plolicy": {
@@ -169,6 +177,7 @@ model_hyperparameter_dependencies = {
             "booster": ["gbtree", "dart"],
             "tree_method": ["hist", "approx", "auto"],
         },
+        # ?
         "max_bin": {
             "booster": ["gbtree", "dart"],
             "tree_method": ["hist", "approx", "auto"],
@@ -179,8 +188,28 @@ model_hyperparameter_dependencies = {
         "rate_drop": {"booster": ["dart"]},
         "one_drop": {"booster": ["dart"]},
         "skip_drop": {"booster": ["dart"]},
+        "updater": {"booster": ["gblinear"]},
+        "feature_selector": {"booster": ["gblinear"]},
+        "top_k": {
+            "booster": ["gblinear"],
+            "feature_selector": ["greedy", "thrifty"],
+        },
     },
-    "LGBMClassifier": {},
+    "LGBMClassifier": {
+        "bagging_freq": {"data_sample_strategy": ["bagging"]},
+        "bagging_fraction": {"data_sample_strategy": ["bagging"]},
+        "drop_rate": {"boosting_type": ["dart"]},
+        "max_drop": {"boosting_type": ["dart"]},
+        "skip_drop": {"boosting_type": ["dart"]},
+        "xgboost_dart_mode": {"boosting_type": ["dart"]},
+        "uniform_drop": {"boosting_type": ["dart"]},
+        "top_rate": {"data_sample_strategy": ["goss"]},
+        "other_rate": {"data_sample_strategy": ["goss"]},
+        "top_k": {"tree_learner": ["voting"]},
+        "num_grad_quant_bins": {"use_quantized_grad": [True]},
+        "quant_train_renew_leaf": {"use_quantized_grad": [True]},
+        "stochastic_rounding": {"use_quantized_grad": [True]},
+    },
     "RandomForestClassifier": {
         "oob_score": {"bootstrap": [True]},
         "max_samples": {"bootstrap": [True]},
@@ -569,11 +598,13 @@ class OptunaHyperparameterOptimisation:
         # precise_float_parser, parser_config_file
         return {
             "verbosity": -1,
-            "subsample": 1.0,
+            # "subsample": 1.0,
             "objective": "binary",
             "scale_pos_weight": self.positive_class_weight,
             "n_jobs": 1,
             "device": "cpu",
+            "force_col_wise": False,
+            "force_row_wise": False,
             **params,
         }
 
@@ -599,8 +630,8 @@ class OptunaHyperparameterOptimisation:
         )
 
         # Also, dont use max_cat_to_onehot, max_cat_threshold, multi_strategy,
-        # early_stopping_rounds, eval_metric, callbacks, updater, process_type,
-        # colsample_by*, refresh_leaf, max_cached_hist_node, feature_selector,top_k
+        # early_stopping_rounds, eval_metric, callbacks, process_type,
+        # colsample_by*, refresh_leaf, max_cached_hist_node,
         return {
             "verbosity": 0,
             "objective": "binary:logistic",
@@ -631,29 +662,9 @@ class OptunaHyperparameterOptimisation:
             The selected hyperparameters for the SVC model.
 
         """
-        # Other hyperparams depend on kernel, so we must assign it first
-        if "kernel" in self.final_hyperparameter_search_ranges:
-            kernel_param = self.suggest_hyperparams_from_ranges(
-                trial, {"kernel": self.final_hyperparameter_search_ranges["kernel"]}
-            )
-
-            # Once we have assigned the kernel, we can assign the rest
-            hyperparameter_ranges_without_kernel = {
-                k: v
-                for k, v in self.final_hyperparameter_search_ranges.items()
-                if k != "kernel"
-            }
-
-            params = self.suggest_hyperparams_from_ranges(
-                trial, hyperparameter_ranges_without_kernel
-            )
-
-            params["kernel"] = kernel_param["kernel"]
-
-        else:
-            params = self.suggest_hyperparams_from_ranges(
-                trial, self.final_hyperparameter_search_ranges
-            )
+        params = self.suggest_hyperparams_from_ranges(
+            trial, self.final_hyperparameter_search_ranges
+        )
 
         # TO DO: Sort these params out
         return {
@@ -682,30 +693,9 @@ class OptunaHyperparameterOptimisation:
             The selected hyperparameters for the Random Forest model.
 
         """
-        # Other hyperparams depend on bootstrap, so we must assign it first
-        if "bootstrap" in self.final_hyperparameter_search_ranges:
-            bootstrap_param = self.suggest_hyperparams_from_ranges(
-                trial,
-                {"bootstrap": self.final_hyperparameter_search_ranges["bootstrap"]},
-            )
-
-            # Once we have assigned the bootstrap, we can assign the rest
-            hyperparameter_ranges_without_bootstrap = {
-                k: v
-                for k, v in self.final_hyperparameter_search_ranges.items()
-                if k != "bootstrap"
-            }
-
-            params = self.suggest_hyperparams_from_ranges(
-                trial, hyperparameter_ranges_without_bootstrap
-            )
-
-            params["bootstrap"] = bootstrap_param["bootstrap"]
-
-        else:
-            params = self.suggest_hyperparams_from_ranges(
-                trial, self.final_hyperparameter_search_ranges
-            )
+        params = self.suggest_hyperparams_from_ranges(
+            trial, self.final_hyperparameter_search_ranges
+        )
 
         # Dont use monotonic_cst
         return {
@@ -910,64 +900,95 @@ class OptunaHyperparameterOptimisation:
 
     def suggest_hyperparams_from_ranges(
         self,
-        trial,
+        trial: optuna.trial.Trial,
         hyperparameter_search_dict: dict[str, dict],
     ) -> dict[str, Any]:
         final_hyperparameter_values = {}
         unassigned_hyperparams = set(hyperparameter_search_dict.keys())
-        progress_made = True
 
-        while progress_made is True:
-            progress_made = False
-            # We cast to list because we will be removing elements from the set
+        while len(unassigned_hyperparams) > 0:
+            progress_flag = False
+
             for hyperparameter in list(unassigned_hyperparams):
                 param_dependencies_dict = model_hyperparameter_dependencies[
                     self.model_name
                 ].get(hyperparameter, [])
 
-                # We can set the param if all dependent keys are set correctly
+                # We can set the param if all parent keys satisfy dependent condition
                 if all(
-                    final_hyperparameter_values[dependency] in valid_values
-                    for dependency, valid_values in param_dependencies_dict.items()
+                    dependency in final_hyperparameter_values
+                    for dependency in param_dependencies_dict
                 ):
-                    param_range_dict = hyperparameter_search_dict[hyperparameter]
+                    if all(
+                        final_hyperparameter_values[dependency] in valid_values
+                        for dependency, valid_values in param_dependencies_dict.items()
+                    ):
+                        param_range_dict = hyperparameter_search_dict[hyperparameter]
 
-                    # Otherwise, this param should be set, because it is either not dependent on
-                    # other params or the parent params have been assigned values that mean this
-                    # param should be set
-                    if param_range_dict["suggest_type"] == "singular":
-                        final_hyperparameter_values[hyperparameter] = param_range_dict[
-                            "value"
-                        ]
-
-                    elif param_range_dict["suggest_type"] == "int":
-                        final_hyperparameter_values[hyperparameter] = trial.suggest_int(
-                            name=hyperparameter,
-                            low=param_range_dict["low"],
-                            high=param_range_dict["high"],
-                            log=param_range_dict["log"],
-                        )
-
-                    elif param_range_dict["suggest_type"] == "float":
-                        final_hyperparameter_values[hyperparameter] = (
-                            trial.suggest_float(
-                                name=hyperparameter,
-                                low=param_range_dict["low"],
-                                high=param_range_dict["high"],
-                                log=param_range_dict["log"],
+                        # Otherwise, this param should be set, because it is either not dependent on
+                        # other params or the parent params have been assigned values that mean this
+                        # param should be set
+                        if param_range_dict["suggest_type"] == "singular":
+                            final_hyperparameter_values[hyperparameter] = (
+                                param_range_dict["value"]
                             )
-                        )
-                    # TO DO: Test this
-                    elif param_range_dict["suggest_type"] == "categorical":
-                        final_hyperparameter_values[hyperparameter] = (
-                            trial.suggest_categorical(
-                                name=hyperparameter,
-                                choices=param_range_dict["choices"],
-                            )
-                        )
 
+                        elif param_range_dict["suggest_type"] == "int":
+                            final_hyperparameter_values[hyperparameter] = (
+                                trial.suggest_int(
+                                    name=hyperparameter,
+                                    low=param_range_dict["low"],
+                                    high=param_range_dict["high"],
+                                    log=param_range_dict["log"],
+                                )
+                            )
+
+                        elif param_range_dict["suggest_type"] == "float":
+                            final_hyperparameter_values[hyperparameter] = (
+                                trial.suggest_float(
+                                    name=hyperparameter,
+                                    low=param_range_dict["low"],
+                                    high=param_range_dict["high"],
+                                    log=param_range_dict["log"],
+                                )
+                            )
+                        # TO DO: Test this
+                        elif param_range_dict["suggest_type"] == "categorical":
+                            final_hyperparameter_values[hyperparameter] = (
+                                trial.suggest_categorical(
+                                    name=hyperparameter,
+                                    choices=param_range_dict["choices"],
+                                )
+                            )
+
+                        unassigned_hyperparams.remove(hyperparameter)
+                        progress_flag = True
+
+                    else:
+                        # If we have all the dependencies, but the values are not valid, we must
+                        # remove the hyperparameter from the list of unassigned hyperparameters
+                        unassigned_hyperparams.remove(hyperparameter)
+                        progress_flag = True
+
+                elif any(
+                    (
+                        (dependency not in final_hyperparameter_values)
+                        and (dependency not in unassigned_hyperparams)
+                    )
+                    for dependency in param_dependencies_dict
+                ):
+                    # If we are missing a dependency, we must remove the hyperparameter from the
+                    # list of unassigned hyperparameters
                     unassigned_hyperparams.remove(hyperparameter)
-                    progress_made = True
+                    progress_flag = True
+
+            if progress_flag is False:
+                msg = (
+                    "Hyperaparameter suggestion failed a pass. This means "
+                    "the dependencies have been set incorrecty "
+                    "or the hyperparameter ranges are incorrect."
+                )
+                raise ValueError(msg)
 
         return final_hyperparameter_values
 
