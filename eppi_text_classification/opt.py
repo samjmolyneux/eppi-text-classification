@@ -133,7 +133,7 @@ default_hyperparameter_ranges = {
             "low": 100,
             "high": 1000,
             "log": False,
-            "data_type": "int",
+            "suggest_type": "int",
         },
         # SINGULAR
         "criterion": {"value": "gini", "suggest_type": "singular"},
@@ -402,11 +402,13 @@ class OptunaHyperparameterOptimisation:
             return default_ranges
 
         final_ranges = {}
-        for param, range_dict in default_ranges.items():
-            final_ranges[param] = user_selected_ranges.get(
-                param,
-                range_dict,
-            )
+        # TO DO: This is broken
+        all_params = set(default_ranges.keys()).union(user_selected_ranges.keys())
+        for param in all_params:
+            if param in user_selected_ranges:
+                final_ranges[param] = user_selected_ranges[param]
+            else:
+                final_ranges[param] = default_ranges[param]
 
         print(final_ranges)
         return final_ranges
@@ -912,7 +914,7 @@ class OptunaHyperparameterOptimisation:
             for hyperparameter in list(unassigned_hyperparams):
                 param_dependencies_dict = model_hyperparameter_dependencies[
                     self.model_name
-                ].get(hyperparameter, [])
+                ].get(hyperparameter, {})
 
                 # We can set the param if all parent keys satisfy dependent condition
                 if all(
@@ -923,6 +925,8 @@ class OptunaHyperparameterOptimisation:
                         final_hyperparameter_values[dependency] in valid_values
                         for dependency, valid_values in param_dependencies_dict.items()
                     ):
+                        if hyperparameter == "oob_score":
+                            print("inside")
                         param_range_dict = hyperparameter_search_dict[hyperparameter]
 
                         # Otherwise, this param should be set, because it is either not dependent on
