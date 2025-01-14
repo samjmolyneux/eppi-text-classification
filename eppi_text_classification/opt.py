@@ -1,6 +1,7 @@
 """Methods for optimsing hyperparameters for models."""
 
 import copy
+import warnings
 from dataclasses import asdict, dataclass, field
 from multiprocessing import cpu_count
 from multiprocessing.shared_memory import SharedMemory
@@ -8,11 +9,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import jsonpickle
+import lightgbm as lgb
 import numpy as np
 import optuna
 
 # from optuna._imports import _LazyImport
 import scipy.stats as ss
+import xgboost as xgb
 from joblib import Parallel, delayed
 from lightgbm import LGBMClassifier
 from numpy.typing import NDArray
@@ -72,7 +75,7 @@ default_hyperparameter_ranges = {
         "tol": {"value": 1e-5, "suggest_type": "singular"},
         # CATEGORICAL
     },
-    "XGBClassifier": {
+    "xgboost": {
         # INTS
         "n_estimators": {"low": 100, "high": 1000, "log": False, "suggest_type": "int"},
         "max_depth": {"low": 1, "high": 5, "log": False, "suggest_type": "int"},
@@ -84,9 +87,10 @@ default_hyperparameter_ranges = {
         "booster": {"value": "gbtree", "suggest_type": "singular"},
         "tree_method": {"value": "approx", "suggest_type": "singular"},
         "feature_selector": {"value": "cyclic", "suggest_type": "singular"},
+        "verbosity": {"value": 2, "suggest_type": "singular"},
         # CATEGORICAL
     },
-    "LGBMClassifier": {
+    "lightgbm": {
         # INTS
         "max_depth": {"low": 1, "high": 15, "log": False, "suggest_type": "int"},
         "min_child_samples": {
@@ -161,7 +165,7 @@ model_hyperparameter_dependencies = {
         "coef0": {"kernel": ["poly", "sigmoid"]},
         "gamma": {"kernel": ["rbf", "poly", "sigmoid"]},
     },
-    "XGBClassifier": {
+    "xgboost": {
         "learning_rate": {"booster": ["gbtree", "dart"]},
         "gamma": {"booster": ["gbtree", "dart"]},
         "max_depth": {"booster": ["gbtree", "dart"]},
@@ -195,7 +199,7 @@ model_hyperparameter_dependencies = {
             "feature_selector": ["greedy", "thrifty"],
         },
     },
-    "LGBMClassifier": {
+    "lightgbm": {
         "bagging_freq": {"data_sample_strategy": ["bagging"]},
         "bagging_fraction": {"data_sample_strategy": ["bagging"]},
         "drop_rate": {"boosting_type": ["dart"]},
@@ -216,18 +220,11 @@ model_hyperparameter_dependencies = {
     },
 }
 
-model_name_to_model_class = {
-    "SVC": SVC,
-    "LGBMClassifier": LGBMClassifier,
-    "RandomForestClassifier": RandomForestClassifier,
-    "XGBClassifier": XGBClassifier,
-}
-
 model_name_to_selector = {
     "SVC": "select_svc_hyperparameters",
-    "LGBMClassifier": "select_lgbm_hyperparameters",
+    "lightgbm": "select_lgbm_hyperparameters",
     "RandomForestClassifier": "select_rand_forest_hyperparameters",
-    "XGBClassifier": "select_xgb_hyperparameters",
+    "xgboost": "select_xgb_hyperparameters",
 }
 
 
@@ -333,7 +330,6 @@ class OptunaHyperparameterOptimisation:
             self.n_jobs = n_jobs
         print(f"Number of processes: {self.n_jobs}")
 
-        self.model_class = model_name_to_model_class[model_name]
         self.select_hyperparameters = getattr(self, model_name_to_selector[model_name])
 
         self.setup_database(db_url)
@@ -521,7 +517,6 @@ class OptunaHyperparameterOptimisation:
         params = self.select_hyperparameters(trial)
         serialized_params = jsonpickle.encode(params, keys=True)
         trial.set_user_attr("all_params", serialized_params)
-        clf = self.model_class(**params)
 
         # Calculate the cross validation score
         scores = []
@@ -537,7 +532,7 @@ class OptunaHyperparameterOptimisation:
                 y_train = self.labels[train_idx]
                 y_val = self.labels[val_idx]
 
-                clf.fit(X_train, y_train)
+                clf = _train_model(self.model_name, params, X_train, y_train)
 
                 y_val_pred = _predict_scores(clf, X_val)
 
@@ -599,8 +594,7 @@ class OptunaHyperparameterOptimisation:
         # categegorical_feature, forcedbins_filename, save_binary,
         # precise_float_parser, parser_config_file
         return {
-            "verbosity": -1,
-            # "subsample": 1.0,
+            "verbosity": 0,
             "objective": "binary",
             "scale_pos_weight": self.positive_class_weight,
             "n_jobs": 1,
@@ -635,7 +629,7 @@ class OptunaHyperparameterOptimisation:
         # early_stopping_rounds, eval_metric, callbacks, process_type,
         # colsample_by*, refresh_leaf, max_cached_hist_node,
         return {
-            "verbosity": 0,
+            "verbosity": 2,
             "objective": "binary:logistic",
             "eval_metric": "logloss",
             "scale_pos_weight": self.positive_class_weight,
@@ -1022,8 +1016,84 @@ def _predict_scores(
 ) -> NDArray[np.float64] | NDArray[np.float32]:
     if isinstance(model, LGBMClassifier):
         return model.predict(X, raw_score=True)
-    if isinstance(model, XGBClassifier):
-        return model.predict(X, output_margin=True)
+    if isinstance(model, xgb.core.Booster):
+        dtrain = xgb.DMatrix(X)
+        return model.predict(dtrain, output_margin=True)
     if isinstance(model, RandomForestClassifier):
         return model.predict_proba(X)[:, 1]
     return model.decision_function(X)
+
+
+def _train_model(
+    model_name: str,
+    params: dict[str, Any],
+    X: "csr_matrix",
+    y: NDArray[np.int64],
+) -> NDArray[np.float64] | NDArray[np.float32]:
+    if model_name == "lightgbm":
+        with SuppressStderr(
+            [
+                "No further splits with positive gain, best gain: -inf",
+                "Stopped training because there are no more leaves that meet the split requirements",
+            ]
+        ):
+            dtrain = lgb.Dataset(X, label=y, free_raw_data=True)
+            model = LGBMClassifier(**params)
+            model.fit(X, y)
+        return model
+
+    if model_name == "xgboost":
+        train_params = copy.deepcopy(params)
+        num_boost_round = train_params.pop("n_estimators")
+        # enable categorical is always false
+        enable_categorical = train_params.pop("enable_categorical")
+        dtrain = xgb.DMatrix(X, label=y, enable_categorical=enable_categorical)
+        # xgboost.train ignores params it cannot use
+        model = xgb.train(
+            train_params,
+            dtrain,
+            num_boost_round=num_boost_round,
+        )
+        return model
+
+    if model_name == "RandomForestClassifier":
+        model = RandomForestClassifier(**params)
+        model.fit(X, y)
+        return model
+
+    if model_name == "SVC":
+        model = SVC(**params)
+        model.fit(X, y)
+        return model
+
+    print(f"model is {model}")
+    msg = "Model not recognised."
+    raise ValueError(msg)
+
+
+import sys
+from io import StringIO
+
+
+class SuppressStderr:
+    def __init__(self, messages):
+        self.messages = messages
+        self.original_stdout = sys.stdout
+
+    def __enter__(self):
+        # Redirect stderr to this context manager
+        sys.stdout = self
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # Restore the original stderr
+        sys.stdout = self.original_stdout
+
+    def write(self, output: str):
+        # Suppress messages containing the keyword
+        if all(message not in output for message in self.messages):
+            if not output.isspace():
+                self.original_stdout.write(output)
+
+    def flush(self):
+        pass  # To match `sys.stderr` behavior
