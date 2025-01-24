@@ -3,6 +3,7 @@
 import warnings
 from typing import TYPE_CHECKING
 
+import json
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,7 +12,7 @@ from matplotlib import cm
 from matplotlib.axes import Axes
 from matplotlib.text import Text
 from numpy.typing import NDArray
-from scipy.sparse import csr_matrix
+import scipy.sparse as sp
 
 from . import predict_scores
 from . import shap_colors as colors
@@ -24,6 +25,12 @@ if TYPE_CHECKING:
     from xgboost import XGBClassifier
 
 
+model_class_to_name = {
+    "lightgbm.basic.Booster": "lgbmclassifier",
+    "sklearn.ensemble._forest.RandomForestClassifier": "randomforestclassifier",
+    "xgboost.core.Booster": "xgbclassifier",
+    "sklearn.svm._classes.SVC": "svc",
+}
 # Considerations: The number of samples that are calculated to get the kernel explainer
 # shap values should be adjusted
 
@@ -59,8 +66,8 @@ class DecisionPlot:
         self,
         expected_value: float,
         threshold: float,
-        shap_values: csr_matrix,
-        X_test: csr_matrix,
+        shap_values: sp.csr_matrix,
+        X_test: sp.csr_matrix,
         feature_names: NDArray[np.str_],
         num_display: int,
         log_scale: bool,
@@ -76,10 +83,10 @@ class DecisionPlot:
         threshold : float
             Decision threshold for the model output.
 
-        shap_values : csr_matrix
+        shap_values : sp.csr_matrix
             SHAP values for the model's features. (#Samples, #Features)
 
-        X_test : csr_matrix
+        X_test : sp.csr_matrix
             Data used for calculating SHAP values. (#Samples, #Features)
 
         feature_names : list[str]
@@ -258,8 +265,8 @@ class DotPlot:
 
     def __init__(
         self,
-        shap_values: csr_matrix,
-        X_test: csr_matrix,
+        shap_values: sp.csr_matrix,
+        X_test: sp.csr_matrix,
         feature_names: NDArray[np.str_],
         num_display: int,
         log_scale: bool,
@@ -268,10 +275,10 @@ class DotPlot:
         """
         Initialize the DotPlot object.
 
-        shap_values : csr_matrix
+        shap_values : sp.csr_matrix
             SHAP values for the model's features. (#Samples, #Features).
 
-        X_test : csr_matrix
+        X_test : sp.csr_matrix
             Data used for calculating SHAP values. (#Samples, #Features)
 
         feature_names : list[str]
@@ -305,7 +312,7 @@ class DotPlot:
         plt.savefig(filename)
 
     def _make_plot(self) -> None:
-        summary_new(
+        sparse_summary_new(
             shap_values=self.shap_values,
             features=self.X_test,
             feature_names=self.feature_names,
@@ -323,18 +330,18 @@ class BarPlot:
 
     def __init__(
         self,
-        shap_values: csr_matrix,
-        X_test: csr_matrix,
+        shap_values: sp.csr_matrix,
+        X_test: sp.csr_matrix,
         feature_names: NDArray[np.str_],
         num_display: int,
     ) -> None:
         """
         Initialize the Barplot object.
 
-        shap_values : csr_matrix
+        shap_values : sp.csr_matrix
             SHAP values for the model's features. (#Samples, #Features).
 
-        X_test : csr_matrix
+        X_test : sp.csr_matrix
             Data used for calculating SHAP values. (#Samples, #Features)
 
         feature_names : list[str]
@@ -360,7 +367,7 @@ class BarPlot:
         plt.savefig(filename)
 
     def _make_plot(self) -> None:
-        summary_new(
+        sparse_summary_new(
             shap_values=self.shap_values,
             features=self.X_test,
             feature_names=self.feature_names,
@@ -381,7 +388,7 @@ class ShapPlotter:
     def __init__(
         self,
         model: "LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC",
-        X_test: csr_matrix,
+        X_test: sp.csr_matrix,
         feature_names: NDArray[np.str_],
         tree_path_dependent: bool = False,
         kernel_nsamples: int | str = "auto",
@@ -404,7 +411,7 @@ class ShapPlotter:
         model : LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC
             Model to calculate SHAP values.
 
-        X_test : csr_matrix
+        X_test : sp.csr_matrix
             Data to use on model for calculating SHAP values. (#Samples, #Features)
 
         feature_names : list[str]
@@ -427,31 +434,29 @@ class ShapPlotter:
             Should be deleted once the tree explainer is fixed for sparse matrices.
 
         """
-        check_size_xtest_not_too_large(X_test)
+        # check_size_xtest_not_too_large(X_test)
         self.model = model
         self.X_test = X_test
         self.feature_names = feature_names
         self.tree_path_dependent = tree_path_dependent
         self.kernel_nsamples = kernel_nsamples
 
-        self.background_data = csr_matrix((1, X_test.shape[-1]))
-
-        self.shap_values: csr_matrix
+        self.shap_values: sp.csr_matrix
         self.expected_value: float
 
         # Setup the explantation for plotting
         if tree_explainer_working:
-            model_name = self.model.__class__.__name__
+            self.model_name = model_class_to_name[self.model.__class__]
             perform_explanation_func = getattr(
-                self, f"{model_name.lower()}_setup", None
+                self, f"{self.model_name.lower()}_setup", None
             )
         else:
-            perform_explanation_func = self.temporary_setup_for_kernel
+            perform_explanation_func = self.setup_kernel_explainer
 
         if perform_explanation_func is None:
-            msg = f"No setup function for model type {model_name}"
+            msg = f"No setup function for model type {self.model_name}"
             raise ValueError(msg)
-        perform_explanation_func()
+        self.shap_values, self.expected_value = perform_explanation_func()
 
     def dot_plot(
         self, num_display: int = 10, log_scale: bool = True, plot_zero: bool = False
@@ -570,43 +575,63 @@ class ShapPlotter:
 
     def lgbmclassifier_setup(self) -> None:
         """Set up ShapPlotter for lgbm models."""
-        self.setup_tree_explainer()
-        self.shap_values = self.explainer.shap_values(self.X_test)
-        self.expected_value = self.explainer.expected_value
+        return self.setup_tree_explainer()
 
     def xgbclassifier_setup(self) -> None:
         """Set up ShapPlotter for xgb models."""
-        self.setup_tree_explainer()
-        self.shap_values = self.explainer.shap_values(self.X_test)
-        self.expected_value = self.explainer.expected_value
+        if self.model.attr("boosting_type") != "gblinear":
+            return self.setup_tree_explainer()
+        else:
+            raw_dump = self.model.get_dump(dump_format="json")
+            parsed_dump = json.loads(raw_dump[0])  # gblinear dump is stored in index 0
+            coefficients = np.array(parsed_dump["weight"])  # Coefficients for features
+            intercept = parsed_dump["bias"]        
+
+            background_data = np.zeros((1, self.X_test.shape[-1]))
+            self.explainer = shap.LinearExplainer((coefficients, intercept), background_data)
+
+            processed_chunks = []
+            for i in range(0, self.X_test[0], 1000):
+                chunk = self.X_test[i:i+1000]
+                chunk_array = chunk.toarray()
+                processed_chunks.append(sp.csr_matrix(self.shap_values(chunk_array)))
+            
+            shap_values = sp.csr_matrix(sp.vstack(processed_chunks))
+            expected_value = self.explainer.expected_value[0]
+            return shap_values, expected_value
 
     def randomforestclassifier_setup(self) -> None:
         """Set up ShapPlotter for random forest models."""
-        self.setup_tree_explainer()
-        self.shap_values = self.explainer.shap_values(self.X_test)
-        self.shap_values = self.shap_values[:, :, 1]
-        self.expected_value = self.explainer.expected_value[1]
+        return self.setup_tree_explainer()
 
     def svc_setup(self) -> None:
         """Set up ShapPlotter for SVC models."""
-        self.explainer = shap.KernelExplainer(
-            self.model.decision_function, self.background_data
-        )
-        self.shap_values = self.explainer.shap_values(
-            self.X_test, nsamples=self.kernel_nsamples, l1_reg="aic"
-        )
-        self.expected_value = self.explainer.expected_value
+        return self.setup_kernel_explainer()
+    
+    def tree_shap_values(self):
+        if self.model_name == "lgbmclassifier" or self.model_name == "xgbclassifier":
+            return self.explainer.shap_values(self.X_test)
+        if self.model_name == "randomforestclassifier":
+            return self.explainer.shap_values(self.X_test)[:, :, 1]
+    
+    def tree_expected_value(self):
+        if self.model_name == "lgbmclassifier" or self.model_name == "xgbclassifier":
+            return self.explainer.expected_value
+        if self.model_name == "randomforestclassifier":
+            return self.explainer.expected_value[1]
 
-    def temporary_setup_for_kernel(self) -> None:
+
+    def setup_kernel_explainer(self) -> None:
         """
         Set up ShapPlotter for models with kernel explainer.
 
         This is only to be used temporarily until the treeExplainer is fixed for sparse
         matrices.
         """
+        background_data = sp.csr_matrix((1, self.X_test.shape[-1]))
         # Set up the explainer object
         self.explainer = shap.KernelExplainer(
-            self.temporary_prediction_wrapper_for_kernel_explainer, self.background_data
+            self.temporary_prediction_wrapper_for_kernel_explainer, background_data
         )
 
         # Run the explaination and ignore the warnings
@@ -616,27 +641,33 @@ class ShapPlotter:
             shap_values = self.explainer.shap_values(
                 self.X_test, nsamples=self.kernel_nsamples, l1_reg="aic", silent=True
             )
-        self.shap_values = csr_matrix(shap_values)
-        self.expected_value = self.explainer.expected_value
+        shap_values = sp.csr_matrix(shap_values)
+        expected_value = self.explainer.expected_value
+        return shap_values, expected_value
 
     def setup_tree_explainer(self) -> None:
         """General method to set up tree explainer for tree-based models."""
-        if not self.tree_path_dependent:
-            self.explainer = shap.TreeExplainer(
-                self.model,
-                data=self.background_data,
-                model_output="raw",
-                feature_perturbation="interventional",
-            )
-        else:
-            self.explainer = shap.TreeExplainer(
-                self.model,
-                model_output="raw",
-                feature_perturbation="tree_path_dependent",
-            )
+        # if not self.tree_path_dependent:
+        background_data = np.zeros((1, self.X_test.shape[-1]))
+        self.explainer = shap.TreeExplainer(
+            self.model,
+            data=background_data,
+            model_output="raw",
+            feature_perturbation="interventional",
+        )
+
+        processed_chunks = []
+        for i in range(0, self.X_test[0], 1000):
+            chunk = self.X_test[i:i+1000]
+            chunk_array = chunk.toarray()
+            processed_chunks.append(sp.csr_matrix(self.tree_shap_values(chunk_array)))
+        
+        shap_values = sp.csr_matrix(sp.vstack(processed_chunks))
+        expected_value = self.tree_expected_value()
+        return shap_values, expected_value
 
     def temporary_prediction_wrapper_for_kernel_explainer(
-        self, X: csr_matrix
+        self, X: sp.csr_matrix
     ) -> NDArray[np.float64] | NDArray[np.float32]:
         """
         Temporary function to make predictions for the kernel explainer.
@@ -646,7 +677,7 @@ class ShapPlotter:
 
         Parameters
         ----------
-        X : csr_matrix
+        X : sp.csr_matrix
             Data to make predictions on.
 
         Returns
@@ -659,7 +690,7 @@ class ShapPlotter:
         return scores
 
 
-def check_size_xtest_not_too_large(dataset: csr_matrix) -> None:
+def check_size_xtest_not_too_large(dataset: sp.csr_matrix) -> None:
     """Check the size of the dataset for the SHAP plotter."""
     if len(dataset.shape) != 2:
         msg = f"Dataset must have two dimensions, but got {dataset.shape}."
@@ -670,10 +701,95 @@ def check_size_xtest_not_too_large(dataset: csr_matrix) -> None:
         raise MemoryError(msg)
 
 
-# TO DO: separate into two functions for dot and bars
-def summary_new(
-    shap_values: csr_matrix,
-    features: csr_matrix,
+def add_warning_to_plot_that_all_shap_values_are_zero(ax: Axes) -> None:
+    """Add a warning to the plot that all shap values are zero."""
+    warning_message = """All SHAP values are zero. This means removing words from
+     this data does not affect the model output."""
+    ax.set_title(
+        warning_message,
+        color="red",
+        fontsize=12,
+        fontweight="bold",
+    )
+
+
+def remove_tick_labels_adjacent_to_origin(ax: Axes) -> None:
+    """Remove the x-axis tick labels closest to origin to prevent overlap."""
+    x_ticks = ax.xaxis.get_major_ticks()
+    x_ticks_locs = ax.xaxis.get_ticklocs()
+    for i, loc in enumerate(x_ticks_locs):
+        if (loc == 0) and i > 0 and i < len(x_ticks) - 1:
+            x_ticks[i - 1].label1.set_visible(False)
+            x_ticks[i + 1].label1.set_visible(False)
+
+
+def add_new_threshold_line_to_decision_plot(ax: Axes, threshold: float) -> None:
+    """Add a new threshold line to the decision plot."""
+    ax.axvline(x=threshold, color="black", zorder=1000)
+    threshold_line = mlines.Line2D([], [], color="black", label="Threshold")
+    ax.legend(handles=[threshold_line], loc="best")
+    text_y_position = ax.get_ylim()[1] + 0.4  # Slightly above the top
+    ax.text(
+        threshold,
+        text_y_position,
+        f"{threshold:.3f}",
+        verticalalignment="top",
+        horizontalalignment="left",
+        zorder=1001,
+    )
+
+
+def ignore_unproblematic_warnings_from_kernel_explainer() -> None:
+    """
+    Ignore warnings from kernel explainer that do not affect the output.
+
+    Each warning is thrown due to some problem within the kernel explainer that has not
+    been fixed. To remove these warnings, we require a pull request to the shap package.
+    """
+    # LGBM throws this warning when kernel explainer tries to predict with a lil_matrix
+    warnings.filterwarnings(
+        "ignore",
+        category=UserWarning,
+        message="Converting data to scipy sparse matrix.",
+    )
+    # Xgbost throws this warning when kernel explainer predicts with a lil_matrix
+    warnings.filterwarnings(
+        "ignore",
+        category=UserWarning,
+        message=(
+            "Unknown data type: <class 'scipy.sparse._lil.lil_matrix'>, "
+            "trying to convert it to sp.csr_matrix"
+        ),
+    )
+    # Numpy throws this when kernel explainer tries to run a regression on uniform data
+    warnings.filterwarnings(
+        "ignore",
+        category=RuntimeWarning,
+        message="divide by zero encountered in log",
+    )
+    # Numpy throws this when kernel explainer tries to run a regression on uniform data
+    warnings.filterwarnings(
+        "ignore",
+        category=RuntimeWarning,
+        message="invalid value encountered in divide",
+    )
+
+
+def ignore_unproblematic_warnings_from_decision_plot() -> None:
+    """Ignore warnings from decision plot that do not affect the output."""
+    warnings.filterwarnings(
+        "ignore",
+        category=UserWarning,
+        message=(
+            "Attempting to set identical low and high xlims makes transformation "
+            "singular; automatically expanding."
+        ),
+    )
+
+
+def sparse_summary_new(
+    shap_values: sp.csr_matrix,
+    features: sp.csr_matrix,
     feature_names: NDArray[np.str_],
     plot_type: str,
     max_display: int = 10,
@@ -696,10 +812,10 @@ def summary_new(
 
     Parameters
     ----------
-    shap_values : csr_matrix
+    shap_values : sp.csr_matrix
         SHAP values for the model's features. (#Samples, #Features)
 
-    features : csr_matrix
+    features : sp.csr_matrix
         Data to use on model for calculating SHAP values. (#Samples, #Features)
 
     feature_names : NDArray[np.str_]
@@ -747,22 +863,26 @@ def summary_new(
         Parameter that controls the spread of points vertically within a feature.
 
     """
-    shap_values = shap_values.toarray()
-    features = features.toarray()
-
-    num_of_non_zero_shap_values = np.count_nonzero(shap_values)
+    # All instances of features and shap values to be converted to csr matriz
+    num_of_non_zero_shap_values = shap_values.nnz
 
     color = colors.blue_rgb
-
     rasterize_threshold = 500
 
-    # order features by the sum of their effect magnitudes
-    feature_order = np.argsort(np.sum(np.abs(shap_values), axis=0))
+    shap_values_abs = shap_values.copy()
+    shap_values_abs.data = np.abs(shap_values_abs.data)
+    abs_sum_by_feature = np.array(shap_values_abs.sum(axis=0)).ravel()
+    feature_order = np.argsort(abs_sum_by_feature)
     feature_order = feature_order[-min(max_display, len(feature_order)) :]
 
-    if use_log_scale and num_of_non_zero_shap_values > 0:
+    if use_log_scale and num_of_non_zero_shap_values > 0 and plot_type == "dot":
         temp_feats = shap_values[:, feature_order]
-        min_non_zero_by_magnitude = np.min(np.abs(temp_feats[temp_feats != 0]))
+        non_zero_abs_vals = np.abs(temp_feats.data)
+        non_zero_abs_vals = non_zero_abs_vals[non_zero_abs_vals != 0]
+        if non_zero_abs_vals.size > 0:
+            min_non_zero_by_magnitude = np.min(non_zero_abs_vals)
+        else:
+            min_non_zero_by_magnitude = 1e-8  # fallback if no non-zero data
         plt.xscale("symlog", linthresh=min_non_zero_by_magnitude, linscale=1)
 
     row_height = 0.4
@@ -775,8 +895,11 @@ def summary_new(
     if plot_type == "dot":
         for pos, i in enumerate(feature_order):
             plt.axhline(y=pos, color="#cccccc", lw=0.5, dashes=(1, 5), zorder=-1)
-            shaps = shap_values[:, i]
-            values = features[:, i]
+
+            # Convert a single column of shap values and features to numpy array
+            shaps = shap_values[:, i].toarray().ravel()
+            values = features[:, i].toarray().ravel()
+
             inds = np.arange(len(shaps))
             np.random.default_rng().shuffle(inds)
             values = values[inds]
@@ -881,7 +1004,6 @@ def summary_new(
                         zorder=3,
                         rasterized=len(shaps) > rasterize_threshold,
                     )
-
             else:
                 plt.scatter(
                     shaps,
@@ -897,7 +1019,7 @@ def summary_new(
     elif plot_type == "bar":
         feature_inds = feature_order[:max_display]
         y_pos = np.arange(len(feature_inds))
-        global_shap_values = np.abs(shap_values).mean(0)
+        global_shap_values = abs_sum_by_feature / shap_values.shape[0]
         plt.barh(
             y_pos, global_shap_values[feature_inds], 0.7, align="center", color=color
         )
@@ -944,89 +1066,3 @@ def summary_new(
     # Delete the ticks closest to zero if using log scale
     if plot_type == "dot" and use_log_scale:
         remove_tick_labels_adjacent_to_origin(plt.gca())
-
-
-def add_warning_to_plot_that_all_shap_values_are_zero(ax: Axes) -> None:
-    """Add a warning to the plot that all shap values are zero."""
-    warning_message = """All SHAP values are zero. This means removing words from
-     this data does not affect the model output."""
-    ax.set_title(
-        warning_message,
-        color="red",
-        fontsize=12,
-        fontweight="bold",
-    )
-
-
-def remove_tick_labels_adjacent_to_origin(ax: Axes) -> None:
-    """Remove the x-axis tick labels closest to origin to prevent overlap."""
-    x_ticks = ax.xaxis.get_major_ticks()
-    x_ticks_locs = ax.xaxis.get_ticklocs()
-    for i, loc in enumerate(x_ticks_locs):
-        if (loc == 0) and i > 0 and i < len(x_ticks) - 1:
-            x_ticks[i - 1].label1.set_visible(False)
-            x_ticks[i + 1].label1.set_visible(False)
-
-
-def add_new_threshold_line_to_decision_plot(ax: Axes, threshold: float) -> None:
-    """Add a new threshold line to the decision plot."""
-    ax.axvline(x=threshold, color="black", zorder=1000)
-    threshold_line = mlines.Line2D([], [], color="black", label="Threshold")
-    ax.legend(handles=[threshold_line], loc="best")
-    text_y_position = ax.get_ylim()[1] + 0.4  # Slightly above the top
-    ax.text(
-        threshold,
-        text_y_position,
-        f"{threshold:.3f}",
-        verticalalignment="top",
-        horizontalalignment="left",
-        zorder=1001,
-    )
-
-
-def ignore_unproblematic_warnings_from_kernel_explainer() -> None:
-    """
-    Ignore warnings from kernel explainer that do not affect the output.
-
-    Each warning is thrown due to some problem within the kernel explainer that has not
-    been fixed. To remove these warnings, we require a pull request to the shap package.
-    """
-    # LGBM throws this warning when kernel explainer tries to predict with a lil_matrix
-    warnings.filterwarnings(
-        "ignore",
-        category=UserWarning,
-        message="Converting data to scipy sparse matrix.",
-    )
-    # Xgbost throws this warning when kernel explainer predicts with a lil_matrix
-    warnings.filterwarnings(
-        "ignore",
-        category=UserWarning,
-        message=(
-            "Unknown data type: <class 'scipy.sparse._lil.lil_matrix'>, "
-            "trying to convert it to csr_matrix"
-        ),
-    )
-    # Numpy throws this when kernel explainer tries to run a regression on uniform data
-    warnings.filterwarnings(
-        "ignore",
-        category=RuntimeWarning,
-        message="divide by zero encountered in log",
-    )
-    # Numpy throws this when kernel explainer tries to run a regression on uniform data
-    warnings.filterwarnings(
-        "ignore",
-        category=RuntimeWarning,
-        message="invalid value encountered in divide",
-    )
-
-
-def ignore_unproblematic_warnings_from_decision_plot() -> None:
-    """Ignore warnings from decision plot that do not affect the output."""
-    warnings.filterwarnings(
-        "ignore",
-        category=UserWarning,
-        message=(
-            "Attempting to set identical low and high xlims makes transformation "
-            "singular; automatically expanding."
-        ),
-    )
