@@ -38,6 +38,7 @@ from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
 from . import validation
+from .utils import SuppressStderr
 
 # ss = _LazyImport("scipy.stats")
 
@@ -332,7 +333,7 @@ class OptunaHyperparameterOptimisation:
 
         self.select_hyperparameters = getattr(self, model_name_to_selector[model_name])
 
-        self.setup_database(db_url)
+        self.db_storage_url = self.set_database_url(db_url)
 
         self.final_hyperparameter_search_ranges = (
             self.define_hyperparameter_search_ranges(
@@ -345,7 +346,7 @@ class OptunaHyperparameterOptimisation:
         )
         print(f"Positive class weight: {self.positive_class_weight}")
 
-    def setup_database(self, db_url: str | None) -> None:
+    def set_database_url(self, db_url: str | None) -> None:
         """
         Set up the database for the hyperparameter search.
 
@@ -357,15 +358,16 @@ class OptunaHyperparameterOptimisation:
         """
         if db_url is None:
             root_path = Path(Path(__file__).resolve()).parent.parent
-            self.db_storage_url = f"sqlite:///{root_path}/optuna.db"
+            db_storage_url = f"sqlite:///{root_path}/optuna.db"
         else:
-            self.db_storage_url = db_url
+            db_storage_url = db_url
 
-        validation.check_valid_database_url(self.db_storage_url)
+        validation.check_valid_database_url(db_storage_url)
 
         # If a database does not exist, it will be created by optuna.
+        print(db_storage_url)
 
-        print(self.db_storage_url)
+        return db_storage_url
 
     def define_hyperparameter_search_ranges(
         self,
@@ -397,14 +399,8 @@ class OptunaHyperparameterOptimisation:
         if user_selected_ranges is None:
             return default_ranges
 
-        final_ranges = {}
-        # TO DO: This is broken
-        all_params = set(default_ranges.keys()).union(user_selected_ranges.keys())
-        for param in all_params:
-            if param in user_selected_ranges:
-                final_ranges[param] = user_selected_ranges[param]
-            else:
-                final_ranges[param] = default_ranges[param]
+        final_ranges = copy.deepcopy(default_ranges)
+        final_ranges.update(user_selected_ranges)
 
         print(final_ranges)
         return final_ranges
@@ -1014,7 +1010,7 @@ def _predict_scores(
     model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
     X: "csr_matrix",
 ) -> NDArray[np.float64] | NDArray[np.float32]:
-    if isinstance(model, LGBMClassifier):
+    if isinstance(model, lgb.basic.Booster):
         return model.predict(X, raw_score=True)
     if isinstance(model, xgb.core.Booster):
         dtrain = xgb.DMatrix(X)
@@ -1031,15 +1027,16 @@ def _train_model(
     y: NDArray[np.int64],
 ) -> NDArray[np.float64] | NDArray[np.float32]:
     if model_name == "lightgbm":
+        train_params = copy.deepcopy(params)
         with SuppressStderr(
             [
                 "No further splits with positive gain, best gain: -inf",
                 "Stopped training because there are no more leaves that meet the split requirements",
             ]
         ):
+            num_boost_round = train_params.pop("n_estimators")
             dtrain = lgb.Dataset(X, label=y, free_raw_data=True)
-            model = LGBMClassifier(**params)
-            model.fit(X, y)
+            model = lgb.train(train_params, dtrain, num_boost_round=num_boost_round)
         return model
 
     if model_name == "xgboost":
@@ -1054,6 +1051,8 @@ def _train_model(
             dtrain,
             num_boost_round=num_boost_round,
         )
+        # gblinear uses a different shap explainer, so we save booster info
+        model.set_attr(boosting_type=params["booster"])
         return model
 
     if model_name == "RandomForestClassifier":
@@ -1069,31 +1068,3 @@ def _train_model(
     print(f"model is {model}")
     msg = "Model not recognised."
     raise ValueError(msg)
-
-
-import sys
-from io import StringIO
-
-
-class SuppressStderr:
-    def __init__(self, messages):
-        self.messages = messages
-        self.original_stdout = sys.stdout
-
-    def __enter__(self):
-        # Redirect stderr to this context manager
-        sys.stdout = self
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        # Restore the original stderr
-        sys.stdout = self.original_stdout
-
-    def write(self, output: str):
-        # Suppress messages containing the keyword
-        if all(message not in output for message in self.messages):
-            if not output.isspace():
-                self.original_stdout.write(output)
-
-    def flush(self):
-        pass  # To match `sys.stderr` behavior
