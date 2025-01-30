@@ -322,9 +322,6 @@ class OptunaHyperparameterOptimisation:
             or self.use_worse_than_first_two_pruner
         )
 
-        # We are multiprocessing, so must set up a manager to share when to stop
-        self.create_stopping_event_shared_memory()
-
         if n_jobs == -1:
             self.n_jobs = cpu_count()
         else:
@@ -456,6 +453,8 @@ class OptunaHyperparameterOptimisation:
             during the search. Key: hyperparameter name, value: hyperparameter value.
 
         """
+        self.create_stopping_event_shared_memory()
+
         if self.use_pruner:
             # A pruner must be able to share the best scores between processes
             self.create_best_cv_scores_shared_memory()
