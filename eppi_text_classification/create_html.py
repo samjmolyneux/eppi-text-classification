@@ -1,18 +1,18 @@
 import json
 
-with open("predicted_proba.json", "r") as f:
+with open("../predicted_proba.json", "r") as f:
     predicted_proba = json.load(f)
 
-with open("true_y.json", "r") as f:
+with open("../true_y.json", "r") as f:
     true_y = json.load(f)
 
-with open("x_N.json", "r") as f:
+with open("../x_N.json", "r") as f:
     x_N = json.load(f)
-with open("x_P.json", "r") as f:
+with open("../x_P.json", "r") as f:
     x_P = json.load(f)
-with open("y_N.json", "r") as f:
+with open("../y_N.json", "r") as f:
     y_N = json.load(f)
-with open("y_P.json", "r") as f:
+with open("../y_P.json", "r") as f:
     y_P = json.load(f)
 
 html_template = f"""<!DOCTYPE html>
@@ -26,9 +26,9 @@ html_template = f"""<!DOCTYPE html>
 
 <body>
 
-<div id="plotDiv" style="width:100%;max-width:1500px;height:900px;"></div>
+<div id="plotDiv" style="width: 95vw; height: 80vh; margin-top: 4vh;"></div>
 
-<div style="margin-top: 1em; display: flex; flex-direction: column; gap: 0.5em;">
+<div style="margin-top: 0em; display: flex; flex-direction: column; gap: 0.5em;">
 
   <div style="font-size: 1em;">
     Threshold: <span id="thresholdValue">0.5</span>
@@ -55,6 +55,8 @@ html_template = f"""<!DOCTYPE html>
       step="0.01" 
       value="{min(predicted_proba) + 0.5 * (max(predicted_proba) - min(predicted_proba)):.4f}"
       style="width: 8em; text-align: left;"  
+      onfocus="clearAndStore(this);"
+      onblur="restoreIfEmpty(this);"
     />
   </div>
 
@@ -67,6 +69,8 @@ html_template = f"""<!DOCTYPE html>
       max="{1}" 
       step="0.01" 
       style="width: 8em; text-align: left;"  
+      onfocus="clearAndStore(this)" 
+      onblur="restoreIfEmpty(this)"
     />
   </div>
 </div>
@@ -79,13 +83,6 @@ html_template = f"""<!DOCTYPE html>
 
 // For simplicity, let's assume we already computed xN,yN and xP,yP for
 // two kernel density estimates: negative (N) and positive (P).
-
-document.getElementById("thresholdInput").addEventListener("keydown", function(event) {{
-    if (event.key === "Enter") {{  // Only triggers when Enter is pressed in the input box
-        syncThreshold("input");
-    }}
-}});
-
 
 var xN = {x_N};
 var xP = {x_P};
@@ -118,16 +115,6 @@ let thresholdBoundaries = [Infinity, ...predictedProba.slice()].sort((a,b)=>b-a)
 // We'll keep track of the maximum Y for the negative and positive distribution plots:
 var maxDistY = Math.max(...yN, ...yP);
 
-document.getElementById("recallInput").addEventListener("keydown", function(event) {{
-    if (event.key === "Enter") {{  // Only triggers when Enter is pressed in the input box
-        for (let i = cumulative.length-1; i >= 0; i--) {{
-            if (cumulative[i] < 100*parseFloat(document.getElementById("recallInput").value)) {{
-                updatePlot(thresholdBoundaries[i]);
-                break;
-            }}
-        }}
-    }}
-}});
 
 // --------------------------------------------------------------------
 // 2) FUNCTIONS TO COMPUTE SPLITS, METRICS, CONFUSION MATRIX, ETC.
@@ -427,10 +414,16 @@ var data = [
 //   row=2 col=1 => positive distribution   (xaxis='x3',  yaxis='y3')
 //   row=2 col=2 => gains plot              (xaxis='x4',  yaxis='y4')
 var layout = {{
-  title: {{
-    text: "<b>Choose your threshold</b><br>",
-    y: 0.97,
-    yanchor: 'bottom'
+  //title: {{
+  //  text: "<b>Choose your threshold</b><br>",
+  //  y: 0.97,
+  //  yanchor: 'bottom'
+  //}},
+  margin: {{
+    // l: 20,
+    // r: 20,
+    b: 40,
+    t: 20,
   }},
   grid: {{
     rows: 2,
@@ -790,6 +783,37 @@ function syncThreshold(source) {{
 }}
 
 updatePlot( parseFloat(document.getElementById('thresholdSlider').value) );
+
+document.getElementById("thresholdInput").addEventListener("keydown", function(event) {{
+    if (event.key === "Enter") {{  // Only triggers when Enter is pressed in the input box
+        syncThreshold("input");
+    }}
+}});
+
+
+document.getElementById("recallInput").addEventListener("keydown", function(event) {{
+    if (event.key === "Enter") {{  // Only triggers when Enter is pressed in the input box
+        console.log("here")
+        for (let i = cumulative.length-2; i >= 0; i--) {{
+            if (cumulative[i]*100 < parseFloat(document.getElementById("recallInput").value)) {{
+                updatePlot(thresholdBoundaries[i+1]);
+                break;
+            }}
+        }}
+    }}
+}});
+
+function clearAndStore(inputElement) {{
+  inputElement.dataset.originalValue = inputElement.value;
+  inputElement.value = '';
+}}
+
+function restoreIfEmpty(inputElement) {{
+  if (inputElement.value === '') {{
+    inputElement.value = inputElement.dataset.originalValue;
+  }}
+}}
+
 </script>
 
 </body>
