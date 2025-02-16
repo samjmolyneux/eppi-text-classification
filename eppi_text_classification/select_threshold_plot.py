@@ -12,7 +12,6 @@ def select_threshold_plot(
 ):
     # generate the X_N, X_P and stuff here
     x_N, y_N = _get_density_curve_data([pred_scores[true_y == 0]])
-    y_N = y_N * 27
     x_P, y_P = _get_density_curve_data([pred_scores[true_y == 1]])
 
     roc_auc = roc_auc_score(true_y, pred_scores)
@@ -327,7 +326,7 @@ def select_threshold_plot(
     }},
     domain: {{
       x: [0.78, 1.0],
-      y: [0.52, 0.72]
+      y: [0.475, 0.675]
     }}
   }};
 
@@ -346,7 +345,7 @@ def select_threshold_plot(
     }},
     domain: {{
       x: [0.78, 1.0],
-      y: [0.72, 1.0]
+      y: [0.68, 1.0]
     }}
   }};
 
@@ -528,8 +527,22 @@ def select_threshold_plot(
     dragmode: false,
   }};
 
+  var config = {{
+    responsive: true, 
+    scrollZoom: false,
+    modeBarButtons: [["toImage"]],
+    displaylogo: false,
+    displayModeBar: "always",
+    toImageButtonOptions: {{
+      format: "png", 
+      filename: "eppi-select-threshold", 
+      height: 720, 
+      width: 1480, 
+      scale: 3
+    }}
+  }};
   // Make the initial plot
-  Plotly.newPlot('plotDiv', data, layout, {{responsive:true, displayModeBar: false, scrollZoom: false}});
+  Plotly.newPlot('plotDiv', data, layout, config);
 
   // --------------------------------------------------------------------
   // 4) THE KEY FUNCTION: updatePlot(threshold)
@@ -619,12 +632,13 @@ def select_threshold_plot(
     var balancedAccuracy = (100*cm.balancedAccuracy).toFixed(4) + '%';
     var recall           = (100*cm.TPR).toFixed(4) + '%';
     var precision        = (100*cm.precision).toFixed(4) + '%';
+    var specificity      = (100*(1-cm.FPR)).toFixed(4) + '%';
     var fpr              = (100*cm.FPR).toFixed(4) + '%';
     var f4               = (100*cm.F4).toFixed(4) + '%';
 
     var newVariantValues = [
-      ["Accuracy", "Balanced Accuracy", "Recall", "Precision", "FPR", "F4"],
-      [accuracy, balancedAccuracy, recall, precision, fpr, f4]
+      ["Accuracy", "Balanced Accuracy", "Recall", "Precision", "Specificity", "FPR", "F4"],
+      [accuracy, balancedAccuracy, recall, precision, specificity, fpr, f4]
     ];
 
     // 6) Gains plot threshold lines
