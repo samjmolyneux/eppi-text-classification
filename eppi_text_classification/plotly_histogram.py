@@ -96,7 +96,24 @@ def create_histogram_html(scores, savepath, title="", xaxis_title=""):
                     dragmode: false,
                 }};
                 
-                Plotly.newPlot("histogram", [trace], layout, {{responsive:true, displayModeBar: false, scrollZoom: false}});
+                var config = {{
+                    responsive: true, 
+                    scrollZoom: false,
+                    showLink: true,
+                    plotlyServerURL: "https://chart-studio.plotly.com",
+                    modeBarButtons: [["toImage"]],
+                    displaylogo: false,
+                    displayModeBar: "always",
+                    toImageButtonOptions: {{
+                        format: "png", 
+                        filename: "eppi-histogram", 
+                        height: 600, 
+                        width: 900, 
+                        scale: 3
+                    }}
+                }};
+
+                Plotly.newPlot("histogram", [trace], layout, config);
             }}
 
 
