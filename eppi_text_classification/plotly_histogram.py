@@ -228,16 +228,44 @@ def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
                 margin-top: 2em;
             }}
             #histogram-container {{
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
+                // display: flex;
+                // flex-direction: column;
+                // align-items: center;
+                // justify-content: center;
+                position: relative; 
+                width: 80%;         
+                margin: 0 auto;     
+                aspect-ratio: 16/9; 
             }}
             #histogram {{
-                width: 80%;
-                //max-width: 50rem;
+                //width: 80%;
+               // //max-width: 50rem;
                 // margin-bottom: 0.5em;  /* Adds spacing before dropdown */
-                aspect-ratio: 16/9; 
+                //aspect-ratio: 16/9; 
+                width: 100%;
+                height: 100%;
+
+            }}
+            #tips-container {{
+                position: absolute;  /* Overlay on top of #histogram */
+                bottom: 10%;           /* Adjust spacing from the top */
+                right: 1%;         /* Adjust spacing from the right */
+                background-color: #f8f8f8;
+                border-radius: 0.5rem;
+                font-size: 0.7rem;
+
+            }}
+
+            
+
+            #tips-container ul {{
+                list-style-type: none;
+                padding: 0.4rem;
+                margin: 0
+            }}
+
+            #tips-container li {{
+                padding: 0.3rem 0;
             }}
             #binSelect {{
                 font-size: 0.8rem;
@@ -257,6 +285,14 @@ def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
 
         <div id="histogram-container">
             <div id="histogram"></div>
+
+            <div id="tips-container">
+                <ul>
+                    <li>🔍 Scroll to Zoom</li>
+                    <li>✋ Click & Move to Pan</li>
+                    <li>🔄 Double-Click to Reset</li> 
+                </ul>
+            </div>
         </div>
         
         
@@ -280,7 +316,7 @@ def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
 
             function createHistogram(binSize) {{
                 var negativeTrace = {{
-                    name: "Negative Scores",
+                    name: "Negative Class",
                     x: {negative_scores},
                     type: "histogram",
                     marker: {{
@@ -291,7 +327,7 @@ def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
                 }};
 
                 var positiveTrace = {{
-                    name: "Positive Scores",
+                    name: "Positive Class",
                     x: {positive_scores},
                     type: "histogram",
                     marker: {{
@@ -307,18 +343,18 @@ def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
                 var layout = {{
                     title: {{
                         text: "Predicted Scores on Positive and Negative Test Datasets",
-                        font : {{size: 30}},
+                        font : {{size: 20}},
                     }},
                     xaxis: {{
                         title: {{
                             text: "Predicted Score", 
-                            font: {{ size: 18 }},
+                            font: {{ size: 16 }},
                         }},
                     }},
                     yaxis: {{ 
                         title: {{
                             text: "Count", 
-                            font: {{ size: 18 }},
+                            font: {{ size: 16 }},
                         }},
                     }},
                     template: "plotly_white",
