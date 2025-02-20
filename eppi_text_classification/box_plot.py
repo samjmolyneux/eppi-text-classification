@@ -179,7 +179,6 @@ def generate_box_plot_html(
                             line: {{ color: "black", width: 1 }}
                         }},
                         hoverinfo: "skip",
-                        width: 0.1,
                     }});
                 }}
 
