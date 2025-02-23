@@ -1,13 +1,11 @@
-import json
-
 import numpy as np
 import plotly.figure_factory as ff
 from sklearn.metrics import average_precision_score, roc_auc_score
 
 
 def select_threshold_plot(
-    pred_scores,
     true_y,
+    pred_scores,
     output_html_path="select_threshold_plot.html",
 ):
     # generate the X_N, X_P and stuff here
@@ -31,6 +29,18 @@ def select_threshold_plot(
     <title>Interactive Probabilities Density Plot (Pure JS)</title>
     <!-- Load Plotly from CDN -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <style> 
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {{
+          -webkit-appearance: none;
+          margin: 0;
+      }}
+
+      input[type="number"] {{
+          -moz-appearance: textfield;
+      }}
+    </style>
   </head>
 
   <body>
@@ -68,6 +78,7 @@ def select_threshold_plot(
         onblur="restoreIfEmpty(this);"
       />
     </div>
+
 
     <div style="display: flex; gap: 0.5em;">
       <label for="recallInput" style="font-size: 0.875em;">Set Recall:</label>

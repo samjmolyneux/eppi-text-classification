@@ -19,7 +19,7 @@ def predict_cv_metrics(
 ):
     auc_scores = []
     recall_scores = []
-    specifcity_scores = []
+    fpr_scores = []
 
     for i in range(num_cv_repeats):
         kf = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=i)
@@ -42,13 +42,13 @@ def predict_cv_metrics(
                 recall = recall_score(y_val, y_val_pred)
                 recall_scores.append(recall)
 
-                specifcity = recall_score(y_val, y_val_pred, pos_label=0)
-                specifcity_scores.append(specifcity)
+                fpr = 1 - recall_score(y_val, y_val_pred, pos_label=0)
+                fpr_scores.append(fpr)
 
     if threshold is None:
         return auc_scores
     else:
-        return auc_scores, recall_scores, specifcity_scores
+        return auc_scores, recall_scores, fpr_scores
 
 
 def predict_cv_scores(
@@ -83,7 +83,7 @@ def predict_cv_metrics_per_model(
 ):
     auc_scores_per_model = []
     recall_scores_per_model = []
-    specificity_scores_per_model = []
+    fpr_scores_per_model = []
 
     assert len(model_names) == len(
         model_params_list
@@ -101,8 +101,8 @@ def predict_cv_metrics_per_model(
 
         auc_scores = []
         recall_scores = []
-        specifcity_scores = []
-        for i in range(num_cv_repeats):
+        fpr_scores = []
+        for _ in range(num_cv_repeats):
             kf = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=i)
 
             for _, (train_idx, val_idx) in enumerate(kf.split(tfidf_scores, labels)):
@@ -124,12 +124,12 @@ def predict_cv_metrics_per_model(
                     recall = recall_score(y_val, y_val_pred)
                     recall_scores.append(recall)
 
-                    specifcity = recall_score(y_val, y_val_pred, pos_label=0)
-                    specifcity_scores.append(specifcity)
+                    fpr = 1 - recall_score(y_val, y_val_pred, pos_label=0)
+                    fpr_scores.append(fpr)
 
         auc_scores_per_model.append(auc_scores)
         recall_scores_per_model.append(recall_scores)
-        specificity_scores_per_model.append(specifcity_scores)
+        fpr_scores_per_model.append(fpr_scores)
 
     if thresholds is None:
         return auc_scores_per_model
@@ -137,5 +137,5 @@ def predict_cv_metrics_per_model(
         return (
             auc_scores_per_model,
             recall_scores_per_model,
-            specificity_scores_per_model,
+            fpr_scores_per_model,
         )

@@ -225,7 +225,7 @@ class SingleProcessHyperparameterOptimiser:
 
         # Update the shared memory with the best scores
         if self.use_pruner:
-            self.update_shared_memory_best_cv_scores(scores)
+            update_shared_memory_best_cv_scores(scores)
 
         return np.mean(scores)
 
@@ -482,7 +482,7 @@ class SingleProcessHyperparameterOptimiser:
         )
 
     def should_we_prune(self, trial, scores):
-        current_best_scores = self.get_shared_memory_best_cv_scores()
+        current_best_scores = get_shared_memory_best_cv_scores()
 
         # Written this strange way because I think it improves readability
         if self.use_worse_than_first_two_pruner:
@@ -505,7 +505,6 @@ class SingleProcessHyperparameterOptimiser:
         final_hyperparameter_values = {}
         unassigned_hyperparams = set(hyperparameter_search_dict.keys())
 
-        start = time.time()
         while len(unassigned_hyperparams) > 0:
             progress_flag = False
 

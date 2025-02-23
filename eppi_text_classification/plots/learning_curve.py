@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 
 import numpy as np
-from sklearn.metrics import recall_score, roc_auc_score
+from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 
-from .predict import predict_scores, raw_threshold_predict
-from .train import train
+from eppi_text_classification.predict import predict_scores
+from eppi_text_classification.train import train
 
 
 def get_learning_curve_data(

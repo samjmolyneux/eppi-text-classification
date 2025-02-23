@@ -2,6 +2,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 
+# TO DO: Get rid of the trace being at 0 before making open source.
 def python_generate_box_plot_html(
     data_list, name_list, title, yaxis_title, xaxis_title
 ):
@@ -241,7 +242,7 @@ def generate_box_plot_html(
                     }},
                     showlegend: true,
                     xaxis: {{
-                        range: [-0.5, dataList.length - 0.5],
+                        // range: [-0.5, dataList.length - 0.5],
                         autorange: false,
                         zeroline: false
                     }},

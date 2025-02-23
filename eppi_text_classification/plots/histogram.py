@@ -1,6 +1,9 @@
 import numpy as np
 
-def create_histogram_html(scores, savepath, title="", xaxis_title="", colour="rgba(102, 204, 255, 0.7)"):
+
+def create_histogram_html(
+    scores, savepath, title="", xaxis_title="", colour="rgba(102, 204, 255, 0.7)"
+):
     mean = np.mean(scores)
     median = np.median(scores)
     std_dev = np.std(scores)
@@ -14,7 +17,7 @@ def create_histogram_html(scores, savepath, title="", xaxis_title="", colour="rg
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Interactive AUC Histogram</title>
+        <title>Histogram</title>
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
         <style>
             body {{
@@ -202,14 +205,13 @@ def create_histogram_html(scores, savepath, title="", xaxis_title="", colour="rg
 
     print(f"HTML file saved at {savepath}")
 
-def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
 
+def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
     negative_scores = pred_scores[y_true == 0]
     positive_scores = pred_scores[y_true == 1]
 
-    negative_scores = list(negative_scores) 
-    positive_scores= list(positive_scores) 
-
+    negative_scores = list(negative_scores)
+    positive_scores = list(positive_scores)
 
     # bin_width = freedman_diaconis_bin_width(negative_scores)
     html_content = f"""
@@ -320,8 +322,8 @@ def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
                     x: {negative_scores},
                     type: "histogram",
                     marker: {{
-                        color: "rgba(255, 0, 0, 0.5)",  // Softer blue with transparency
-                        line: {{color: "rgba(255, 0, 0, 0.5)", width: 1.5}}
+                        color: "rgba(255, 0, 0, 0.4)",  
+                        line: {{color: "rgba(255, 0, 0, 0.4)", width: 1.5}}
                     }},
                     xbins: {{ size: binSize }}
                 }};
@@ -331,8 +333,8 @@ def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
                     x: {positive_scores},
                     type: "histogram",
                     marker: {{
-                        color: "rgba(0, 188, 0, 0.6)", // Softer blue with transparency
-                        line: {{color: "rgba(0, 188, 0, 0.6)", width: 1.5}}
+                        color: "rgba(0, 188, 0, 0.65)", 
+                        line: {{color: "rgba(0, 188, 0, 0.8)", width: 1.5}}
                     }},
                     xbins: {{ size: binSize }}
                 }};
@@ -367,7 +369,7 @@ def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
                     scrollZoom: true,
                     showLink: true,
                     plotlyServerURL: "https://chart-studio.plotly.com",
-                    modeBarButtons: [["toImage"]],
+                    modeBarButtons: [["toImage", "zoom2d", "pan2d", "autoScale2d"]],
                     displaylogo: false,
                     displayModeBar: "always",
                     toImageButtonOptions: {{
@@ -400,6 +402,7 @@ def postive_negative_scores_histogram_html(pred_scores, y_true, savepath):
         f.write(html_content)
 
     print(f"HTML file saved at {savepath}")
+
 
 def freedman_diaconis_bin_width(data):
     q25, q75 = np.percentile(data, [25, 75])

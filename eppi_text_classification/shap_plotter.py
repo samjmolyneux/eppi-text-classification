@@ -1,35 +1,36 @@
 """For plotting the SHAP values of a model's features."""
 
+import json
 import warnings
 from typing import TYPE_CHECKING
 
-import json
+import lightgbm as lgb
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.sparse as sp
 import shap
+import xgboost as xgb
 from matplotlib import cm
 from matplotlib.axes import Axes
 from matplotlib.text import Text
 from numpy.typing import NDArray
-import scipy.sparse as sp
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+
+from eppi_text_classification.plots import shap_colors as colors
 
 from . import predict_scores
-from . import shap_colors as colors
 
 if TYPE_CHECKING:
-    from lightgbm import LGBMClassifier
     from matplotlib.colors import LinearSegmentedColormap
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.svm import SVC
-    from xgboost import XGBClassifier
 
 
 model_class_to_name = {
-    "lightgbm.basic.Booster": "lgbmclassifier",
-    "sklearn.ensemble._forest.RandomForestClassifier": "randomforestclassifier",
-    "xgboost.core.Booster": "xgbclassifier",
-    "sklearn.svm._classes.SVC": "svc",
+    lgb.basic.Booster: "lgbmclassifier",
+    RandomForestClassifier: "randomforestclassifier",
+    xgb.core.Booster: "xgbclassifier",
+    SVC: "svc",
 }
 # Considerations: The number of samples that are calculated to get the kernel explainer
 # shap values should be adjusted
@@ -387,12 +388,11 @@ class ShapPlotter:
 
     def __init__(
         self,
-        model: "LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC",
+        model: lgb.Booster | RandomForestClassifier | xgb.Booster | SVC,
         X_test: sp.csr_matrix,
         feature_names: NDArray[np.str_],
         tree_path_dependent: bool = False,
         kernel_nsamples: int | str = "auto",
-        tree_explainer_working: bool = False,
     ) -> None:
         """
         Initialize the ShapPlotter object.
@@ -434,7 +434,6 @@ class ShapPlotter:
             Should be deleted once the tree explainer is fixed for sparse matrices.
 
         """
-        # check_size_xtest_not_too_large(X_test)
         self.model = model
         self.X_test = X_test
         self.feature_names = feature_names
@@ -444,19 +443,23 @@ class ShapPlotter:
         self.shap_values: sp.csr_matrix
         self.expected_value: float
 
+        if isinstance(self.model, SVC) and self.X_test.shape[0] > 1000:
+            msg = "SVC cannot be explained with more than 1000 samples."
+            raise ValueError(msg)
+
         # Setup the explantation for plotting
-        if tree_explainer_working:
-            self.model_name = model_class_to_name[self.model.__class__]
-            perform_explanation_func = getattr(
-                self, f"{self.model_name.lower()}_setup", None
-            )
-        else:
-            perform_explanation_func = self.setup_kernel_explainer
+        self.model_name = model_class_to_name[self.model.__class__]
+        perform_explanation_func = getattr(
+            self, f"{self.model_name.lower()}_explain", None
+        )
 
         if perform_explanation_func is None:
             msg = f"No setup function for model type {self.model_name}"
             raise ValueError(msg)
-        self.shap_values, self.expected_value = perform_explanation_func()
+
+        self.explainer, self.shap_values, self.expected_value = (
+            perform_explanation_func()
+        )
 
     def dot_plot(
         self, num_display: int = 10, log_scale: bool = True, plot_zero: bool = False
@@ -507,7 +510,11 @@ class ShapPlotter:
         )
 
     def decision_plot(
-        self, threshold: float, num_display: int = 10, log_scale: bool = False
+        self,
+        threshold: float,
+        num_display: int = 10,
+        log_scale: bool = False,
+        data_indices: list[int] | None = None,
     ) -> DecisionPlot:
         """
         Plot the SHAP values in a decision plot.
@@ -526,11 +533,17 @@ class ShapPlotter:
             Wether to use a log scale for the x-axis, by default False
 
         """
+        if data_indices is not None and len(data_indices) > 1000:
+            msg = "Data indices should be less than 1000."
+            raise ValueError(msg)
+        if data_indices is None:
+            data_indices = range(min(self.X_test.shape[0], 1000))
+
         return DecisionPlot(
             self.expected_value,
             threshold,
-            self.shap_values,
-            self.X_test,
+            self.shap_values[data_indices],
+            self.X_test[data_indices],
             self.feature_names,
             num_display,
             log_scale,
@@ -573,55 +586,56 @@ class ShapPlotter:
             log_scale,
         )
 
-    def lgbmclassifier_setup(self) -> None:
+    def lgbmclassifier_explain(self) -> None:
         """Set up ShapPlotter for lgbm models."""
-        return self.setup_tree_explainer()
+        return self.tree_explain()
 
-    def xgbclassifier_setup(self) -> None:
+    def xgbclassifier_explain(self) -> None:
         """Set up ShapPlotter for xgb models."""
         if self.model.attr("boosting_type") != "gblinear":
-            return self.setup_tree_explainer()
+            return self.tree_explain()
         else:
             raw_dump = self.model.get_dump(dump_format="json")
             parsed_dump = json.loads(raw_dump[0])  # gblinear dump is stored in index 0
             coefficients = np.array(parsed_dump["weight"])  # Coefficients for features
-            intercept = parsed_dump["bias"]        
+            intercept = parsed_dump["bias"]
 
             background_data = np.zeros((1, self.X_test.shape[-1]))
-            self.explainer = shap.LinearExplainer((coefficients, intercept), background_data)
+            explainer = shap.LinearExplainer((coefficients, intercept), background_data)
 
             processed_chunks = []
-            for i in range(0, self.X_test[0], 1000):
-                chunk = self.X_test[i:i+1000]
+            for i in range(0, self.X_test.shape[0], 1000):
+                chunk = self.X_test[i : i + 1000]
                 chunk_array = chunk.toarray()
-                processed_chunks.append(sp.csr_matrix(self.shap_values(chunk_array)))
-            
+                processed_chunks.append(
+                    sp.csr_matrix(explainer.shap_values(chunk_array))
+                )
+
             shap_values = sp.csr_matrix(sp.vstack(processed_chunks))
-            expected_value = self.explainer.expected_value[0]
-            return shap_values, expected_value
+            expected_value = explainer.expected_value[0]
+            return explainer, shap_values, expected_value
 
-    def randomforestclassifier_setup(self) -> None:
+    def randomforestclassifier_explain(self) -> None:
         """Set up ShapPlotter for random forest models."""
-        return self.setup_tree_explainer()
+        return self.tree_explain()
 
-    def svc_setup(self) -> None:
+    def svc_explain(self) -> None:
         """Set up ShapPlotter for SVC models."""
-        return self.setup_kernel_explainer()
-    
-    def tree_shap_values(self):
-        if self.model_name == "lgbmclassifier" or self.model_name == "xgbclassifier":
-            return self.explainer.shap_values(self.X_test)
-        if self.model_name == "randomforestclassifier":
-            return self.explainer.shap_values(self.X_test)[:, :, 1]
-    
-    def tree_expected_value(self):
-        if self.model_name == "lgbmclassifier" or self.model_name == "xgbclassifier":
-            return self.explainer.expected_value
-        if self.model_name == "randomforestclassifier":
-            return self.explainer.expected_value[1]
+        return self.kernel_explain()
 
+    def tree_shap_values(self, explainer, data):
+        if self.model_name == "lgbmclassifier" or self.model_name == "xgbclassifier":
+            return explainer.shap_values(data)
+        if self.model_name == "randomforestclassifier":
+            return explainer.shap_values(data)[:, :, 1]
 
-    def setup_kernel_explainer(self) -> None:
+    def tree_expected_value(self, explainer):
+        if self.model_name == "lgbmclassifier" or self.model_name == "xgbclassifier":
+            return explainer.expected_value
+        if self.model_name == "randomforestclassifier":
+            return explainer.expected_value[1]
+
+    def kernel_explain(self) -> None:
         """
         Set up ShapPlotter for models with kernel explainer.
 
@@ -630,26 +644,26 @@ class ShapPlotter:
         """
         background_data = sp.csr_matrix((1, self.X_test.shape[-1]))
         # Set up the explainer object
-        self.explainer = shap.KernelExplainer(
-            self.temporary_prediction_wrapper_for_kernel_explainer, background_data
+        explainer = shap.KernelExplainer(
+            self.prediction_wrapper_for_kernel_explainer, background_data
         )
 
         # Run the explaination and ignore the warnings
         with warnings.catch_warnings():
             ignore_unproblematic_warnings_from_kernel_explainer()
 
-            shap_values = self.explainer.shap_values(
+            shap_values = explainer.shap_values(
                 self.X_test, nsamples=self.kernel_nsamples, l1_reg="aic", silent=True
             )
         shap_values = sp.csr_matrix(shap_values)
-        expected_value = self.explainer.expected_value
-        return shap_values, expected_value
+        expected_value = explainer.expected_value
+        return explainer, shap_values, expected_value
 
-    def setup_tree_explainer(self) -> None:
+    def tree_explain(self) -> None:
         """General method to set up tree explainer for tree-based models."""
         # if not self.tree_path_dependent:
         background_data = np.zeros((1, self.X_test.shape[-1]))
-        self.explainer = shap.TreeExplainer(
+        explainer = shap.TreeExplainer(
             self.model,
             data=background_data,
             model_output="raw",
@@ -657,16 +671,21 @@ class ShapPlotter:
         )
 
         processed_chunks = []
-        for i in range(0, self.X_test[0], 1000):
-            chunk = self.X_test[i:i+1000]
+        for i in range(0, self.X_test.shape[0], 1000):
+            chunk = self.X_test[i : i + 1000]
             chunk_array = chunk.toarray()
-            processed_chunks.append(sp.csr_matrix(self.tree_shap_values(chunk_array)))
-        
-        shap_values = sp.csr_matrix(sp.vstack(processed_chunks))
-        expected_value = self.tree_expected_value()
-        return shap_values, expected_value
+            if self.model_name == "xgbclassifier":
+                chunk_array[chunk_array == 0] = np.nan
+                chunk_array = chunk_array.astype(np.float32)
+            processed_chunks.append(
+                sp.csr_matrix(self.tree_shap_values(explainer, chunk_array))
+            )
 
-    def temporary_prediction_wrapper_for_kernel_explainer(
+        shap_values = sp.csr_matrix(sp.vstack(processed_chunks))
+        expected_value = self.tree_expected_value(explainer)
+        return explainer, shap_values, expected_value
+
+    def prediction_wrapper_for_kernel_explainer(
         self, X: sp.csr_matrix
     ) -> NDArray[np.float64] | NDArray[np.float32]:
         """

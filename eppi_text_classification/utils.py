@@ -3,6 +3,8 @@
 import json
 import os
 import pickle
+import sys
+from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -65,18 +67,53 @@ def load_pickle_object_at_directory(directory_path: str) -> Any:
         return pickle.load(file)
 
 
-def parse_multiple_types(value):
-    # Try to convert to int
+def parse_multiple_types(value: str) -> int | float | str:
+    """
+    Parse a string into an int, float, or str in that hierarchical order.
+
+    Parameters
+    ----------
+    value : str
+        The value to parse.
+
+    Returns
+    -------
+    int | float | str
+        int if can be cast, else if it can be casted to float, float, else str.
+
+    """
     try:
         return int(value)
     except ValueError:
         pass
 
-    # Try to convert to float
     try:
         return float(value)
     except ValueError:
         pass
 
-    # Return as string if neither int nor float
     return value
+
+
+class SuppressStderr:
+    def __init__(self, messages):
+        self.messages = messages
+        self.original_stdout = sys.stdout
+
+    def __enter__(self):
+        # Redirect stderr to this context manager
+        sys.stdout = self
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # Restore the original stderr
+        sys.stdout = self.original_stdout
+
+    def write(self, output: str):
+        # Suppress messages containing the keyword
+        if all(message not in output for message in self.messages):
+            if not output.isspace():
+                self.original_stdout.write(output)
+
+    def flush(self):
+        pass  # To match `sys.stderr` behavior
