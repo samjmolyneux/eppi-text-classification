@@ -7,14 +7,14 @@ ml_client = get_azure_ml_client()
 
 dependencies_dir = "./../dependencies"
 
-custom_env_name = "temp-eppi-env"
+custom_env_name = "eppi-classifier-workbench-environment"
 
 pipeline_job_env = Environment(
     name=custom_env_name,
-    description="Temporary env to use before merging into main",
+    description="Python environment for eppi classifier workbench.",
     conda_file=os.path.join(dependencies_dir, "temp_env.yaml"),
     image="mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest",
-    version="0.1.1",
+    version="1.0.0",
 )
 pipeline_job_env = ml_client.environments.create_or_update(pipeline_job_env)
 
