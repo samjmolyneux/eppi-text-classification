@@ -10,6 +10,8 @@ def create_histogram_html(
     min_val = np.min(scores)
     max_val = np.max(scores)
 
+    scores = np.array(scores).tolist()
+
     # Generate the HTML file
     html_content = f"""
     <!DOCTYPE html>
@@ -207,11 +209,8 @@ def create_histogram_html(
 
 
 def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
-    negative_scores = pred_scores[y_true == 0]
-    positive_scores = pred_scores[y_true == 1]
-
-    negative_scores = list(negative_scores)
-    positive_scores = list(positive_scores)
+    negative_scores = pred_scores[y_true == 0].tolist()
+    positive_scores = pred_scores[y_true == 1].tolist()
 
     # bin_width = freedman_diaconis_bin_width(negative_scores)
     html_content = f"""

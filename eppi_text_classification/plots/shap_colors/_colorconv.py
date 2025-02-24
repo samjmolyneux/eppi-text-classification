@@ -815,8 +815,8 @@ def convert(image, dtype, force_copy=False, uniform=False):
     # - when the output is specified as a type, and the input dtype
     #   is a subclass of that type (e.g. `np.floating` will allow
     #   `float32` and `float64` arrays through)
-    # if np.issubdtype(dtype_in, np.dtype(dtype).type):
-    if np.issubdtype(dtype_in, np.obj2sctype(dtype)):
+    if np.issubdtype(dtype_in, np.dtype(dtype).type):
+    # if np.issubdtype(dtype_in, np.obj2sctype(dtype)):
         if force_copy:
             image = image.copy()
         return image

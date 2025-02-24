@@ -98,8 +98,8 @@ import json
 
 
 def generate_box_plot_html(
-    data_list,
-    name_list,
+    data_by_box,
+    box_names,
     title,
     xaxis_title,
     yaxis_title,
@@ -108,11 +108,14 @@ def generate_box_plot_html(
 ):
     # Generate the invisible scatter trace to get hoverline
     invisible_y = np.linspace(
-        min([min(d) for d in data_list]),
-        max([max(d) for d in data_list]),
+        min([min(d) for d in data_by_box]),
+        max([max(d) for d in data_by_box]),
         1000,
-    )
+    ).tolist()
+
     invisible_x = [0] * len(invisible_y)
+
+    data_by_box = [np.array(box_data).tolist() for box_data in data_by_box]
 
     html_content = f"""
     <!DOCTYPE html>
@@ -224,8 +227,8 @@ def generate_box_plot_html(
 
                 traces.push({{
                     type: "scatter",
-                    x : {list(invisible_x)},
-                    y : {list(invisible_y)},
+                    x : {invisible_x},
+                    y : {invisible_y},
                     mode: "lines",
                     hoverinfo: "y",
                     line: {{ color: "rgba(0,0,0,0)" }},
@@ -242,9 +245,10 @@ def generate_box_plot_html(
                     }},
                     showlegend: true,
                     xaxis: {{
-                        // range: [-0.5, dataList.length - 0.5],
+                        range: [-0.5, dataList.length - 0.5],
                         autorange: false,
-                        zeroline: false
+                        zeroline: false,
+                        type: "category",
                     }},
                     yaxis: {{
                         title: {{
@@ -285,8 +289,8 @@ def generate_box_plot_html(
             }}
 
             // Call the function with Python-generated data
-            const dataList = {list(data_list)};
-            const nameList = {list(name_list)};
+            const dataList = {data_by_box};
+            const nameList = {box_names};
 
             createBoxPlot(dataList, nameList, "{title}", "{xaxis_title}", "{yaxis_title}", "box-plot-div");
         </script>

@@ -15,12 +15,13 @@ def select_threshold_plot(
     roc_auc = roc_auc_score(true_y, pred_scores)
     pr_auc = average_precision_score(true_y, pred_scores)
 
-    pred_scores = list(pred_scores)
-    true_y = list(true_y)
-    x_N = list(x_N)
-    y_N = list(y_N)
-    x_P = list(x_P)
-    y_P = list(y_P)
+    pred_scores = pred_scores.tolist()
+    true_y = true_y.tolist()
+
+    x_N = x_N.tolist()
+    y_N = y_N.tolist()
+    x_P = x_P.tolist()
+    y_P = y_P.tolist()
 
     html_template = f"""<!DOCTYPE html>
   <html>
