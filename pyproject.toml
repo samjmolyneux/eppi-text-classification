@@ -112,11 +112,12 @@ push_azure = [
 
 
 [tool.ruff]
-extend-include = ["*.ipynb"]
-lint.select = ["ALL"]
 exclude = ["eppi_text_classification/plots/shap_colors/*"]
-lint.ignore = [
+show-fixes = true
 
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
     "D203",    #Docstring standards for datascience
     "D212",
     
@@ -129,9 +130,6 @@ lint.ignore = [
     "RET504", #Disables unessecary assignement before return
 
     "S106", #Checks for harcoded passwords in code
-
-    "ANN101", #type hint for self
-    "ANN102", #type hint for cls
 
     "PLR0913", #Too many function parameters
 
@@ -152,9 +150,21 @@ lint.ignore = [
 
     "PLR2004", #Magic numbers 
 
-    "N806" #Variables not in lower case  
-    ]
-show-fixes = true
+    "N806", #Variables not in lower case  
+]
+
+fixable = [
+    "W291",
+    "W293",
+    "F401",
+    "C408",
+    "RET505",
+    "I001",
+    "SIM118",
+    "D409",
+    "D413",
+    "RUF022",
+]
 
 [tool.ruff.format]
 docstring-code-format = true
