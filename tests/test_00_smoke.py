@@ -23,8 +23,8 @@ from eppi_text_classification import (
     validation,
 )
 from eppi_text_classification.opt import delete_optuna_study
-from eppi_text_classification.plotly_roc import plotly_roc
-from eppi_text_classification.plots import binary_train_valid_confusion_plot
+from eppi_text_classification.plots.roc import plotly_roc
+from eppi_text_classification.plots.plots import binary_train_valid_confusion_plot
 from eppi_text_classification.predict import (
     get_raw_threshold,
     predict_scores,
