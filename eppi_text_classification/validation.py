@@ -2,7 +2,7 @@
 
 import warnings
 
-valid_models = ("LGBMClassifier", "RandomForestClassifier", "SVC", "XGBClassifier")
+valid_models = ("lightgbm", "RandomForestClassifier", "SVC", "xgboost")
 
 
 class InvalidModelError(Exception):

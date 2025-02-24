@@ -2,22 +2,24 @@
 
 from typing import TYPE_CHECKING
 
+import lightgbm as lgb
 import numpy as np
-from lightgbm import LGBMClassifier
+import xgboost as xgb
 from numpy.typing import NDArray
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_curve, roc_auc_score, recall_score
 from sklearn.svm import SVC
-from xgboost import XGBClassifier
+from sklearn.model_selection import StratifiedKFold
 
 from .validation import InvalidModelError
+from .train import train
 
 if TYPE_CHECKING:
     from scipy.sparse import csr_matrix
 
 
 def get_raw_threshold(
-    model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
+    model: lgb.basic.Booster | RandomForestClassifier | xgb.core.Booster | SVC,
     X: "csr_matrix",
     y: NDArray[np.int_],
     target_tpr: float = 1,
@@ -56,7 +58,7 @@ def get_raw_threshold(
 
 
 def raw_threshold_predict(
-    model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
+    model: lgb.basic.Booster | RandomForestClassifier | xgb.core.Booster | SVC,
     X: "csr_matrix",
     threshold: float,
 ) -> NDArray[np.int_]:
@@ -85,7 +87,7 @@ def raw_threshold_predict(
 
 
 def predict_scores(
-    model: LGBMClassifier | RandomForestClassifier | XGBClassifier | SVC,
+    model: lgb.basic.Booster | RandomForestClassifier | xgb.core.Booster | SVC,
     X: "csr_matrix",
 ) -> NDArray[np.float64] | NDArray[np.float32]:
     """
@@ -112,10 +114,11 @@ def predict_scores(
         Raw prediction scores for binary classification.
 
     """
-    if isinstance(model, LGBMClassifier):
+    if isinstance(model, lgb.Booster):
         return model.predict(X, raw_score=True)
-    if isinstance(model, XGBClassifier):
-        return model.predict(X, output_margin=True)
+    if isinstance(model, xgb.Booster):
+        dtrain = xgb.DMatrix(X)
+        return model.predict(dtrain, output_margin=True)
     if isinstance(model, RandomForestClassifier):
         return model.predict_proba(X)[:, 1]
     if isinstance(model, SVC):
