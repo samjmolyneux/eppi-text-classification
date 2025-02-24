@@ -95,6 +95,11 @@ test = [
     "pandas-stubs",
 ]
 
+push_azure = [
+    "azure-ai-ml",
+    "azure-identity",
+]
+
 
 
 
