@@ -214,14 +214,16 @@ class SingleProcessHyperparameterOptimiser:
                 if self.use_pruner:
                     should_prune = self.should_we_prune(trial, scores)
                     if should_prune:
-                        print(f"Pruned trial with scores: {scores}")
+                        print(
+                            f"Pruned trial with scores: {[float(score) for score in scores]}"
+                        )
                         return np.mean(scores)
 
         # Early terminator uses variance of reported scores to calculate error
         if self.use_early_terminator:
             report_cross_validation_scores(trial, scores)
 
-        print(f"Finished trial with scores: {scores}")
+        print(f"Finished trial with scores: {[float(score) for score in scores]}")
 
         # Update the shared memory with the best scores
         if self.use_pruner:
