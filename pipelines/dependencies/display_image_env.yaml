@@ -1,8 +1,0 @@
-name: display-image-env 
-channels:
-  - conda-forge 
-dependencies:
-  - python=3.11.8
-  - pip=24.0
-  - pip:
-    - azureml-mlflow==1.42.0  

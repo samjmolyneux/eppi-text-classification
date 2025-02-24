@@ -1,9 +1,0 @@
-name: eppi-text-classification-temp-env 
-channels:
-  - conda-forge 
-dependencies:
-  - python=3.11.8
-  - pip=24.0
-  - pip:
-    - git+https://github.com/samjmolyneux/eppi-text-classification.git@temp_az_env
-    - https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
