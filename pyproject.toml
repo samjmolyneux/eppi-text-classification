@@ -98,6 +98,7 @@ test = [
 push_azure = [
     "azure-ai-ml",
     "azure-identity",
+    "python-dotenv",
 ]
 
 
