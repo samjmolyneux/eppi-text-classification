@@ -11,17 +11,16 @@ from .save_features_labels import get_features, get_labels, get_tfidf_and_names
 from .shap_plotter import ShapPlotter
 
 __all__ = [
+    "OptunaHyperparameterOptimisation",
+    "ShapPlotter",
+    "binary_train_valid_confusion_plotly",
+    "binary_train_valid_test_confusion_plotly",
+    "delete_optuna_study",
     "get_features",
     "get_labels",
-    "get_tfidf_and_names",
-    "OptunaHyperparameterOptimisation",
-    "binary_train_valid_confusion_plotly",
-    "plotly_roc",
-    "delete_optuna_study",
-    "predict_scores",
-    "plotly_roc",
     "get_raw_threshold",
+    "get_tfidf_and_names",
+    "plotly_roc",
+    "predict_scores",
     "raw_threshold_predict",
-    "ShapPlotter",
-    "binary_train_valid_test_confusion_plotly",
 ]

@@ -31,7 +31,7 @@ def select_threshold_plot(
     <!-- Load Plotly from CDN -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
-    <style> 
+    <style>
       input[type="number"]::-webkit-outer-spin-button,
       input[type="number"]::-webkit-inner-spin-button {{
           -webkit-appearance: none;
@@ -54,27 +54,27 @@ def select_threshold_plot(
       Threshold: <span id="thresholdValue">0.5</span>
     </div>
 
-    <input 
-      type="range" 
-      id="thresholdSlider" 
-      min="{min(pred_scores)}" 
-      max="{max(pred_scores)}" 
-      step="0.01" 
+    <input
+      type="range"
+      id="thresholdSlider"
+      min="{min(pred_scores)}"
+      max="{max(pred_scores)}"
+      step="0.01"
       value="{min(pred_scores) + 0.5 * (max(pred_scores) - min(pred_scores))}"
       oninput="updatePlot(parseFloat(this.value));"
-      style="width: 40%;"  
+      style="width: 40%;"
     />
 
     <div style="display: flex; gap: 0.5em;">
       <label for="thresholdInput" style="font-size: 0.875em;">Set Threshold:</label>
-      <input 
-        type="number" 
-        id="thresholdInput" 
-        min="{min(pred_scores)}" 
-        max="{max(pred_scores)}" 
-        step="0.01" 
+      <input
+        type="number"
+        id="thresholdInput"
+        min="{min(pred_scores)}"
+        max="{max(pred_scores)}"
+        step="0.01"
         value="{min(pred_scores) + 0.5 * (max(pred_scores) - min(pred_scores)):.4f}"
-        style="width: 8em; text-align: left;"  
+        style="width: 8em; text-align: left;"
         onfocus="clearAndStore(this);"
         onblur="restoreIfEmpty(this);"
       />
@@ -83,14 +83,14 @@ def select_threshold_plot(
 
     <div style="display: flex; gap: 0.5em;">
       <label for="recallInput" style="font-size: 0.875em;">Set Recall:</label>
-      <input 
-        type="number" 
-        id="recallInput" 
-        min="{0}" 
-        max="{1}" 
-        step="0.01" 
-        style="width: 8em; text-align: left;"  
-        onfocus="clearAndStore(this)" 
+      <input
+        type="number"
+        id="recallInput"
+        min="{0}"
+        max="{1}"
+        step="0.01"
+        style="width: 8em; text-align: left;"
+        onfocus="clearAndStore(this)"
         onblur="restoreIfEmpty(this)"
       />
     </div>
@@ -117,8 +117,8 @@ def select_threshold_plot(
   // and y=cumulativeRecall, sorted by predictedProba descending:
   var sortedScoresIndices = predictedProba
     .map((value, index) => [value, index])
-    .sort((a, b) => b[0] - a[0])    
-    .map(pair => pair[1]); 
+    .sort((a, b) => b[0] - a[0])
+    .map(pair => pair[1]);
 
   var sortedTrueY = sortedScoresIndices.map(idx => trueY[idx]);
   var nPos        = sortedTrueY.reduce((acc,v)=>acc+v,0);  // total # of positives
@@ -210,7 +210,7 @@ def select_threshold_plot(
   // precompute them in Python and embed them. For demonstration, let's just fix them.
   var invariantHeader = [["Invariant Metric","Value"]];
   var invariantRows   = [
-    ["ROC AUC", {roc_auc:.4f}], 
+    ["ROC AUC", {roc_auc:.4f}],
     ["PR AUC", {pr_auc:.4f}]
   ];
   var invariantCellsValues = [
@@ -342,7 +342,7 @@ def select_threshold_plot(
     }}
   }};
 
-  // 3.6 "Variant" metrics table (Accuracy, etc.) – also in top-right quadrant
+  // 3.6 "Variant" metrics table (Accuracy, etc.) - also in top-right quadrant
   var variantTableTrace = {{
     type: 'table',
     header: {{
@@ -388,7 +388,7 @@ def select_threshold_plot(
   }};
 
   // 3.8 Two lines to mark threshold on the gains plot
-  //     We'll place them at (pAT, 0) -> (pAT, TPR) and (0, TPR) -> (pAT, TPR) 
+  //     We'll place them at (pAT, 0) -> (pAT, TPR) and (0, TPR) -> (pAT, TPR)
   var gainsVLine = {{
     x: [],
     y: [],
@@ -423,7 +423,7 @@ def select_threshold_plot(
     // top-right confusion matrix
     confusionTrace,
     // top-right tables
-    invariantTableTrace, 
+    invariantTableTrace,
     variantTableTrace,
     // bottom-right gains line + threshold lines
     gainsLine, gainsVLine, gainsHLine
@@ -456,7 +456,7 @@ def select_threshold_plot(
     xaxis: {{
       domain: [0.0, 0.45], // top-left
       anchor: 'y',
-      // autorange: false,  
+      // autorange: false,
       range: [
         minProba - 0.05*rangeProba,
         maxProba + 0.05*rangeProba,
@@ -492,7 +492,7 @@ def select_threshold_plot(
       domain: [0.0, 0.45],  // bottom-left
       anchor: 'y3',
       title: 'Predicted Probability',
-      // autorange: false,  
+      // autorange: false,
       range: [
         minProba - 0.05*rangeProba,
         maxProba + 0.05*rangeProba,
@@ -540,16 +540,16 @@ def select_threshold_plot(
   }};
 
   var config = {{
-    responsive: true, 
+    responsive: true,
     scrollZoom: false,
     modeBarButtons: [["toImage"]],
     displaylogo: false,
     displayModeBar: "always",
     toImageButtonOptions: {{
-      format: "png", 
-      filename: "eppi-select-threshold", 
-      height: 720, 
-      width: 1480, 
+      format: "png",
+      filename: "eppi-select-threshold",
+      height: 720,
+      width: 1480,
       scale: 3
     }}
   }};
@@ -582,8 +582,8 @@ def select_threshold_plot(
       var xTN = [];
       var yTN = [];
       var xFP = xN.slice()
-      var yFP = yN.slice() 
-    }}  
+      var yFP = yN.slice()
+    }}
     // var xTN = [...xN.slice(0, idxN), threshold];
     // var yTN = [...yN.slice(0, idxN), ;
     // var xFP = [threshold, ...xN.slice(idxN)];
@@ -764,7 +764,7 @@ def select_threshold_plot(
         y: -0.06,
         font:{{size:12}},
         showarrow:false,
-        bgcolor: "white",  
+        bgcolor: "white",
         bordercolor: "black",
         borderwidth: 1,
         borderpad: 3,
@@ -777,7 +777,7 @@ def select_threshold_plot(
         y: cm.TPR.toFixed(2),
         font:{{size:12}},
         showarrow:false,
-        bgcolor: "white",  
+        bgcolor: "white",
         bordercolor: "black",
         borderwidth: 1,
         borderpad: 3,
@@ -814,7 +814,6 @@ def select_threshold_plot(
   function syncThreshold(source) {{
     let input = document.getElementById("thresholdInput");
 
-    
     updatePlot(parseFloat(input.value));
   }}
 
@@ -874,11 +873,12 @@ def _get_density_curve_data(data, curve_type="kde"):
         type of curve, either kernel density estimation or normal curve
 
     Returns
-    ----------
+    -------
     x_dist_data: np.array
         array with x coordinates data for the density curve
     y_dist_data: np.array
         array with y coordinates data for the density curve
+
     """
     fig = ff.create_distplot(
         data,

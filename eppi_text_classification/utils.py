@@ -4,7 +4,6 @@ import json
 import os
 import pickle
 import sys
-from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -111,9 +110,11 @@ class SuppressStderr:
 
     def write(self, output: str):
         # Suppress messages containing the keyword
-        if all(message not in output for message in self.messages):
-            if not output.isspace():
-                self.original_stdout.write(output)
+        if (
+            all(message not in output for message in self.messages)
+            and not output.isspace()
+        ):
+            self.original_stdout.write(output)
 
     def flush(self):
         pass  # To match `sys.stderr` behavior

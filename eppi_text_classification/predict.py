@@ -7,12 +7,10 @@ import numpy as np
 import xgboost as xgb
 from numpy.typing import NDArray
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_curve, roc_auc_score, recall_score
+from sklearn.metrics import roc_curve
 from sklearn.svm import SVC
-from sklearn.model_selection import StratifiedKFold
 
 from .validation import InvalidModelError
-from .train import train
 
 if TYPE_CHECKING:
     from scipy.sparse import csr_matrix

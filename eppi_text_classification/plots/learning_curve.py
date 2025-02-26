@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
@@ -14,14 +12,10 @@ def get_learning_curve_data(
     model_name,
     model_params,
     nfolds=5,
-    proportions=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    proportions=None,
 ):
-    # train_sizes = [0]
-
-    # # We use nfolds 0s to make the curve data homogenous, as all following
-    # # lists will have an auc score for each fold.
-    # train_curve_data = [[0] * nfolds]
-    # val_curve_data = [[0] * nfolds]
+    if proportions is None:
+        proportions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
     train_sizes = []
 
@@ -72,8 +66,11 @@ def create_learning_curve_html(
     model_params,
     savepath,
     nfolds=5,
-    proportions=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    proportions=None,
 ):
+    if proportions is None:
+        proportions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
     train_sizes, train_curve_data, val_curve_data = get_learning_curve_data(
         tfidf_scores=tfidf_scores,
         labels=labels,

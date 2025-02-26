@@ -22,7 +22,7 @@ def train(
     n_jobs: int = -1,
 ) -> NDArray[np.float64] | NDArray[np.float32]:
     train_params = copy.deepcopy(params)
-    train_params["n_jobs"] = n_jobs 
+    train_params["n_jobs"] = n_jobs
 
     if model_name == "lightgbm":
         with SuppressStderr(

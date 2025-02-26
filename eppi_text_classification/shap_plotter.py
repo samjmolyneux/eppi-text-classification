@@ -594,26 +594,24 @@ class ShapPlotter:
         """Set up ShapPlotter for xgb models."""
         if self.model.attr("boosting_type") != "gblinear":
             return self.tree_explain()
-        else:
-            raw_dump = self.model.get_dump(dump_format="json")
-            parsed_dump = json.loads(raw_dump[0])  # gblinear dump is stored in index 0
-            coefficients = np.array(parsed_dump["weight"])  # Coefficients for features
-            intercept = parsed_dump["bias"]
 
-            background_data = np.zeros((1, self.X_test.shape[-1]))
-            explainer = shap.LinearExplainer((coefficients, intercept), background_data)
+        raw_dump = self.model.get_dump(dump_format="json")
+        parsed_dump = json.loads(raw_dump[0])  # gblinear dump is stored in index 0
+        coefficients = np.array(parsed_dump["weight"])  # Coefficients for features
+        intercept = parsed_dump["bias"]
 
-            processed_chunks = []
-            for i in range(0, self.X_test.shape[0], 1000):
-                chunk = self.X_test[i : i + 1000]
-                chunk_array = chunk.toarray()
-                processed_chunks.append(
-                    sp.csr_matrix(explainer.shap_values(chunk_array))
-                )
+        background_data = np.zeros((1, self.X_test.shape[-1]))
+        explainer = shap.LinearExplainer((coefficients, intercept), background_data)
 
-            shap_values = sp.csr_matrix(sp.vstack(processed_chunks))
-            expected_value = explainer.expected_value[0]
-            return explainer, shap_values, expected_value
+        processed_chunks = []
+        for i in range(0, self.X_test.shape[0], 1000):
+            chunk = self.X_test[i : i + 1000]
+            chunk_array = chunk.toarray()
+            processed_chunks.append(sp.csr_matrix(explainer.shap_values(chunk_array)))
+
+        shap_values = sp.csr_matrix(sp.vstack(processed_chunks))
+        expected_value = explainer.expected_value[0]
+        return explainer, shap_values, expected_value
 
     def randomforestclassifier_explain(self) -> None:
         """Set up ShapPlotter for random forest models."""
@@ -624,13 +622,13 @@ class ShapPlotter:
         return self.kernel_explain()
 
     def tree_shap_values(self, explainer, data):
-        if self.model_name == "lgbmclassifier" or self.model_name == "xgbclassifier":
+        if self.model_name in ["lgbmclassifier", "xgbclassifier"]:
             return explainer.shap_values(data)
         if self.model_name == "randomforestclassifier":
             return explainer.shap_values(data)[:, :, 1]
 
     def tree_expected_value(self, explainer):
-        if self.model_name == "lgbmclassifier" or self.model_name == "xgbclassifier":
+        if self.model_name in ["lgbmclassifier", "xgbclassifier"]:
             return explainer.expected_value
         if self.model_name == "randomforestclassifier":
             return explainer.expected_value[1]
@@ -958,8 +956,8 @@ def sparse_summary_new(
                     if vmin == vmax:
                         vmin = np.min(values)
                         vmax = np.max(values)
-                if vmin > vmax:  # fixes rare numerical precision issues
-                    vmin = vmax
+
+                vmin = min(vmin, vmax)  # fixes rare numerical precision issues
 
                 if features.shape[0] != len(shaps):
                     msg = "Feature and SHAP matrices must have the same number of rows!"

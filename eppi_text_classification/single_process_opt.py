@@ -1,6 +1,4 @@
 import copy
-import time
-
 from multiprocessing.shared_memory import SharedMemory
 from typing import TYPE_CHECKING, Any
 
@@ -376,7 +374,7 @@ class SingleProcessHyperparameterOptimiser:
             **params,
         }
 
-    def optimisation_process_completed_callback(self, study, trial):
+    def optimisation_process_completed_callback(self, study, trial):  # noqa: ARG002
         """
         Stop all processes when one process stops searching.
 

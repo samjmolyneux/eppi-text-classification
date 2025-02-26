@@ -1,6 +1,3 @@
-from typing import TYPE_CHECKING
-
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import recall_score, roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 
@@ -47,8 +44,8 @@ def predict_cv_metrics(
 
     if threshold is None:
         return auc_scores
-    else:
-        return auc_scores, recall_scores, fpr_scores
+
+    return auc_scores, recall_scores, fpr_scores
 
 
 def predict_cv_scores(
@@ -85,13 +82,13 @@ def predict_cv_metrics_per_model(
     recall_scores_per_model = []
     fpr_scores_per_model = []
 
-    assert len(model_names) == len(
-        model_params_list
-    ), "model_list and model_param_list must have the same length"
+    assert len(model_names) == len(model_params_list), (
+        "model_list and model_param_list must have the same length"
+    )
     if thresholds is not None:
-        assert len(model_names) == len(
-            thresholds
-        ), "model_list and thresholds must have the same length"
+        assert len(model_names) == len(thresholds), (
+            "model_list and thresholds must have the same length"
+        )
 
     for i in range(len(model_names)):
         model_name = model_names[i]
@@ -133,9 +130,8 @@ def predict_cv_metrics_per_model(
 
     if thresholds is None:
         return auc_scores_per_model
-    else:
-        return (
-            auc_scores_per_model,
-            recall_scores_per_model,
-            fpr_scores_per_model,
-        )
+    return (
+        auc_scores_per_model,
+        recall_scores_per_model,
+        fpr_scores_per_model,
+    )

@@ -1,5 +1,5 @@
-import plotly.graph_objects as go
 import numpy as np
+import plotly.graph_objects as go
 
 
 # TO DO: Get rid of the trace being at 0 before making open source.
@@ -35,18 +35,13 @@ def python_generate_box_plot_html(
             go.Box(
                 y=data,
                 name=name_list[i],
-                # Violin shape
                 fillcolor=fc,
                 line_color=lc,
-                # boxmean="sd",
                 boxpoints="all",
-                # Points
-                # points="all",
-                marker=dict(
-                    color=lc,  # keep points in line-colour
-                    line=dict(color="black", width=1),
-                ),
-                # Hover
+                marker={
+                    "color": lc,
+                    "line": {"color": "black", "width": 1},
+                },
                 hoverinfo="skip",
             )
         )
@@ -66,7 +61,7 @@ def python_generate_box_plot_html(
             y=y_range,
             mode="lines",
             hoverinfo="y",  # Display only the y-value in hover info
-            line=dict(color="rgba(0,0,0,0)"),  # Make the line invisible
+            line={"color": "rgba(0,0,0,0)"},  # Make the line invisible
             showlegend=False,
         )
     )
@@ -74,27 +69,24 @@ def python_generate_box_plot_html(
     fig.update_layout(
         title=title,
         showlegend=True,
-        xaxis=dict(
-            title=xaxis_title,
-            range=[-0.5, n - 0.5],  # a half-unit margin on each side
-            autorange=False,
-            zeroline=False,
-        ),
-        yaxis=dict(
-            title=yaxis_title,
-            showspikes=True,  # Enable spikes on the y-axis
-            spikemode="across+toaxis",  # Spike line across the plot and to the axis
-            spikecolor="black",
-            spikethickness=1,
-            hoverformat=".4f",  # Display 4 decimal places in the hover labels
-        ),
+        xaxis={
+            "title": xaxis_title,
+            "range": [-0.5, n - 0.5],  # a half-unit margin on each side
+            "autorange": False,
+            "zeroline": False,
+        },
+        yaxis={
+            "title": yaxis_title,
+            "showspikes": True,  # Enable spikes on the y-axis
+            "spikemode": "across+toaxis",  # Spike line across the plot and to the axis
+            "spikecolor": "black",
+            "spikethickness": 1,
+            "hoverformat": ".4f",  # Display 4 decimal places in the hover labels
+        },
         hovermode="y",  # Enable hover on the y-axis
     )
 
     return fig
-
-
-import json
 
 
 def generate_box_plot_html(
@@ -152,7 +144,7 @@ def generate_box_plot_html(
         <div id="box-plot-container">
             <div id="box-plot-div"></div>
         </div>
-        
+
         <script>
             function createBoxPlot(dataList, nameList, title, xaxisTitle, yaxisTitle, divId) {{
 

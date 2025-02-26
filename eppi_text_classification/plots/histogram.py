@@ -38,7 +38,7 @@ def create_histogram_html(
                 width: 90%;
                 max-width: 50rem;
                 // margin-bottom: 0.5em;  /* Adds spacing before dropdown */
-                aspect-ratio: 3/2; 
+                aspect-ratio: 3/2;
             }}
             #binSelect {{
                 font-size: 0.8rem;
@@ -76,7 +76,7 @@ def create_histogram_html(
         <div id="histogram-container">
             <div id="histogram"></div>
         </div>
-        
+
         <div id="bin-container">
             <label for="binSelect">Select the bin size:</label>
             <select id="binSelect" onchange="updateBins(this.value)">
@@ -108,30 +108,30 @@ def create_histogram_html(
                     opacity: 0.8,
                     xbins: {{ size: binSize }}
                 }};
-                
+
                 var layout = {{
                     title: {{
-                        text: "{title}", 
+                        text: "{title}",
                         font : {{size: 30}},
                     }},
                     xaxis: {{
                         title: {{
-                            text: "{xaxis_title}", 
+                            text: "{xaxis_title}",
                             font: {{ size: 16 }},
                         }},
                     }},
-                    yaxis: {{ 
+                    yaxis: {{
                         title: {{
-                            text: "Count", 
+                            text: "Count",
                             font: {{ size: 16 }},
                         }},
                     }},
                     template: "plotly_white",
                     dragmode: false,
                 }};
-                
+
                 var config = {{
-                    responsive: true, 
+                    responsive: true,
                     scrollZoom: false,
                     showLink: true,
                     plotlyServerURL: "https://chart-studio.plotly.com",
@@ -139,10 +139,10 @@ def create_histogram_html(
                     displaylogo: false,
                     displayModeBar: "always",
                     toImageButtonOptions: {{
-                        format: "png", 
-                        filename: "eppi-histogram", 
-                        height: 600, 
-                        width: 900, 
+                        format: "png",
+                        filename: "eppi-histogram",
+                        height: 600,
+                        width: 900,
                         scale: 3
                     }}
                 }};
@@ -212,7 +212,6 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
     negative_scores = pred_scores[y_true == 0].tolist()
     positive_scores = pred_scores[y_true == 1].tolist()
 
-    # bin_width = freedman_diaconis_bin_width(negative_scores)
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -228,25 +227,28 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
                 padding: 0;
                 margin-top: 2em;
             }}
+
             #histogram-container {{
                 // display: flex;
                 // flex-direction: column;
                 // align-items: center;
                 // justify-content: center;
-                position: relative; 
-                width: 80%;         
-                margin: 0 auto;     
-                aspect-ratio: 16/9; 
+                position: relative;
+                width: 80%;
+                margin: 0 auto;
+                aspect-ratio: 16/9;
             }}
+
             #histogram {{
                 //width: 80%;
                // //max-width: 50rem;
                 // margin-bottom: 0.5em;  /* Adds spacing before dropdown */
-                //aspect-ratio: 16/9; 
+                //aspect-ratio: 16/9;
                 width: 100%;
                 height: 100%;
 
             }}
+
             #tips-container {{
                 position: absolute;  /* Overlay on top of #histogram */
                 bottom: 10%;           /* Adjust spacing from the top */
@@ -256,8 +258,6 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
                 font-size: 0.7rem;
 
             }}
-
-            
 
             #tips-container ul {{
                 list-style-type: none;
@@ -291,12 +291,11 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
                 <ul>
                     <li>🔍 Scroll to Zoom</li>
                     <li>✋ Click & Move to Pan</li>
-                    <li>🔄 Double-Click to Reset</li> 
+                    <li>🔄 Double-Click to Reset</li>
                 </ul>
             </div>
         </div>
-        
-        
+
         <div id="bin-container">
             <label for="binSelect">Select the bin size:</label>
             <select id="binSelect" onchange="updateBins(this.value)">
@@ -321,7 +320,7 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
                     x: {negative_scores},
                     type: "histogram",
                     marker: {{
-                        color: "rgba(255, 0, 0, 0.4)",  
+                        color: "rgba(255, 0, 0, 0.4)",
                         line: {{color: "rgba(255, 0, 0, 0.4)", width: 1.5}}
                     }},
                     xbins: {{ size: binSize }}
@@ -332,15 +331,13 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
                     x: {positive_scores},
                     type: "histogram",
                     marker: {{
-                        color: "rgba(0, 188, 0, 0.65)", 
+                        color: "rgba(0, 188, 0, 0.65)",
                         line: {{color: "rgba(0, 188, 0, 0.8)", width: 1.5}}
                     }},
                     xbins: {{ size: binSize }}
                 }};
 
 
-                
-                
                 var layout = {{
                     title: {{
                         text: "Predicted Scores on Positive and Negative Test Datasets",
@@ -348,13 +345,13 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
                     }},
                     xaxis: {{
                         title: {{
-                            text: "Predicted Score", 
+                            text: "Predicted Score",
                             font: {{ size: 16 }},
                         }},
                     }},
-                    yaxis: {{ 
+                    yaxis: {{
                         title: {{
-                            text: "Count", 
+                            text: "Count",
                             font: {{ size: 16 }},
                         }},
                     }},
@@ -362,9 +359,9 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
                     barmode: "overlay",
                     dragmode: "pan",
                 }};
-                
+
                 var config = {{
-                    responsive: true, 
+                    responsive: true,
                     scrollZoom: true,
                     showLink: true,
                     plotlyServerURL: "https://chart-studio.plotly.com",
@@ -372,10 +369,10 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
                     displaylogo: false,
                     displayModeBar: "always",
                     toImageButtonOptions: {{
-                        format: "png", 
-                        filename: "to-scale-pos-neg-histogram", 
-                        height: 720, 
-                        width: 1280, 
+                        format: "png",
+                        filename: "to-scale-pos-neg-histogram",
+                        height: 720,
+                        width: 1280,
                         scale: 3
                     }}
                 }};
@@ -401,10 +398,3 @@ def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
         f.write(html_content)
 
     print(f"HTML file saved at {savepath}")
-
-
-def freedman_diaconis_bin_width(data):
-    q25, q75 = np.percentile(data, [25, 75])
-    iqr = q75 - q25
-    bin_width = 2 * iqr / np.cbrt(len(data))
-    return bin_width

@@ -15,7 +15,6 @@ from numpy.typing import NDArray
 from . import validation
 from .single_process_opt import (
     SingleProcessHyperparameterOptimiser,
-    is_stopping_event_set,
 )
 
 if TYPE_CHECKING:

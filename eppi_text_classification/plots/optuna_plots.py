@@ -156,5 +156,5 @@ def create_all_optuna_plots(study, save_dir):
     create_param_importance_html(study, f"{save_dir}/param_importance.html")
     create_timeline_html(study, f"{save_dir}/timeline.html")
 
-    for param in study.best_params.keys():
+    for param in study.best_params:
         create_slice_plot_html(param, study, f"{save_dir}/{param}_slice.html")
