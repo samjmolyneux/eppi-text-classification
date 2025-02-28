@@ -44,5 +44,5 @@ hyperparameter_search_component = ml_client.create_or_update(
 
 # Create (register) the component in your workspace
 print(
-    f"Component {hyperparameter_search_component .name} with Version {hyperparameter_search_component .version} is registered"
+    f"Component {hyperparameter_search_component.name} with Version {hyperparameter_search_component.version} is registered"
 )
