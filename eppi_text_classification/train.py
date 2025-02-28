@@ -64,5 +64,3 @@ def train(
     print(f"model is {model}")
     msg = "Model not recognised."
     raise ValueError(msg)
-
-
