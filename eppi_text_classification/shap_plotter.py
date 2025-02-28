@@ -35,7 +35,7 @@ model_class_to_name = {
 # Considerations: The number of samples that are calculated to get the kernel explainer
 # shap values should be adjusted
 
-# TO DO: REDO Doumentation
+# TO DO: REDO Documentation
 # TO DO: Make the Plot objects figure specific
 
 plot_labels = {
@@ -769,7 +769,7 @@ def ignore_unproblematic_warnings_from_kernel_explainer() -> None:
         category=UserWarning,
         message="Converting data to scipy sparse matrix.",
     )
-    # Xgbost throws this warning when kernel explainer predicts with a lil_matrix
+    # Xgboost throws this warning when kernel explainer predicts with a lil_matrix
     warnings.filterwarnings(
         "ignore",
         category=UserWarning,
@@ -825,7 +825,7 @@ def sparse_summary_new(
     This method is a rewritten version of the shap.summary_legacy() method.
     This method should be called from the ShapPlotter class,
     not directly. It can be called using bar_chart() or dot_plot().
-    It is reccomended to use the log_scale option for the dot plot.
+    It is recommended to use the log_scale option for the dot plot.
 
     Parameters
     ----------
@@ -872,7 +872,7 @@ def sparse_summary_new(
 
     plot_zero : bool, optional
         Whether to (datapoint, feature) pairs that have a shap value equal to 0.
-        It is reccomended setting this to false when working with sparse data,
+        It is recommended setting this to false when working with sparse data,
         as is the case with tfidf vectorizer.
         By default False.
 
