@@ -44,19 +44,6 @@ def get_azure_ml_client():
 
 def get_current_package_env(ml_client: MLClient):
     # Retrieve an existing environment from the workspace
-    env_name = "aml-eppi-text-classification"
-    env_version = "0.1.3"  # Specify the version of the environment
-    return ml_client.environments.get(name=env_name, version=env_version)
-
-
-def get_mlflow_env(ml_client: MLClient):
-    # Retrieve an existing environment from the workspace
-    env_name = "display-image-env"
-    env_version = "0.1.0"  # Specify the version of the environment
-    return ml_client.environments.get(name=env_name, version=env_version)
-
-def get_temp_env(ml_client: MLClient):
-    # Retrieve an existing environment from the workspace
-    env_name = "temp-eppi-env"
-    env_version = "0.1.0"  # Specify the version of the environment
+    env_name = "eppi-classifier-workbench-env"
+    env_version = "1.0.0"  # Specify the version of the environment
     return ml_client.environments.get(name=env_name, version=env_version)
