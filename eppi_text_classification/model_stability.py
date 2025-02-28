@@ -52,6 +52,7 @@ def predict_cv_scores(
     tfidf_scores, labels, model_name, model_params, nfolds, num_cv_repeats
 ):
     fold_raw_scores = []
+    fold_labels = []
 
     for i in range(num_cv_repeats):
         kf = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=i)
@@ -60,13 +61,15 @@ def predict_cv_scores(
             X_val = tfidf_scores[val_idx]
 
             y_train = labels[train_idx]
+            y_val = labels[val_idx]
 
             clf = train(model_name, model_params, X_train, y_train)
 
             y_val_scores = predict_scores(clf, X_val)
             fold_raw_scores.append(y_val_scores)
+            fold_labels.append(y_val)
 
-    return fold_raw_scores
+    return fold_raw_scores, fold_labels
 
 
 def predict_cv_metrics_per_model(
