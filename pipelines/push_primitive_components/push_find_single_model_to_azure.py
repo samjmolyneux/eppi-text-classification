@@ -24,15 +24,13 @@ component_command = command(
         "positive_class_value": Input(type="string", default="1", optional=True),
         "model_name": Input(type="string"),
         "hyperparameter_search_ranges": Input(type="uri_folder"),
-        "max_n_search_iterations": Input(type="integer", default=None, optional=True),
+        "max_n_search_iterations": Input(type="integer", optional=True),
         "nfolds": Input(type="integer", default=3, optional=True),
         "num_cv_repeats": Input(type="integer", default=1, optional=True),
-        "timeout": Input(type="integer", default=None, optional=True),
+        "timeout": Input(type="integer", optional=True),
         "use_early_terminator": Input(type="boolean", default=False, optional=True),
-        "max_stagnation_iterations": Input(type="integer", default=None, optional=True),
-        "wilcoxon_trial_pruner_threshold": Input(
-            type="number", default=None, optional=True
-        ),
+        "max_stagnation_iterations": Input(type="integer", optional=True),
+        "wilcoxon_trial_pruner_threshold": Input(type="number", optional=True),
         "use_worse_than_first_two_pruner": Input(
             type="boolean", default=False, optional=True
         ),
