@@ -17,7 +17,7 @@ def binary_train_valid_confusion_plotly(
     y_train_pred: ArrayLike,
     y_val: ArrayLike,
     y_val_pred: ArrayLike,
-    postive_label: str = "1",
+    positive_label: str = "1",
     negative_label: str = "0",
     save_path: str | None = None,
 ) -> None:
@@ -81,8 +81,8 @@ def binary_train_valid_confusion_plotly(
         height=400,
     )
 
-    add_confusion_trace(fig, cm1, postive_label, negative_label, 1, 1)
-    add_confusion_trace(fig, cm2, postive_label, negative_label, 1, 2)
+    add_confusion_trace(fig, cm1, positive_label, negative_label, 1, 1)
+    add_confusion_trace(fig, cm2, positive_label, negative_label, 1, 2)
 
     add_labels_to_confusion_trace(fig, cm1, labels, plot_index=1)
     add_labels_to_confusion_trace(fig, cm2, labels, plot_index=2)
@@ -142,16 +142,16 @@ def add_confusion_trace(
     labels = ["0", "1"]
     hover_text = np.empty_like(cm, dtype=object)
     hover_text[0, 0] = (
-        f"Truth: {negative_label}<br>Prediction: {positive_label}<br>Total: {cm[0,0]}"
+        f"Truth: {negative_label}<br>Prediction: {positive_label}<br>Total: {cm[0, 0]}"
     )
     hover_text[0, 1] = (
-        f"Truth: {negative_label}<br>Prediction: {negative_label}<br>Total: {cm[0,1]}"
+        f"Truth: {negative_label}<br>Prediction: {negative_label}<br>Total: {cm[0, 1]}"
     )
     hover_text[1, 0] = (
-        f"Truth: {positive_label}<br>Prediction: {positive_label}<br>Total: {cm[1,0]}"
+        f"Truth: {positive_label}<br>Prediction: {positive_label}<br>Total: {cm[1, 0]}"
     )
     hover_text[1, 1] = (
-        f"Truth: {positive_label}<br>Prediction: {negative_label}<br>Total: {cm[1,1]}"
+        f"Truth: {positive_label}<br>Prediction: {negative_label}<br>Total: {cm[1, 1]}"
     )
 
     # Adding heatmaps to both subplots
@@ -335,7 +335,7 @@ def binary_train_valid_test_confusion_plotly(
     y_val_pred: ArrayLike,
     y_test: ArrayLike,
     y_test_pred: ArrayLike,
-    postive_label: str = "1",
+    positive_label: str = "1",
     negative_label: str = "0",
     save_path: str | None = None,
 ) -> None:
@@ -352,7 +352,7 @@ def binary_train_valid_test_confusion_plotly(
         The binary labels for the training data. (bool or int)
 
     y_train_pred : ArrayLike
-        Predictied binary labels for the training data. (bool or int)
+        Predicted binary labels for the training data. (bool or int)
 
     y_val : ArrayLike
         The binary labels for the validation data. (bool or int)
@@ -364,9 +364,9 @@ def binary_train_valid_test_confusion_plotly(
         The binary labels for the test data. (bool or int)
 
     y_test_pred : ArrayLike
-        Predictied binary labels for the test data. (bool or int)
+        Predicted binary labels for the test data. (bool or int)
 
-    postive_label : str, optional
+    positive_label : str, optional
         The label for the positive class.
         Alters the pos label displayed when hovering over confusion matrix with cursor.
         By default "1".
@@ -408,9 +408,9 @@ def binary_train_valid_test_confusion_plotly(
         height=400,
     )
 
-    add_confusion_trace(fig, cm1, postive_label, negative_label, 1, 1)
-    add_confusion_trace(fig, cm2, postive_label, negative_label, 1, 2)
-    add_confusion_trace(fig, cm3, postive_label, negative_label, 1, 3)
+    add_confusion_trace(fig, cm1, positive_label, negative_label, 1, 1)
+    add_confusion_trace(fig, cm2, positive_label, negative_label, 1, 2)
+    add_confusion_trace(fig, cm3, positive_label, negative_label, 1, 3)
 
     add_labels_to_confusion_trace(fig, cm1, labels, plot_index=1)
     add_labels_to_confusion_trace(fig, cm2, labels, plot_index=2)
