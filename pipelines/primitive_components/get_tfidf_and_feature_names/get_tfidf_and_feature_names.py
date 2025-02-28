@@ -10,7 +10,6 @@ from eppi_text_classification import (
     get_features,
     get_tfidf_and_names,
 )
-from eppi_text_classification.utils import load_value_from_json_at_directory
 
 
 def main():
@@ -19,7 +18,6 @@ def main():
     # input and output arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, help="path to input dataframe")
-    parser.add_argument("--labels", type=str, help="path to ordered list of labels")
     parser.add_argument(
         "--tfidf_scores", type=str, help="path to tfidf scores for data"
     )
@@ -27,10 +25,16 @@ def main():
         "--feature_names", type=str, help="path to ordered list of feature names"
     )
     parser.add_argument(
-        "--title_header", type=str, help="path to name of title columns", default="title",
+        "--title_header",
+        type=str,
+        help="path to name of title columns",
+        default="title",
     )
     parser.add_argument(
-        "--abstract_header", type=str, help="path to name of abstract column", default="abstract",
+        "--abstract_header",
+        type=str,
+        help="path to name of abstract column",
+        default="abstract",
     )
     args = parser.parse_args()
 
