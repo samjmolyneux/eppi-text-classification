@@ -89,7 +89,7 @@ def python_generate_box_plot_html(
     return fig
 
 
-def generate_box_plot_html(
+def box_plot(
     data_by_box,
     box_names,
     title,
