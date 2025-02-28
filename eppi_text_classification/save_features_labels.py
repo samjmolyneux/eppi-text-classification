@@ -154,7 +154,7 @@ def process_column(
 
 def get_labels(
     df: "pd.DataFrame",
-    label_column_name: str = "included",
+    label_key: str = "included",
     positive_class_value: str | float = 1,
 ) -> NDArray[np.int8]:
     """
@@ -165,7 +165,7 @@ def get_labels(
     df : pd.DataFrame
         Dataframe containing the labels.
 
-    label_column_name : str, optional
+    label_key: str, optional
         The column name containing the labels, by default "included".
 
     positive_class_value : str | float, optional
@@ -180,7 +180,7 @@ def get_labels(
     """
     positive_class_value = parse_multiple_types(positive_class_value)
     labels = (
-        df[label_column_name].apply(lambda x: 1 if x == positive_class_value else 0)
+        df[label_key].apply(lambda x: 1 if x == positive_class_value else 0)
     ).to_numpy(dtype=np.int8)
 
     return labels
