@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 #                Choosing spacy model,
 
 
-# TO DO:Loguru for processer count and chunksize
+# TO DO:Loguru for processor count and chunksize
 # TO DO Ability to change the process count
 
 system_num_processes = cpu_count()
@@ -100,7 +100,7 @@ def process_chunk(texts: Sequence[str]) -> list[list[str]]:
 
     Parameters
     ----------
-    texts : Seqeunce[str]
+    texts : Sequence[str]
         A Sequence of texts to be processed.
 
     Returns
@@ -241,7 +241,7 @@ def get_tfidf_and_names(
     word_features: list[str], min_df: int = 3, max_features: int = 75000
 ) -> tuple["csr_matrix", NDArray[np.str_]]:
     """
-    Get the tfidf scores and their corresponing feature names.
+    Get the tfidf scores and their corresponding feature names.
 
     This function assumes that the word_features are preprocessed.
     The TfidfVectorizer uses a non-whitespace token pattern, and as a result

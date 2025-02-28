@@ -25,7 +25,7 @@ def get_raw_threshold(
     """
     Get the model prediction threshold required to achieve the target TPR.
 
-    Given a binary classifier, using a raw prediction score, find the minimun threshold
+    Given a binary classifier, using a raw prediction score, find the minimum threshold
     that is required to achieve a target true positive that is larger than or equal to
     target_tpr.
 
