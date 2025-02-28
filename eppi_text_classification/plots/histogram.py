@@ -208,7 +208,7 @@ def create_histogram_html(
     print(f"HTML file saved at {savepath}")
 
 
-def postive_negative_scores_histogram_html(y_true, pred_scores, savepath):
+def positive_negative_scores_histogram_plot(y_true, pred_scores, savepath):
     negative_scores = pred_scores[y_true == 0].tolist()
     positive_scores = pred_scores[y_true == 1].tolist()
 
