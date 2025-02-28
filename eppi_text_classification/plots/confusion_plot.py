@@ -1,4 +1,4 @@
-"""Generate plotly confusion matricies. Plots can be saved to html."""
+"""Generate plotly confusion matrices. Plots can be saved to html."""
 
 from typing import Literal
 
