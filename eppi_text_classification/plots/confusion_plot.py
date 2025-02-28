@@ -34,7 +34,7 @@ def binary_train_valid_confusion_plotly(
         The binary labels for the training data. (bool or int)
 
     y_train_pred : ArrayLike
-        Predictied binary labels for the training data. (bool or int)
+        Predicted binary labels for the training data. (bool or int)
 
     y_val : ArrayLike
         The binary labels for the validation data. (bool or int)
@@ -42,7 +42,7 @@ def binary_train_valid_confusion_plotly(
     y_val_pred : ArrayLike
         _Predicted binary labels for the validation data. (bool or int)
 
-    postive_label : str, optional
+    positive_label : str, optional
         The label for the positive class.
         Alters the pos label displayed when hovering over confusion matrix with cursor.
         By default "1".
