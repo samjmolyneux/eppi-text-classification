@@ -1,4 +1,4 @@
-"""Methods for optimsing hyperparameters for models."""
+"""Methods for optimising hyperparameters for models."""
 
 import copy
 from multiprocessing import cpu_count
@@ -21,11 +21,11 @@ if TYPE_CHECKING:
     from scipy.sparse import csr_matrix
 
 # Considerations: Will the database work correctly in deployment?
-# Considerations: Need a way to handle the interupts
+# Considerations: Need a way to handle the interrupts
 # Considerations: The cache size needs setting for the SVC
 # Considerations: Should not use SVC for large datasets
 
-# TO DO: Add a way for mutliclass
+# TO DO: Add a way for multiclass
 # TO DO: Add a way to automatically fill the class weights for each objective function
 # TO DO: Check the defaults are all good for the params
 # TO DO: Fix all the params
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 # URGENT TO DO: MAKE SURE ALL THE MODELS A SINGLE CORE
 
 
-# LLIMIT DEFAULT MAX N_ESTIMSTORS TO ABOIUT 1000
+# LIMIT DEFAULT MAX N_ESTIMATORS TO ABOUT 1000
 
 # Verbosity, objective, n_jobs and scale_pos_weight cannot be changed
 
@@ -137,7 +137,7 @@ default_hyperparameter_ranges = {
 
 
 class OptunaHyperparameterOptimisation:
-    """An engine for optimsing hyperparameters for a using optuna."""
+    """An engine for optimising hyperparameters for a using optuna."""
 
     def __init__(
         self,
@@ -178,7 +178,7 @@ class OptunaHyperparameterOptimisation:
             available processes. By default -1.
 
         nfolds : int, optional
-            Number of folds to use when performing cross-validation for evalutating
+            Number of folds to use when performing cross-validation for evaluating
             model performance. Must be larger than 1. By default 3.
 
         num_cv_repeats : int, optional
@@ -317,7 +317,7 @@ class OptunaHyperparameterOptimisation:
         Parameters
         ----------
         study_name : str
-            A name to assign to a hyperparmeter search. Allows for stopping
+            A name to assign to a hyperparameter search. Allows for stopping
             and continuing the search at a later time.
 
         Returns
