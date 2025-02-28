@@ -378,7 +378,7 @@ class SingleProcessHyperparameterOptimiser:
         """
         Stop all processes when one process stops searching.
 
-        To run the optuna search, we spawn mulitple processes.
+        To run the optuna search, we spawn multiple processes.
         In order to implement early stopping we use callbacks from optuna.
         These callbacks call study.stop(), which only stops trials spawned
         by the current process. This means that if one of the trials from the other
@@ -444,7 +444,7 @@ class SingleProcessHyperparameterOptimiser:
 
         diff_values = step_values[steps] - best_step_values[steps]
 
-        # TO DO: GPT reccomended this, can we change?
+        # TO DO: GPT recommended this, can we change?
         if len(diff_values) == 0:
             return False  # or handle this situation as needed
 
@@ -586,8 +586,8 @@ class SingleProcessHyperparameterOptimiser:
 
             if progress_flag is False:
                 msg = (
-                    "Hyperaparameter suggestion failed a pass. This means "
-                    "the dependencies have been set incorrecty "
+                    "Hyperparameter suggestion failed a pass. This means "
+                    "the dependencies have been set incorrectly "
                     "or the hyperparameter ranges are incorrect."
                 )
                 raise ValueError(msg)
