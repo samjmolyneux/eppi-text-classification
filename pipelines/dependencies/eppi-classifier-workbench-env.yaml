@@ -1,4 +1,4 @@
-name: eppi-text-classification-env 
+name: eppi-classifier-workbench-env 
 channels:
   - conda-forge 
 dependencies:
