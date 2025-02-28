@@ -307,7 +307,7 @@ class OptunaHyperparameterOptimisation:
         print(f"final ranges: {final_ranges}")
         return final_ranges
 
-    def optimise_hyperparameters(
+    def run_hparam_search_study(
         self,
         study_name: str,
     ) -> dict[str, Any]:
@@ -373,10 +373,6 @@ class OptunaHyperparameterOptimisation:
         except KeyboardInterrupt:
             print("Optimization interrupted by user.")
 
-        best_trial = study.best_trial
-        best_params = best_trial.user_attrs["all_params"]
-        best_params = jsonpickle.decode(best_params, keys=True)
-
         if self.use_pruner:
             # Once the search is complete, we must clean up the shared memory
             delete_shared_memory(cv_scores_shm_name)
@@ -384,7 +380,7 @@ class OptunaHyperparameterOptimisation:
         # We have shared memory to manage stopping needs to be removed
         delete_shared_memory(stopping_shm_name)
 
-        return best_params
+        return study
 
     def delete_optuna_study(self, study_name: str) -> None:
         """
@@ -487,3 +483,24 @@ def optimise_on_single(
         cv_scores_shm_shape=cv_scores_shm_shape,
     )
     optimiser.optimise()
+
+
+def get_best_hyperparams_from_study(study: optuna.study.Study) -> dict[str, Any]:
+    """
+    Get the best hyperparameters from an optuna study.
+
+    Parameters
+    ----------
+    study : optuna.study.Study
+        An optuna study object.
+
+    Returns
+    -------
+    dict
+        Best hyperparameters found during the search. Key: hyperparameter name,
+        value: hyperparameter value.
+
+    """
+    best_trial = study.best_trial
+    best_params = best_trial.user_attrs["all_params"]
+    return jsonpickle.decode(best_params, keys=True)
