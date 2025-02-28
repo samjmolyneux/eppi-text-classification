@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-def plotly_roc(
+def roc_plot(
     y_test: Sequence[int],
     y_test_pred_probs: "NDArray[np.float64 | np.float32]",
     save_path: str | None = None,
