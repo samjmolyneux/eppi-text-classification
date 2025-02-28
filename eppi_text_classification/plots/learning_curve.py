@@ -59,7 +59,7 @@ def get_learning_curve_data(
     return train_sizes, train_curve_data, val_curve_data
 
 
-def create_learning_curve_html(
+def learning_curve(
     tfidf_scores,
     labels,
     model_name,
