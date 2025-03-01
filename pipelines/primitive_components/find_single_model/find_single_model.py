@@ -66,7 +66,7 @@ def main():
         "--max_n_search_iterations",
         type=int,
         help="Maximum number of search iterations",
-        default=None,
+        # default=None,
     )
     parser.add_argument(
         "--nfolds",
