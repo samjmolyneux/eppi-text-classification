@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def create_histogram_html(
+def histogram_plot(
     scores, savepath, title="", xaxis_title="", colour="rgba(102, 204, 255, 0.7)"
 ):
     mean = np.mean(scores)
