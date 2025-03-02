@@ -486,7 +486,10 @@ class SingleProcessHyperparameterOptimiser:
         )
 
     def should_we_prune(self, trial, scores):
-        current_best_scores = get_shared_memory_best_cv_scores()
+        current_best_scores = get_shared_memory_best_cv_scores(
+            shm_name=self.cv_scores_shm_name,
+            shm_array_shape=self.cv_scores_shm_shape,
+        )
 
         # Written this strange way because I think it improves readability
         if self.use_worse_than_first_two_pruner:
