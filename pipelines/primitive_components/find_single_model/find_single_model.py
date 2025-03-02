@@ -1,11 +1,15 @@
 import argparse
+import json
 
 import numpy as np
 import pandas as pd
 from scipy.sparse import save_npz
 
 from eppi_text_classification import get_features, get_labels, get_tfidf_and_names
-from eppi_text_classification.model_stability import predict_cv_scores
+from eppi_text_classification.model_stability import (
+    predict_cv_metrics,
+    predict_cv_scores,
+)
 from eppi_text_classification.opt import (
     OptunaHyperparameterOptimisation,
     get_best_hyperparams_from_study,
@@ -13,12 +17,13 @@ from eppi_text_classification.opt import (
 from eppi_text_classification.plots import (
     box_plot,
     create_all_optuna_plots,
+    histogram_plot,
     learning_curve,
     positive_negative_scores_histogram_plot,
     roc_plot,
     select_threshold_plot,
 )
-from eppi_text_classification.utils import load_json_at_directory
+from eppi_text_classification.shap_plotter import ShapPlotter
 
 
 def main():
@@ -141,6 +146,19 @@ def main():
         type=str,
         help="Path to labels",
     )
+    parser.add_argument(
+        "--shap_num_display",
+        type=int,
+        help="Number of features to display in shap plots",
+    )
+    parser.add_argument(
+        "--",
+        type=int,
+        help="Number of features to display in shap plots",
+    )
+    # parser.add_argument(
+    #     "--shap_num_display",
+    # )
 
     args = parser.parse_args()
 
@@ -159,10 +177,11 @@ def main():
     wilcoxon_trial_pruner_threshold = args.wilcoxon_trial_pruner_threshold
     use_worse_than_first_two_pruner = args.use_worse_than_first_two_pruner
     study_name = args.study_name
+    shap_num_display = args.shap_num_display
 
-    hyperparameter_search_ranges = load_json_at_directory(
-        args.hyperparameter_search_ranges
-    )
+    with open(args.hyperparameter_search_ranges) as f:
+        hyperparameter_search_ranges = json.load(f)
+
     search_db_url = f"sqlite:///{args.search_db}/optuna.db"
 
     plots_directory = args.plots
@@ -187,7 +206,7 @@ def main():
 
     optimiser = OptunaHyperparameterOptimisation(
         tfidf_scores=tfidf_scores,
-        lables=labels,
+        labels=labels,
         model_name=model_name,
         max_n_search_iterations=max_n_search_iterations,
         n_jobs=-1,
@@ -249,6 +268,34 @@ def main():
         nfolds=nfolds,
         proportions=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     )
+
+    auc_scores = predict_cv_metrics(
+        tfidf_scores=tfidf_scores,
+        labels=labels,
+        model_name=model_name,
+        model_params=best_params,
+        nfolds=3,
+        num_cv_repeats=100,
+    )
+
+    histogram_plot(
+        scores=auc_scores,
+        savepath=f"{plots_directory}/auc_histogram.html",
+        title="Model Stability Histogram",
+        xaxis_title="AUC",
+    )
+
+    shap_plotter = ShapPlotter(
+        model,
+        X_test,
+        feature_names,
+    )
+    dot_plot = shap_plotter.dot_plot(num_display=shap_num_display, log_scale=True)
+    dot_plot.show()
+    dot_plot = shap_plotter.dot_plot(num_display=shap_num_display, log_scale=False)
+    dot_plot.show()
+    bar_plot = shap_plotter.bar_chart(num_display=shap_num_display)
+    bar_plot.show()
 
     save_npz(args.tfidf_scores, tfidf_scores)
     np.save(args.feature_names, feature_names)
