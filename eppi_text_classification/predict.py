@@ -35,7 +35,7 @@ def get_raw_threshold(
         A trained model.
 
     X : np.ndarray[float]
-        Data to classifiy in the shape (samples, features).
+        Data to classify in the shape (samples, features).
 
     y : np.ndarray[int]
         True labels for the data.
