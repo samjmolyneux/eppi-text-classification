@@ -1,5 +1,6 @@
 from eppi_text_classification.plots.box_plot import box_plot
 from eppi_text_classification.plots.histogram import (
+    histogram_plot,
     positive_negative_scores_histogram_plot,
 )
 from eppi_text_classification.plots.learning_curve import learning_curve
