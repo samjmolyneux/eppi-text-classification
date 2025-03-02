@@ -646,7 +646,7 @@ class ShapPlotter:
             self.prediction_wrapper_for_kernel_explainer, background_data
         )
 
-        # Run the explaination and ignore the warnings
+        # Run the explanation and ignore the warnings
         with warnings.catch_warnings():
             ignore_unproblematic_warnings_from_kernel_explainer()
 
