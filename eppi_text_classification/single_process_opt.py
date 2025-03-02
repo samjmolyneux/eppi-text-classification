@@ -225,7 +225,11 @@ class SingleProcessHyperparameterOptimiser:
 
         # Update the shared memory with the best scores
         if self.use_pruner:
-            update_shared_memory_best_cv_scores(scores)
+            update_shared_memory_best_cv_scores(
+                shm_name=self.cv_scores_shm_name,
+                shm_array_shape=self.cv_scores_shm_shape,
+                scores=scores,
+            )
 
         return np.mean(scores)
 
