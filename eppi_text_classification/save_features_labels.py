@@ -121,7 +121,7 @@ def process_column(
     Process a column of text data. E.g abstracts or titles.
 
     The function processes the data in parallel using the process_chunk function.
-    Texts are lematized and stop words and punctuation are removed.
+    Texts are lemmatized and stop words and punctuation are removed.
 
     Parameters
     ----------
