@@ -132,12 +132,12 @@ def main():
         help="Path to feature names",
     )
     parser.add_argument(
-        "tfidf_scores",
+        "--tfidf_scores",
         type=str,
         help="Path to tfidf scores",
     )
     parser.add_argument(
-        "labels",
+        "--labels",
         type=str,
         help="Path to labels",
     )
