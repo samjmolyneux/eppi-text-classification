@@ -24,6 +24,7 @@ from eppi_text_classification.plots import (
     select_threshold_plot,
 )
 from eppi_text_classification.shap_plotter import ShapPlotter
+from eppi_text_classification.train import train
 
 
 def main():
@@ -116,15 +117,10 @@ def main():
         default=False,
     )
     parser.add_argument(
-        "--study_name",
-        type=str,
-        help="Name of the study",
-        default="hyperparam_search",
-    )
-    parser.add_argument(
-        "--plots",
-        type=str,
-        help="Path to directory to plots",
+        "--shap_num_display",
+        type=int,
+        help="Number of features to display in shap plots",
+        default=10,
     )
     parser.add_argument(
         "--search_db",
@@ -147,19 +143,15 @@ def main():
         help="Path to labels",
     )
     parser.add_argument(
-        "--shap_num_display",
-        type=int,
-        help="Number of features to display in shap plots",
+        "--plots",
+        type=str,
+        help="Path to directory to plots",
     )
     parser.add_argument(
-        "--",
-        type=int,
-        help="Number of features to display in shap plots",
+        "--best_hparams",
+        type=str,
+        help="Path to best hyperparameters",
     )
-    # parser.add_argument(
-    #     "--shap_num_display",
-    # )
-
     args = parser.parse_args()
 
     data_path = args.data
@@ -176,7 +168,6 @@ def main():
     max_stagnation_iterations = args.max_stagnation_iterations
     wilcoxon_trial_pruner_threshold = args.wilcoxon_trial_pruner_threshold
     use_worse_than_first_two_pruner = args.use_worse_than_first_two_pruner
-    study_name = args.study_name
     shap_num_display = args.shap_num_display
 
     with open(args.hyperparameter_search_ranges) as f:
@@ -186,24 +177,50 @@ def main():
 
     plots_directory = args.plots
 
+    print(f"data_path: {data_path}")
+    print(f"title_header: {title_header}")
+    print(f"abstract_header: {abstract_header}")
+    print(f"label_header: {label_header}")
+    print(f"positive_class_value: {positive_class_value}")
+    print(f"model_name: {model_name}")
+    print(f"max_n_search_iterations: {max_n_search_iterations}")
+    print(f"nfolds: {nfolds}")
+    print(f"num_cv_repeats: {num_cv_repeats}")
+    print(f"timeout: {timeout}")
+    print(f"use_early_terminator: {use_early_terminator}")
+    print(f"max_stagnation_iterations: {max_stagnation_iterations}")
+    print(f"wilcoxon_trial_pruner_threshold: {wilcoxon_trial_pruner_threshold}")
+    print(f"use_worse_than_first_two_pruner: {use_worse_than_first_two_pruner}")
+    print(f"shap_num_display: {shap_num_display}")
+    print(f"hyperparameter_search_ranges: {hyperparameter_search_ranges}")
+    print(f"search_db_url: {search_db_url}")
+    print(f"plots_directory: {plots_directory}")
+    print(f"search_db: {args.search_db}")
+
     columns_to_use = [title_header, abstract_header, label_header]
 
     df = pd.read_csv(data_path, sep="\t", usecols=columns_to_use)
 
     # First create a model
-
+    print("")
+    print("GETTING FEATURES")
     word_features = get_features(
         df,
         title_key=title_header,
         abstract_key=abstract_header,
     )
-
+    print("")
+    print("GETTING LABELS")
     labels = get_labels(
         df, label_key=label_header, positive_class_value=positive_class_value
     )
 
+    print("")
+    print("GETTING TFIDF AND NAMES")
     tfidf_scores, feature_names = get_tfidf_and_names(word_features)
 
+    print("")
+    print("INITIALISING OPTIMISER")
     optimiser = OptunaHyperparameterOptimisation(
         tfidf_scores=tfidf_scores,
         labels=labels,
@@ -221,9 +238,14 @@ def main():
         use_worse_than_first_two_pruner=use_worse_than_first_two_pruner,
     )
 
-    optimiser.delete_optuna_study(study_name=study_name)
-    study = optimiser.run_hparam_search_study(study_name=study_name)
+    optimiser.delete_optuna_study(study_name="hyperparameter_search_study")
 
+    print("")
+    print("RUNNING HYPERPARAMETER SEARCH")
+    study = optimiser.run_hparam_search_study(study_name="hyperparameter_search_study")
+
+    print("")
+    print("GET BEST HYPERPARAMETERS FROM STUDY")
     best_params = get_best_hyperparams_from_study(study)
 
     # Second perform analysis for the resulting model
@@ -285,9 +307,16 @@ def main():
         xaxis_title="AUC",
     )
 
+    model = train(
+        model_name=model_name,
+        params=best_params,
+        X=tfidf_scores,
+        y=labels,
+        n_jobs=-1,
+    )
     shap_plotter = ShapPlotter(
         model,
-        X_test,
+        tfidf_scores,
         feature_names,
     )
     dot_plot = shap_plotter.dot_plot(num_display=shap_num_display, log_scale=True)
@@ -300,6 +329,8 @@ def main():
     save_npz(args.tfidf_scores, tfidf_scores)
     np.save(args.feature_names, feature_names)
     np.save(args.labels, labels)
+    with open(args.best_hparams, "w") as f:
+        json.dump(best_params, f)
 
 
 if __name__ == "__main__":
