@@ -1,0 +1,106 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: find_single_model_for_classifier_workbench
+display_name: Find single model for eppi classifier workbench
+type: command
+description: >-
+  Takes tsv, performs tokenisation, tfidf, and searches for the best 
+  hyperparameters for a given model.
+inputs:
+  data:
+    type: uri_folder
+  title_header:
+    type: string
+    default: PaperTitle
+    optional: true
+  abstract_header:
+    type: string
+    default: Abstract
+    optional: true
+  label_header:
+    type: string
+    default: Label
+    optional: true
+  positive_class_value:
+    type: string
+    default: "1"
+    optional: true
+  model_name:
+    type: string
+  hyperparameter_search_ranges:
+    type: uri_folder
+  max_n_search_iterations:
+    type: integer
+    optional: true
+  nfolds:
+    type: integer
+    default: 3
+    optional: true
+  num_cv_repeats:
+    type: integer
+    default: 1
+    optional: true
+  timeout:
+    type: integer
+    optional: true
+  use_early_terminator:
+    type: boolean
+    default: false
+  max_stagnation_iterations:
+    type: integer
+    optional: true
+  wilcoxon_trial_pruner_threshold:
+    type: number
+    optional: true
+  use_worse_than_first_two_pruner:
+    type: boolean
+    default: false
+    optional: true
+  shap_num_display:
+    type: integer
+    default: 20
+    optional: true
+outputs:
+  plots:
+    type: uri_folder
+    mode: rw_mount
+  search_db:
+    type: uri_folder
+    mode: rw_mount
+  feature_names:
+    type: uri_folder
+    mode: rw_mount
+  tfidf_scores:
+    type: uri_folder
+    mode: rw_mount
+  labels:
+    type: uri_folder
+    mode: rw_mount
+  best_hparams:
+    type: uri_folder
+    mode: rw_mount
+code: find_single_model.py
+environment: azureml:eppi-classifier-workbench-env:1.0.0
+command: >-
+  python find_single_model.py  
+  --data ${{inputs.data}}  
+  --model_name ${{inputs.model_name}}
+  --hyperparameter_search_ranges ${{inputs.hyperparameter_search_ranges}}  
+  --use_early_terminator ${{inputs.use_early_terminator}}  
+  $[[--title_header ${{inputs.title_header}}]]  
+  $[[--abstract_header ${{inputs.abstract_header}}]]  
+  $[[--label_header ${{inputs.label_header}}]]  
+  $[[--positive_class_value ${{inputs.positive_class_value}}]]  
+  $[[--max_n_search_iterations ${{inputs.max_n_search_iterations}}]]  
+  $[[--nfolds ${{inputs.nfolds}}]]  
+  $[[--num_cv_repeats ${{inputs.num_cv_repeats}}]]  
+  $[[--timeout ${{inputs.timeout}}]]  
+  $[[--max_stagnation_iterations ${{inputs.max_stagnation_iterations}}]]  
+  $[[--wilcoxon_trial_pruner_threshold ${{inputs.wilcoxon_trial_pruner_threshold}}]]  
+  $[[--use_worse_than_first_two_pruner ${{inputs.use_worse_than_first_two_pruner}}]]  
+  $[[--shap_num_display ${{inputs.shap_num_display}}]]  
+  --plots ${{outputs.plots}} 
+  --search_db ${{outputs.search_db}}  
+  --feature_names ${{outputs.feature_names}}  
+  --tfidf_scores ${{outputs.tfidf_scores}}  
+  --labels ${{outputs.labels}}  
+  --best_hparams ${{outputs.best_hparams}}
