@@ -485,7 +485,7 @@ def optimise_on_single(
     optimiser.optimise()
 
 
-def get_best_hyperparams_from_study(study: optuna.study.Study) -> dict[str, Any]:
+def get_best_hparams_from_study(study: optuna.study.Study) -> dict[str, Any]:
     """
     Get the best hyperparameters from an optuna study.
 
