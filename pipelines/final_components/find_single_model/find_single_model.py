@@ -14,7 +14,7 @@ from eppi_text_classification.model_stability import (
 )
 from eppi_text_classification.opt import (
     OptunaHyperparameterOptimisation,
-    get_best_hyperparams_from_study,
+    get_best_hparams_from_study,
 )
 from eppi_text_classification.plots import (
     box_plot,
@@ -250,7 +250,7 @@ def main():
 
     print("")
     tprint("GET BEST HYPERPARAMETERS FROM STUDY")
-    best_params = get_best_hyperparams_from_study(study)
+    best_params = get_best_hparams_from_study(study)
 
     # Second perform analysis for the resulting model
 
