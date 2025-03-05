@@ -58,7 +58,8 @@ dependencies = [
     "jsonpickle~=4.0.2",
     "numpy~=2.1.3",
     # "torch==2.6.0+cpu",
-    "torch @ https://download.pytorch.org/whl/torch/torch-2.6.0+cpu-cp311-cp311-linux_x86_64.whl",
+    # TODO: Must add torch back
+    # "torch @ https://download.pytorch.org/whl/torch/torch-2.6.0+cpu-cp311-cp311-linux_x86_64.whl",
 ]
 
 # dependencies = [
