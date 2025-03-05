@@ -211,7 +211,7 @@ def main():
         df,
         title_key=title_header,
         abstract_key=abstract_header,
-        num_processes=-1,
+        num_processes=1,
     )
     print("")
     tprint("GETTING LABELS")
@@ -330,10 +330,10 @@ def main():
     bar_plot = shap_plotter.bar_chart(num_display=shap_num_display)
     bar_plot.show()
 
-    save_npz(args.tfidf_scores, tfidf_scores)
-    np.save(args.feature_names, feature_names)
-    np.save(args.labels, labels)
-    with open(args.best_hparams, "w") as f:
+    save_npz(f"{args.tfidf_scores}/tfidf.npz", tfidf_scores)
+    np.save(f"{args.feature_names}/feature_names.npy", feature_names)
+    np.save(f"{args.labels}/lables.npy", labels)
+    with open(f"{args.best_hparams}/best_hparams.json", "w") as f:
         json.dump(best_params, f)
 
 
