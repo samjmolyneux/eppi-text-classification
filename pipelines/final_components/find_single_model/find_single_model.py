@@ -211,6 +211,7 @@ def main():
         df,
         title_key=title_header,
         abstract_key=abstract_header,
+        num_processes=-1,
     )
     print("")
     tprint("GETTING LABELS")
@@ -276,7 +277,7 @@ def main():
     )
 
     box_plot(
-        data_by_box=cv_y_scores,
+        data_by_box=fold_scores,
         box_names=[f"Fold {i}" for i in range(nfolds)],
         title="Cross-Validation AUC Scores",
         yaxis_title="AUC",
