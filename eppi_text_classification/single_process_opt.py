@@ -144,6 +144,7 @@ class SingleProcessHyperparameterOptimiser:
         self.cv_scores_shm_shape = cv_scores_shm_shape
 
         self.select_hyperparameters = getattr(self, model_name_to_selector[model_name])
+        print("single process user pruner: ", self.use_pruner)
 
     def optimise(self):
         study = optuna.load_study(

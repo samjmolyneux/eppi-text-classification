@@ -228,6 +228,7 @@ class OptunaHyperparameterOptimisation:
             self.wilcoxon_trial_pruner_threshold is not None
             or self.use_worse_than_first_two_pruner
         )
+        print(f"self.use_pruner: {self.use_pruner}")
 
         if n_jobs == -1:
             self.n_jobs = cpu_count()
@@ -331,6 +332,7 @@ class OptunaHyperparameterOptimisation:
 
         cv_scores_shm_name = cv_scores_shm_shp = None
         if self.use_pruner:
+            print("we are creating the shared memory for pruning")
             # A pruner must be able to share the best scores between processes
             cv_scores_shm_name, cv_scores_shm_shp = create_best_cv_scores_shared_memory(
                 num_cv_repeats=self.num_cv_repeats, nfolds=self.nfolds
@@ -374,6 +376,7 @@ class OptunaHyperparameterOptimisation:
             print("Optimization interrupted by user.")
 
         if self.use_pruner:
+            print("we are deleting the shared memory for pruning")
             # Once the search is complete, we must clean up the shared memory
             delete_shared_memory(cv_scores_shm_name)
 
