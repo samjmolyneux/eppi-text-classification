@@ -332,6 +332,10 @@ class OptunaHyperparameterOptimisation:
 
         cv_scores_shm_name = cv_scores_shm_shp = None
         if self.use_pruner:
+            print(f"self.use_pruner for creating shared memory: {self.use_pruner}")
+            print(
+                f"type of self.use_pruner for creating shared_memory: {type(self.use_pruner)}"
+            )
             print("we are creating the shared memory for pruning")
             # A pruner must be able to share the best scores between processes
             cv_scores_shm_name, cv_scores_shm_shp = create_best_cv_scores_shared_memory(
@@ -376,6 +380,7 @@ class OptunaHyperparameterOptimisation:
             print("Optimization interrupted by user.")
 
         if self.use_pruner:
+            print(f"self.use_pruner for deleting shared memory: {self.use_pruner}")
             print("we are deleting the shared memory for pruning")
             # Once the search is complete, we must clean up the shared memory
             delete_shared_memory(cv_scores_shm_name)
