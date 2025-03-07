@@ -94,6 +94,15 @@ def parse_multiple_types(value: str) -> int | float | str:
     return value
 
 
+def str2bool(string: str) -> bool:
+    if string.lower() == "true":
+        return True
+    if string.lower() == "false":
+        return False
+
+    raise ValueError(f"Cannot convert {string} to boolean.")
+
+
 class SuppressStderr:
     def __init__(self, messages):
         self.messages = messages
