@@ -3,11 +3,11 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 import numpy as np
 import pandas as pd
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 from pydantic.dataclasses import dataclass
 from scipy.sparse import save_npz
 
@@ -31,27 +31,28 @@ from eppi_text_classification.plots import (
 )
 from eppi_text_classification.shap_plotter import ShapPlotter
 from eppi_text_classification.train import train
+from eppi_text_classification.utils import str2bool
 
 
 @dataclass(config=ConfigDict(frozen=True, strict=True))
 class SingleModelArgs:
     # Inputs
     data_path: str
-    title_header: str = Field(min_length=1)
-    abstract_header: str = Field(min_length=1)
-    label_header: str = Field(min_length=1)
-    positive_class_value: str = Field(min_length=1)
+    title_header: Annotated[str, Field(min_length=1)]
+    abstract_header: Annotated[str, Field(min_length=1)]
+    label_header: Annotated[str, Field(min_length=1)]
+    positive_class_value: Annotated[str, Field(min_length=1)]
     model_name: Literal["lightgbm", "xgboost", "RandomForestClassifier", "SVC"]
     hparam_search_ranges: dict
-    max_n_search_iterations: int | None = Field(gt=0)
-    nfolds: int = Field(gt=3, lt=10)
-    num_cv_repeats: int = Field(gt=0)
-    timeout: int | None = Field(gt=0)
+    max_n_search_iterations: Annotated[int, Field(gt=0)] | None
+    nfolds: Annotated[int, Field(gt=3, lt=10)]
+    num_cv_repeats: Annotated[int, Field(gt=0)]
+    timeout: Annotated[int, Field(gt=0, le=3600 * 24)]
     use_early_terminator: bool
-    max_stagnation_iterations: int | None = Field(gt=25)
-    wilcoxon_trial_pruner_threshold: float | None = Field(ge=0, le=1)
+    max_stagnation_iterations: Annotated[int, Field(gt=25)] | None
+    wilcoxon_trial_pruner_threshold: Annotated[float, Field(ge=0, le=1)] | None
     use_worse_than_first_two_pruner: bool
-    shap_num_display: int = Field(gt=10)
+    shap_num_display: Annotated[int, Field(gt=10)]
 
     # Outputs
     search_db_dir: str
@@ -107,7 +108,7 @@ def parse_args():
         "--max_n_search_iterations",
         type=int,
         help="Maximum number of search iterations",
-        # default=None,
+        default=None,
     )
     parser.add_argument(
         "--nfolds",
@@ -125,11 +126,11 @@ def parse_args():
         "--timeout",
         type=int,
         help="Time in seconds before cancelling search",
-        default=None,
+        default=3600 * 24,
     )
     parser.add_argument(
         "--use_early_terminator",
-        type=bool,
+        type=str2bool,
         help="Whether to use the regret based early terminator",
         default=False,
     )
@@ -147,7 +148,7 @@ def parse_args():
     )
     parser.add_argument(
         "--use_worse_than_first_two_pruner",
-        type=bool,
+        type=str2bool,
         help="Whether to use the worse than first two pruner",
         default=False,
     )
