@@ -144,7 +144,6 @@ class SingleProcessHyperparameterOptimiser:
         self.cv_scores_shm_shape = cv_scores_shm_shape
 
         self.select_hyperparameters = getattr(self, model_name_to_selector[model_name])
-        print(f"single process user pruner: {self.use_pruner}", flush=True)
 
     def optimise(self):
         study = optuna.load_study(
@@ -214,7 +213,7 @@ class SingleProcessHyperparameterOptimiser:
                     should_prune = self.should_we_prune(trial, scores)
                     if should_prune:
                         print(
-                            f"Pruned trial with scores: {[float(score) for score in scores]}",
+                            f"Pruned trial {trial.number} with scores: {[float(score) for score in scores]}",
                             flush=True,
                         )
                         return np.mean(scores)
@@ -224,7 +223,7 @@ class SingleProcessHyperparameterOptimiser:
             report_cross_validation_scores(trial, scores)
 
         print(
-            f"Finished trial with scores: {[float(score) for score in scores]}",
+            f"Finished trial {trial.number} with scores: {[float(score) for score in scores]}",
             flush=True,
         )
 
