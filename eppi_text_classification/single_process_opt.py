@@ -144,7 +144,7 @@ class SingleProcessHyperparameterOptimiser:
         self.cv_scores_shm_shape = cv_scores_shm_shape
 
         self.select_hyperparameters = getattr(self, model_name_to_selector[model_name])
-        print("single process user pruner: ", self.use_pruner)
+        print(f"single process user pruner: {self.use_pruner}", flush=True)
 
     def optimise(self):
         study = optuna.load_study(
@@ -214,7 +214,8 @@ class SingleProcessHyperparameterOptimiser:
                     should_prune = self.should_we_prune(trial, scores)
                     if should_prune:
                         print(
-                            f"Pruned trial with scores: {[float(score) for score in scores]}"
+                            f"Pruned trial with scores: {[float(score) for score in scores]}",
+                            flush=True,
                         )
                         return np.mean(scores)
 
@@ -222,7 +223,10 @@ class SingleProcessHyperparameterOptimiser:
         if self.use_early_terminator:
             report_cross_validation_scores(trial, scores)
 
-        print(f"Finished trial with scores: {[float(score) for score in scores]}")
+        print(
+            f"Finished trial with scores: {[float(score) for score in scores]}",
+            flush=True,
+        )
 
         # Update the shared memory with the best scores
         if self.use_pruner:
@@ -394,7 +398,7 @@ class SingleProcessHyperparameterOptimiser:
 
         """
         if is_stopping_event_set(self.stopping_shm_name):
-            print("Ending process, stopping_event set.")
+            print("Ending process, stopping_event set.", flush=True)
             study.stop()
 
     def create_search_callbacks(self) -> list:
@@ -686,7 +690,7 @@ def _train_model(
         model.fit(X, y)
         return model
 
-    print(f"model is {model}")
+    print(f"model is {model}", flush=True)
     msg = "Model not recognised."
     raise ValueError(msg)
 
