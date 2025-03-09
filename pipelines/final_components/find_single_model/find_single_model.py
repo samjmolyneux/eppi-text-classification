@@ -335,7 +335,7 @@ def main(args: SingleModelArgs):
     optuna_plots_directory = f"{args.plots_dir}/optuna_plots"
     create_all_optuna_plots(study, optuna_plots_directory)
 
-    fold_scores, fold_labels = predict_cv_scores(
+    _, _, val_fold_scores, val_fold_labels = predict_cv_scores(
         tfidf_scores,
         labels,
         args.model_name,
@@ -344,23 +344,23 @@ def main(args: SingleModelArgs):
         num_cv_repeats=1,
     )
 
-    cv_y_scores = np.concatenate(fold_scores, axis=0)
-    cv_y = np.concatenate(fold_labels, axis=0)
+    cv_scores = np.concatenate(val_fold_scores, axis=0)
+    cv_y = np.concatenate(val_fold_labels, axis=0)
 
-    roc_plot(cv_y, cv_y_scores, f"{args.plots_dir}/roc_plot.html")
+    roc_plot(cv_y, cv_scores, f"{args.plots_dir}/roc_plot.html")
 
     select_threshold_plot(
-        cv_y, cv_y_scores, f"{args.plots_dir}/select_threshold_plot.html"
+        cv_y, cv_scores, f"{args.plots_dir}/select_threshold_plot.html"
     )
 
     positive_negative_scores_histogram_plot(
         cv_y,
-        cv_y_scores,
+        cv_scores,
         f"{args.plots_dir}/positive_negative_scores_histogram_plot.html",
     )
 
     box_plot(
-        data_by_box=fold_scores,
+        data_by_box=val_fold_scores,
         box_names=[f"Fold {i}" for i in range(args.nfolds)],
         title="Cross-Validation AUC Scores",
         yaxis_title="AUC",
@@ -407,11 +407,11 @@ def main(args: SingleModelArgs):
         feature_names,
     )
     dot_plot = shap_plotter.dot_plot(num_display=args.shap_num_display, log_scale=True)
-    dot_plot.save(filename=f"{args.plots_dir}/shap_dot_plot_log_x.html")
+    dot_plot.save(filename=f"{args.plots_dir}/shap_dot_plot_log_x.png")
     dot_plot = shap_plotter.dot_plot(num_display=args.shap_num_display, log_scale=False)
-    dot_plot.save(filename=f"{args.plots_dir}/shap_dot_plot_linear_x.html")
+    dot_plot.save(filename=f"{args.plots_dir}/shap_dot_plot_linear_x.png")
     bar_plot = shap_plotter.bar_chart(num_display=args.shap_num_display)
-    bar_plot.save(filename=f"{args.plots_dir}/shap_bar_plot.html")
+    bar_plot.save(filename=f"{args.plots_dir}/shap_bar_plot.png")
 
     save_npz(f"{args.tfidf_dir}/tfidf.npz", tfidf_scores)
     np.save(f"{args.feature_names_dir}/feature_names.npy", feature_names)
