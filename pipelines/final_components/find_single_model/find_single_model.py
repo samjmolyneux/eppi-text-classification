@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 
 import numpy as np
 import pandas as pd
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 from scipy.sparse import save_npz
 
@@ -45,14 +45,14 @@ class SingleModelArgs:
     model_name: Literal["lightgbm", "xgboost", "RandomForestClassifier", "SVC"]
     hparam_search_ranges: dict
     max_n_search_iterations: Annotated[int, Field(gt=0)] | None
-    nfolds: Annotated[int, Field(gt=3, lt=10)]
+    nfolds: Annotated[int, Field(ge=3, le=10)]
     num_cv_repeats: Annotated[int, Field(gt=0)]
     timeout: Annotated[int, Field(gt=0, le=3600 * 24)]
     use_early_terminator: bool
     max_stagnation_iterations: Annotated[int, Field(gt=25)] | None
-    wilcoxon_trial_pruner_threshold: Annotated[float, Field(ge=0, le=1)] | None
+    wilcoxon_trial_pruner_threshold: Annotated[float, Field(gt=0, le=1)] | None
     use_worse_than_first_two_pruner: bool
-    shap_num_display: Annotated[int, Field(gt=10)]
+    shap_num_display: Annotated[int, Field(ge=10)]
 
     # Outputs
     search_db_dir: str
@@ -288,7 +288,6 @@ def main(args: SingleModelArgs):
         df,
         title_key=args.title_header,
         abstract_key=args.abstract_header,
-        num_processes=1,
     )
     print("")
     tprint("GETTING LABELS")
@@ -408,11 +407,11 @@ def main(args: SingleModelArgs):
         feature_names,
     )
     dot_plot = shap_plotter.dot_plot(num_display=args.shap_num_display, log_scale=True)
-    dot_plot.show()
+    dot_plot.save(filename=f"{args.plots_dir}/shap_dot_plot_log_x.html")
     dot_plot = shap_plotter.dot_plot(num_display=args.shap_num_display, log_scale=False)
-    dot_plot.show()
+    dot_plot.save(filename=f"{args.plots_dir}/shap_dot_plot_linear_x.html")
     bar_plot = shap_plotter.bar_chart(num_display=args.shap_num_display)
-    bar_plot.show()
+    bar_plot.save(filename=f"{args.plots_dir}/shap_bar_plot.html")
 
     save_npz(f"{args.tfidf_dir}/tfidf.npz", tfidf_scores)
     np.save(f"{args.feature_names_dir}/feature_names.npy", feature_names)
