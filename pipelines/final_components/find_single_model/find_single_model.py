@@ -415,7 +415,7 @@ def main(args: SingleModelArgs):
 
     save_npz(f"{args.tfidf_dir}/tfidf.npz", tfidf_scores)
     np.save(f"{args.feature_names_dir}/feature_names.npy", feature_names)
-    np.save(f"{args.labels_dir}/lables.npy", labels)
+    np.save(f"{args.labels_dir}/labels.npy", labels)
     with open(f"{args.best_hparams_dir}/best_hparams.json", "w") as f:
         json.dump(best_params, f)
 
