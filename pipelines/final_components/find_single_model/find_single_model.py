@@ -12,6 +12,7 @@ from pydantic.dataclasses import dataclass
 from scipy.sparse import save_npz
 
 from eppi_text_classification import get_features, get_labels, get_tfidf_and_names
+from eppi_text_classification.model_io import save_model_to_dir
 from eppi_text_classification.model_stability import (
     predict_cv_metrics,
     predict_cv_scores,
@@ -61,6 +62,7 @@ class SingleModelArgs:
     labels_dir: str
     plots_dir: str
     best_hparams_dir: str
+    trained_model_dir: str
 
     # TODO validate the hparam_search_ranges
 
@@ -188,6 +190,11 @@ def parse_args():
         type=str,
         help="Path to best hyperparameters",
     )
+    parser.add_argument(
+        "--trained_model",
+        type=str,
+        help="Path directory of the model",
+    )
     args = parser.parse_args()
 
     with open(args.hyperparameter_search_ranges) as f:
@@ -216,6 +223,7 @@ def parse_args():
         labels_dir=args.labels,
         plots_dir=args.plots,
         best_hparams_dir=args.best_hparams,
+        trained_model_dir=args.trained_model,
     )
 
 
@@ -251,6 +259,7 @@ def main(args: SingleModelArgs):
     tprint(f"search_db_url: {search_db_url}")
     tprint(f"plots_dir: {args.plots_dir}")
     tprint(f"search_db: {args.search_db_dir}")
+    tprint(f"trained_model_dir: {args.trained_model_dir}")
 
     # Print types of all the arguments
     tprint(f"type of data_path: {type(args.data_path)}")
@@ -276,6 +285,7 @@ def main(args: SingleModelArgs):
     tprint(f"type of search_db_url: {type(search_db_url)}")
     tprint(f"type of plots_dir: {type(args.plots_dir)}")
     tprint(f"type of search_db: {type(args.search_db_dir)}")
+    tprint(f"type of trained_model_dir: {type(args.trained_model_dir)}")
 
     columns_to_use = [args.title_header, args.abstract_header, args.label_header]
 
@@ -322,7 +332,7 @@ def main(args: SingleModelArgs):
 
     optimiser.delete_optuna_study(study_name="hyperparameter_search_study")
 
-    ("")
+    print("")
     tprint("RUNNING HYPERPARAMETER SEARCH")
     study = optimiser.run_hparam_search_study(study_name="hyperparameter_search_study")
 
@@ -418,6 +428,7 @@ def main(args: SingleModelArgs):
     np.save(f"{args.labels_dir}/labels.npy", labels)
     with open(f"{args.best_hparams_dir}/best_hparams.json", "w") as f:
         json.dump(best_params, f)
+    save_model_to_dir(model, args.trained_model_dir)
 
 
 def tprint(*args, **kwargs):
