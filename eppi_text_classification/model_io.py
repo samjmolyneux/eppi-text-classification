@@ -1,5 +1,3 @@
-"""Universal functions for making model predictions."""
-
 from typing import TYPE_CHECKING
 
 import joblib
@@ -15,22 +13,22 @@ def save_model_to_dir(
     model: lgb.basic.Booster | RandomForestClassifier | xgb.core.Booster | SVC,
     save_dir: str,
 ) -> None:
+    print(f"Saving model from to {save_dir}")
     if isinstance(model, lgb.Booster):
         model.save_model(f"{save_dir}/model.txt")
-    if isinstance(model, xgb.Booster):
+    elif isinstance(model, xgb.Booster):
         model.save_model(f"{save_dir}/model.ubj")
-    if isinstance(model, RandomForestClassifier):
+    elif isinstance(model, RandomForestClassifier | SVC):
         joblib.dump(model, f"{save_dir}/model.joblib")
-    if isinstance(model, SVC):
-        joblib.dump(model, f"{save_dir}/model.joblib")
-
-    raise InvalidModelError(model)
+    else:
+        raise InvalidModelError(model)
 
 
 def load_model_from_dir(
     model_name: str,
     load_dir: str,
 ) -> None:
+    print(f"Loading model from {load_dir}")
     if model_name == "lightgbm":
         lgb.Booster(model_file=f"{load_dir}/model.txt")
     if model_name == "xgboost":
