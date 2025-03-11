@@ -29,20 +29,16 @@ def load_np_array_at_directory(
     return np.load(file_path, allow_pickle=allow_pickle)
 
 
-def load_json_at_directory(directory_path: str) -> dict[str, Any]:
+def load_json_at_directory(
+    directory_path: str, unpickle: bool = False
+) -> dict[str, Any]:
     """Load json from directory with single file."""
     file_path = Path(directory_path) / os.listdir(directory_path)[0]
     with file_path.open() as file:
-        from_json = jsonpickle.decode(json.load(file))
-    return from_json
+        if unpickle:
+            return jsonpickle.decode(json.load(file))
 
-
-def load_value_from_json_at_directory(directory_path: str) -> dict[str, Any]:
-    """Load value json from directory with single file."""
-    file_path = Path(directory_path) / os.listdir(directory_path)[0]
-    with file_path.open() as file:
-        value = json.load(file)
-    return value
+        return json.load(file)
 
 
 def load_csr_at_directory(directory_path: str) -> "csr_matrix":
