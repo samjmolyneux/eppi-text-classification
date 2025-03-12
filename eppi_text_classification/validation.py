@@ -4,6 +4,11 @@ import warnings
 
 valid_models = ("lightgbm", "RandomForestClassifier", "SVC", "xgboost")
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pandas as pd
+
 
 class InvalidModelError(Exception):
     """Exception for when an invalid model is passed."""
@@ -63,3 +68,16 @@ def check_valid_database_url(database_url: str) -> None:
         msg = """It appears that you may be trying to store the database in a shared
         directory. Using shared file systems may lead to SQLite Lock errors."""
         warnings.warn(msg, UserWarning, stacklevel=2)
+
+
+def check_for_empty_rows(
+    df: pd.DataFrame,
+    title_key: str,
+    abstract_key: str,
+):
+    empty_mask = (df[abstract_key].fillna("").str.strip() == "") & (
+        df[title_key].fillna("").str.strip() == ""
+    )
+    if empty_mask.any():
+        msg = "There are rows with both abstract and title empty"
+        raise ValueError(msg)
