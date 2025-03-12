@@ -71,7 +71,7 @@ def check_valid_database_url(database_url: str) -> None:
 
 
 def check_for_empty_rows(
-    df: pd.DataFrame,
+    df: "pd.DataFrame",
     title_key: str,
     abstract_key: str,
 ):
