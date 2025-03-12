@@ -77,7 +77,11 @@ def main(args: PredArgs):
 
     unlabelled_tfidf_scores = load_csr_at_directory(args.unlabelled_data_dir)
 
-    pred_labels = raw_threshold_predict(model=model, X=unlabelled_tfidf_scores)
+    pred_labels = raw_threshold_predict(
+        model=model,
+        X=unlabelled_tfidf_scores,
+        threshold=args.threshold,
+    )
 
     np.save(f"{args.pred_labels_dir}/pred_labels.npy", pred_labels)
 

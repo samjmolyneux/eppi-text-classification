@@ -14,7 +14,7 @@ pipeline_job_env = Environment(
     description="Python environment for eppi classifier workbench.",
     conda_file=os.path.join(dependencies_dir, "eppi-classifier-workbench-env.yaml"),
     image="mcr.microsoft.com/azureml/openmpi5.0-ubuntu24.04:latest",
-    version="1.0.0",
+    version="1.0.2",
 )
 pipeline_job_env = ml_client.environments.create_or_update(pipeline_job_env)
 

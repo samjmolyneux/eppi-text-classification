@@ -5,7 +5,7 @@ type: command
 description: >-
   Gets recall, fpr model stability histograms and returns a cv confusion plot.
 inputs:
-  tfidf_scores:
+  labelled_tfidf_scores:
     type: uri_folder
   labels:
     type: uri_folder
@@ -36,7 +36,7 @@ environment: azureml:eppi-classifier-workbench-env:1.0.2
 is_deterministic: false
 command: >-
   python threshold_model_analysis.py  
-  --tfidf_scores ${{inputs.tfidf_scores}}
+  --labelled_tfidf_scores ${{inputs.labelled_tfidf_scores}}
   --labels ${{inputs.labels}}
   --model_name ${{inputs.model_name}}
   --model_params ${{inputs.model_params}}

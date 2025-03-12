@@ -22,10 +22,10 @@ from eppi_text_classification.utils import (
 )
 
 
-@dataclass(config=ConfigDict(frozen=True, strict=True))
+@dataclass(config=ConfigDict(frozen=True, strict=True, arbitrary_types_allowed=True))
 class ThresholdModelAnalysisArgs:
     # Inputs
-    tfidf_scores: csr_matrix
+    labelled_tfidf_scores: csr_matrix
     labels: np.ndarray
     model_name: Literal["lightgbm", "xgboost", "RandomForestClassifier", "SVC"]
     model_params: dict
@@ -42,7 +42,7 @@ def parse_args():
     # input and output arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--tfidf_scores",
+        "--labelled_tfidf_scores",
         type=str,
         help="Path to directory of tfidf_scores",
     )
@@ -90,9 +90,9 @@ def parse_args():
         help="Path to directory to save plots",
     )
     args = parser.parse_args()
-
+    print(args.model_params)
     return ThresholdModelAnalysisArgs(
-        tfidf_scores=load_csr_at_directory(args.tfidf_scores),
+        labelled_tfidf_scores=load_csr_at_directory(args.labelled_tfidf_scores),
         labels=load_np_array_at_directory(args.labels),
         model_name=args.model_name,
         model_params=load_json_at_directory(args.model_params),
@@ -106,8 +106,8 @@ def parse_args():
 
 def main(args: ThresholdModelAnalysisArgs):
     # Print all the arguments using the args dataclass
-    tprint(f"tfidf_scores shape: {args.tfidf_scores.shape}")
-    tprint(f"tfidf_scores nnz: {args.tfidf_scores.nnz}")
+    tprint(f"labelled_tfidf_scores shape: {args.labelled_tfidf_scores.shape}")
+    tprint(f"labelled_tfidf_scores nnz: {args.labelled_tfidf_scores.nnz}")
     tprint(f"labels.shape: {args.labels.shape}")
     tprint(f"model_name: {args.model_name}")
     tprint(f"model_params: {args.model_params}")
@@ -118,7 +118,7 @@ def main(args: ThresholdModelAnalysisArgs):
     tprint(f"plots_dir: {args.plots_dir}")
     print("")
 
-    tprint(f"type of tfidf_scores: {type(args.tfidf_scores)}")
+    tprint(f"type of tfidf_scores: {type(args.labelled_tfidf_scores)}")
     tprint(f"type of labels: {type(args.labels)}")
     tprint(f"type of model_name: {type(args.model_name)}")
     tprint(f"type of model_params: {type(args.model_params)}")
@@ -130,7 +130,7 @@ def main(args: ThresholdModelAnalysisArgs):
     print("")
 
     auc_scores, recall_scores, fpr_scores = predict_cv_metrics(
-        tfidf_scores=args.tfidf_scores,
+        tfidf_scores=args.labelled_tfidf_scores,
         labels=args.labels,
         model_name=args.model_name,
         model_params=args.model_params,
@@ -163,7 +163,7 @@ def main(args: ThresholdModelAnalysisArgs):
     # Predict cv scores for confusion plot
     train_fold_scores, train_fold_labels, val_fold_scores, val_fold_labels = (
         predict_cv_scores(
-            tfidf_scores=args.tfidf_scores,
+            tfidf_scores=args.labelled_tfidf_scores,
             labels=args.labels,
             model_name=args.model_name,
             model_params=args.model_params,
@@ -173,17 +173,19 @@ def main(args: ThresholdModelAnalysisArgs):
     )
 
     cv_train_scores = np.concatenate(train_fold_scores, axis=0)
+    cv_train_pred = (cv_train_scores >= args.threshold).astype(int)
     cv_train_y = np.concatenate(train_fold_labels, axis=0)
 
     cv_val_scores = np.concatenate(val_fold_scores, axis=0)
+    cv_val_pred = (cv_val_scores >= args.threshold).astype(int)
     cv_val_y = np.concatenate(val_fold_labels, axis=0)
 
     binary_train_valid_confusion_plotly(
         y_train=cv_train_y,
-        y_train_pred=cv_train_scores,
-        y_valid=cv_val_y,
-        y_valid_pred=cv_val_scores,
-        savepath=f"{args.plots_dir}/confusion_plot.html",
+        y_train_pred=cv_train_pred,
+        y_val=cv_val_y,
+        y_val_pred=cv_val_pred,
+        save_path=f"{args.plots_dir}/confusion_plot.html",
     )
 
 

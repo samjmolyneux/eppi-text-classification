@@ -8,3 +8,4 @@ dependencies:
     - git+https://github.com/samjmolyneux/eppi-text-classification.git@main
     - git+https://github.com/samjmolyneux/eppi-classifier-shap.git@master
     - https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+    - torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
