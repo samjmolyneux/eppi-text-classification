@@ -23,4 +23,4 @@ command: >-
   --unlabelled_data ${{inputs.unlabelled_data}}
   --threshold ${{inputs.threshold}}
   --model ${{inputs.model}}
-  --pred_dir ${{outputs.pred_labels}}
+  --pred_labels ${{outputs.pred_labels}}
