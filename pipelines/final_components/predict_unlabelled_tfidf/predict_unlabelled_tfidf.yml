@@ -19,29 +19,8 @@ code: predict_unlabelled_tfidf.py
 environment: azureml:eppi-classifier-workbench-env:1.0.2
 is_deterministic: false
 command: >-
-  python find_single_model.py  
-  --labelled_data ${{inputs.labelled_data}}  
-  --unlabelled_data ${{inputs.unlabelled_data}}  
-  --model_name ${{inputs.model_name}}
-  --hparam_search_ranges ${{inputs.hparam_search_ranges}}  
-  --use_early_terminator ${{inputs.use_early_terminator}}  
-  $[[--title_header ${{inputs.title_header}}]]  
-  $[[--abstract_header ${{inputs.abstract_header}}]]  
-  $[[--label_header ${{inputs.label_header}}]]  
-  $[[--positive_class_value ${{inputs.positive_class_value}}]]  
-  $[[--max_n_search_iterations ${{inputs.max_n_search_iterations}}]]  
-  $[[--nfolds ${{inputs.nfolds}}]]  
-  $[[--num_cv_repeats ${{inputs.num_cv_repeats}}]]  
-  $[[--timeout ${{inputs.timeout}}]]  
-  $[[--max_stagnation_iterations ${{inputs.max_stagnation_iterations}}]]  
-  $[[--wilcoxon_trial_pruner_threshold ${{inputs.wilcoxon_trial_pruner_threshold}}]]  
-  $[[--use_worse_than_first_two_pruner ${{inputs.use_worse_than_first_two_pruner}}]]  
-  $[[--shap_num_display ${{inputs.shap_num_display}}]]  
-  --plots ${{outputs.plots}} 
-  --search_db ${{outputs.search_db}}  
-  --feature_names ${{outputs.feature_names}}  
-  --labelled_tfidf_scores ${{outputs.labelled_tfidf_scores}}  
-  --unlabelled_tfidf_scores ${{outputs.unlabelled_tfidf_scores}}  
-  --labels ${{outputs.labels}}  
-  --best_hparams ${{outputs.best_hparams}}
-  --trained_model ${{outputs.trained_model}}
+  python predict_unlabelled_tfidf.py  
+  --unlabelled_data ${{inputs.unlabelled_data}}
+  --threshold ${{inputs.threshold}}
+  --model ${{inputs.model}}
+  --pred_dir ${{outputs.pred_labels}}
