@@ -10,7 +10,8 @@ from joblib import Parallel, delayed
 from numpy.typing import NDArray
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from .utils import parse_multiple_types
+from eppi_text_classification.utils import parse_multiple_types
+from eppi_text_classification.validation import check_for_empty_rows
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -113,7 +114,7 @@ def process_chunk(texts: Sequence[str]) -> list[list[str]]:
     return [lemmatize_pipe(doc) for doc in nlp.pipe(texts, batch_size=25)]
 
 
-def process_column(
+def preprocess_texts(
     texts: Sequence[str],
     num_processes: int = system_num_processes,
 ) -> list[list[str]]:
@@ -187,7 +188,8 @@ def get_labels(
 
 
 def get_features(
-    df: "pd.DataFrame",
+    labelled_df: "pd.DataFrame",
+    unlabelled_df: "pd.DataFrame",
     title_key: str = "title",
     abstract_key: str = "abstract",
     num_processes: int = system_num_processes,
@@ -223,14 +225,33 @@ def get_features(
        The word features.
 
     """
-    df = df.dropna(subset=[title_key, abstract_key], how="all")
-    abstract_column = df[abstract_key].astype(str).to_list()
-    title_column = df[title_key].astype(str).to_list()
+    # df = df.dropna(subset=[title_key, abstract_key], how="all")
 
-    abstracts = process_column(abstract_column, num_processes=num_processes)
-    titles = process_column(title_column, num_processes=num_processes)
+    check_for_empty_rows(labelled_df, title_key, abstract_key)
+    check_for_empty_rows(unlabelled_df, title_key, abstract_key)
+
+    abstracts = (
+        labelled_df[abstract_key].astype(str).to_list()
+        + unlabelled_df[abstract_key].astype(str).to_list()
+    )
+
+    titles = (
+        labelled_df[title_key].astype(str).to_list()
+        + unlabelled_df[title_key].astype(str).to_list()
+    )
+
+    preprocessed_abstracts = preprocess_texts(abstracts, num_processes=num_processes)
+    preprocessed_titles = preprocess_texts(titles, num_processes=num_processes)
+
+    number_of_rows = labelled_df.shape[0] + unlabelled_df.shape[0]
+    assert number_of_rows == len(preprocessed_abstracts) == len(preprocessed_titles), (
+        "a title or abstract was lost in the processing"
+    )
+
     word_features = []
-    for abstract, title in zip(abstracts, titles, strict=True):
+    for abstract, title in zip(
+        preprocessed_abstracts, preprocessed_titles, strict=True
+    ):
         words = [f"t_{word}" for word in title] + [f"a_{word}" for word in abstract]
         string = " ".join(words)
         word_features.append(string)
