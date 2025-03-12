@@ -6,7 +6,9 @@ description: >-
   Takes tsv, performs tokenisation, tfidf, and searches for the best 
   hyperparameters for a given model.
 inputs:
-  data:
+  labelled_data:
+    type: uri_folder
+  unlabelled_data:
     type: uri_folder
   title_header:
     type: string
@@ -26,7 +28,7 @@ inputs:
     optional: true
   model_name:
     type: string
-  hyperparameter_search_ranges:
+  hparam_search_ranges:
     type: uri_folder
   max_n_search_iterations:
     type: integer
@@ -69,7 +71,10 @@ outputs:
   feature_names:
     type: uri_folder
     mode: rw_mount
-  tfidf_scores:
+  labelled_tfidf_scores:
+    type: uri_folder
+    mode: rw_mount
+  unlabelled_tfidf_scores:
     type: uri_folder
     mode: rw_mount
   labels:
@@ -86,9 +91,10 @@ environment: azureml:eppi-classifier-workbench-env:1.0.2
 is_deterministic: false
 command: >-
   python find_single_model.py  
-  --data ${{inputs.data}}  
+  --labelled_data ${{inputs.labelled_data}}  
+  --unlabelled_data ${{inputs.unlabelled_data}}  
   --model_name ${{inputs.model_name}}
-  --hyperparameter_search_ranges ${{inputs.hyperparameter_search_ranges}}  
+  --hparam_search_ranges ${{inputs.hparam_search_ranges}}  
   --use_early_terminator ${{inputs.use_early_terminator}}  
   $[[--title_header ${{inputs.title_header}}]]  
   $[[--abstract_header ${{inputs.abstract_header}}]]  
@@ -105,7 +111,8 @@ command: >-
   --plots ${{outputs.plots}} 
   --search_db ${{outputs.search_db}}  
   --feature_names ${{outputs.feature_names}}  
-  --tfidf_scores ${{outputs.tfidf_scores}}  
+  --labelled_tfidf_scores ${{outputs.labelled_tfidf_scores}}  
+  --unlabelled_tfidf_scores ${{outputs.unlabelled_tfidf_scores}}  
   --labels ${{outputs.labels}}  
   --best_hparams ${{outputs.best_hparams}}
   --trained_model ${{outputs.trained_model}}

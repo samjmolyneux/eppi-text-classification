@@ -32,13 +32,14 @@ from eppi_text_classification.plots import (
 )
 from eppi_text_classification.shap_plotter import ShapPlotter
 from eppi_text_classification.train import train
-from eppi_text_classification.utils import str2bool
+from eppi_text_classification.utils import load_json_at_directory, str2bool
 
 
 @dataclass(config=ConfigDict(frozen=True, strict=True))
 class SingleModelArgs:
     # Inputs
-    data_path: str
+    labelled_data_path: str
+    unlabelled_data_path: str
     title_header: Annotated[str, Field(min_length=1)]
     abstract_header: Annotated[str, Field(min_length=1)]
     label_header: Annotated[str, Field(min_length=1)]
@@ -58,7 +59,8 @@ class SingleModelArgs:
     # Outputs
     search_db_dir: str
     feature_names_dir: str
-    tfidf_dir: str
+    labelled_tfidf_dir: str
+    unlabelled_tfidf_dir: str
     labels_dir: str
     plots_dir: str
     best_hparams_dir: str
@@ -70,7 +72,16 @@ class SingleModelArgs:
 def parse_args():
     # input and output arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, help="path to input tsv")
+    parser.add_argument(
+        "--labelled_data",
+        type=str,
+        help="path to input tsv",
+    )
+    parser.add_argument(
+        "--unlabelled_data",
+        type=str,
+        help="path to input tsv",
+    )
     parser.add_argument(
         "--title_header",
         type=str,
@@ -101,7 +112,7 @@ def parse_args():
         help="Name of the model used in the search",
     )
     parser.add_argument(
-        "--hyperparameter_search_ranges",
+        "--hparam_search_ranges",
         type=str,
         help="Path to directory containing hyperparameter search ranges json",
         default=None,
@@ -158,7 +169,7 @@ def parse_args():
         "--shap_num_display",
         type=int,
         help="Number of features to display in shap plots",
-        default=10,
+        default=20,
     )
     parser.add_argument(
         "--search_db",
@@ -171,7 +182,12 @@ def parse_args():
         help="Path to feature names",
     )
     parser.add_argument(
-        "--tfidf_scores",
+        "--labelled_tfidf_scores",
+        type=str,
+        help="Path to tfidf scores",
+    )
+    parser.add_argument(
+        "--unlabelled_tfidf_scores",
         type=str,
         help="Path to tfidf scores",
     )
@@ -197,17 +213,15 @@ def parse_args():
     )
     args = parser.parse_args()
 
-    with open(args.hyperparameter_search_ranges) as f:
-        hyperparameter_search_ranges = json.load(f)
-
     return SingleModelArgs(
-        data_path=args.data,
+        labelled_data_path=args.labelled_data,
+        unlabelled_data_path=args.unlabelled_data,
         title_header=args.title_header,
         abstract_header=args.abstract_header,
         label_header=args.label_header,
         positive_class_value=args.positive_class_value,
         model_name=args.model_name,
-        hparam_search_ranges=hyperparameter_search_ranges,
+        hparam_search_ranges=load_json_at_directory(args.hparam_search_ranges),
         max_n_search_iterations=args.max_n_search_iterations,
         nfolds=args.nfolds,
         num_cv_repeats=args.num_cv_repeats,
@@ -219,7 +233,8 @@ def parse_args():
         shap_num_display=args.shap_num_display,
         search_db_dir=args.search_db,
         feature_names_dir=args.feature_names,
-        tfidf_dir=args.tfidf_scores,
+        labelled_tfidf_dir=args.labelled_tfidf_scores,
+        unlabelled_tfidf_dir=args.unlabelled_tfidf_scores,
         labels_dir=args.labels,
         plots_dir=args.plots,
         best_hparams_dir=args.best_hparams,
@@ -239,8 +254,9 @@ def main(args: SingleModelArgs):
 
     # raise Exception("stop")
 
-    # Print all the arguments using the args dataclass
-    tprint(f"data_path: {args.data_path}")
+    # Print all the arguments using the args labelled_dataclass
+    tprint(f"labelled_data_path: {args.labelled_data_path}")
+    tprint(f"unlabelled_data_path: {args.unlabelled_data_path}")
     tprint(f"title_header: {args.title_header}")
     tprint(f"abstract_header: {args.abstract_header}")
     tprint(f"label_header: {args.label_header}")
@@ -259,10 +275,13 @@ def main(args: SingleModelArgs):
     tprint(f"search_db_url: {search_db_url}")
     tprint(f"plots_dir: {args.plots_dir}")
     tprint(f"search_db: {args.search_db_dir}")
+    tprint(f"labelled_tfidf_dir: {args.labelled_tfidf_dir}")
+    tprint(f"unlabelled_tfidf_dir: {args.unlabelled_tfidf_dir}")
     tprint(f"trained_model_dir: {args.trained_model_dir}")
 
     # Print types of all the arguments
-    tprint(f"type of data_path: {type(args.data_path)}")
+    tprint(f"type of labelled_data_path: {type(args.labelled_data_path)}")
+    tprint(f"type of unlabelled_data_path: {type(args.unlabelled_data_path)}")
     tprint(f"type of title_header: {type(args.title_header)}")
     tprint(f"type of abstract_header: {type(args.abstract_header)}")
     tprint(f"type of label_header: {type(args.label_header)}")
@@ -285,36 +304,66 @@ def main(args: SingleModelArgs):
     tprint(f"type of search_db_url: {type(search_db_url)}")
     tprint(f"type of plots_dir: {type(args.plots_dir)}")
     tprint(f"type of search_db: {type(args.search_db_dir)}")
+    tprint(f"type labelled_tfidf_dir: {type(args.labelled_tfidf_dir)}")
+    tprint(f"type unlabelled_tfidf_dir: {type(args.unlabelled_tfidf_dir)}")
     tprint(f"type of trained_model_dir: {type(args.trained_model_dir)}")
 
-    columns_to_use = [args.title_header, args.abstract_header, args.label_header]
+    labelled_df = pd.read_csv(
+        args.labelled_data_path,
+        sep="\t",
+        usecols=[args.title_header, args.abstract_header, args.label_header],
+    )
 
-    df = pd.read_csv(args.data_path, sep="\t", usecols=columns_to_use)
+    unlabelled_df = pd.read_csv(
+        args.unlabelled_data_path,
+        sep="\t",
+        usecols=[args.title_header, args.abstract_header],
+    )
 
     # First create a model
     print("")
-    tprint(f"GETTING FEATURES")
-    word_features = get_features(
-        df,
+    tprint(f"GETTING LABELLED WORD FEATURES")
+    labelled_word_features = get_features(
+        labelled_df,
         title_key=args.title_header,
         abstract_key=args.abstract_header,
     )
+
+    print("")
+    tprint(f"GETTING UNLABELLED WORD FEATURES")
+    unlabelled_word_features = get_features(
+        unlabelled_df,
+        title_key=args.title_header,
+        abstract_key=args.abstract_header,
+    )
+
+    word_features = labelled_word_features + unlabelled_word_features
+
+    # Check that nothing was lost in word feature extraction
+    number_of_rows = labelled_df.shape[0] + unlabelled_df.shape[0]
+    assert number_of_rows == len(word_features), (
+        "something was lost in word feature extraction"
+    )
+
     print("")
     tprint("GETTING LABELS")
     labels = get_labels(
-        df,
+        labelled_df,
         label_key=args.label_header,
         positive_class_value=args.positive_class_value,
     )
 
     print("")
     tprint("GETTING TFIDF AND NAMES")
-    tfidf_scores, feature_names = get_tfidf_and_names(word_features)
+    all_tfidf_scores, feature_names = get_tfidf_and_names(word_features)
+
+    labelled_tfidf_scores = all_tfidf_scores[: labelled_df.shape[0]]
+    unlabelled_tfidf_scores = all_tfidf_scores[labelled_df.shape[0] :]
 
     print("")
     tprint("INITIALISING OPTIMISER")
     optimiser = OptunaHyperparameterOptimisation(
-        tfidf_scores=tfidf_scores,
+        tfidf_scores=labelled_tfidf_scores,
         labels=labels,
         model_name=args.model_name,
         max_n_search_iterations=args.max_n_search_iterations,
@@ -346,7 +395,7 @@ def main(args: SingleModelArgs):
     create_all_optuna_plots(study, optuna_plots_directory)
 
     _, _, val_fold_scores, val_fold_labels = predict_cv_scores(
-        tfidf_scores,
+        labelled_tfidf_scores,
         labels,
         args.model_name,
         best_params,
@@ -379,7 +428,7 @@ def main(args: SingleModelArgs):
     )
 
     learning_curve(
-        tfidf_scores,
+        labelled_tfidf_scores,
         labels,
         args.model_name,
         best_params,
@@ -389,7 +438,7 @@ def main(args: SingleModelArgs):
     )
 
     auc_scores = predict_cv_metrics(
-        tfidf_scores=tfidf_scores,
+        tfidf_scores=labelled_tfidf_scores,
         labels=labels,
         model_name=args.model_name,
         model_params=best_params,
@@ -407,13 +456,13 @@ def main(args: SingleModelArgs):
     model = train(
         model_name=args.model_name,
         params=best_params,
-        X=tfidf_scores,
+        X=labelled_tfidf_scores,
         y=labels,
         n_jobs=-1,
     )
     shap_plotter = ShapPlotter(
         model,
-        tfidf_scores,
+        unlabelled_tfidf_scores,
         feature_names,
     )
     dot_plot = shap_plotter.dot_plot(num_display=args.shap_num_display, log_scale=True)
@@ -423,11 +472,15 @@ def main(args: SingleModelArgs):
     bar_plot = shap_plotter.bar_chart(num_display=args.shap_num_display)
     bar_plot.save(filename=f"{args.plots_dir}/shap_bar_plot.png")
 
-    save_npz(f"{args.tfidf_dir}/tfidf.npz", tfidf_scores)
+    save_npz(f"{args.labelled_tfidf_dir}/labelled_tfidf.npz", labelled_tfidf_scores)
+    save_npz(
+        f"{args.unlabelled_tfidf_dir}/unlabelled_tfidf.npz", unlabelled_tfidf_scores
+    )
     np.save(f"{args.feature_names_dir}/feature_names.npy", feature_names)
     np.save(f"{args.labels_dir}/labels.npy", labels)
     with open(f"{args.best_hparams_dir}/best_hparams.json", "w") as f:
         json.dump(best_params, f)
+    print(type(model))
     save_model_to_dir(model, args.trained_model_dir)
 
 
