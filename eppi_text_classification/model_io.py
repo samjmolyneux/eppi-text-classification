@@ -25,18 +25,15 @@ def save_model_to_dir(
 
 
 def load_model_from_dir(
-    model_name: str,
     load_dir: str,
 ) -> None:
     print(f"Loading model from {load_dir}")
-    if model_name == "lightgbm":
+    if load_dir.endswith("txt"):
         lgb.Booster(model_file=f"{load_dir}/model.txt")
-    if model_name == "xgboost":
+    if load_dir.endswith("ubj"):
         xgb.Booster(model_file=f"{load_dir}/model.ubj")
-    if model_name == "RandomForestClassifier":
-        joblib.load(f"{load_dir}/model.joblib")
-    if model_name == "SVC":
+    if load_dir.endswith("joblib"):
         joblib.load(f"{load_dir}/model.joblib")
 
-    msg = f"Model {model_name} not recognised"
+    msg = f"Could not load model from {load_dir}"
     raise ValueError(msg)
