@@ -1,0 +1,26 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: classify_unlabelled_tfidf_for_classifier_workbench
+display_name: Classify tfidf scores of unlabelled data 
+type: command
+description: >-
+  Predicts labels for tfidf scores of unlabelled data using a trained model.
+inputs:
+  unlabelled_tfidf_scores:
+    type: uri_folder
+  threshold:
+    type: number
+  trained_model:
+    type: uri_folder
+outputs:
+  pred_labels:
+    type: uri_folder
+    mode: rw_mount
+code: classify_unlabelled_tfidf.py
+environment: azureml:eppi-classifier-workbench-env:1.0.2
+is_deterministic: false
+command: >-
+  python classify_unlabelled_tfidf.py  
+  --unlabelled_tfidf_scores ${{inputs.unlabelled_tfidf_scores}}
+  --threshold ${{inputs.threshold}}
+  --trained_model ${{inputs.trained_model}}
+  --pred_labels ${{outputs.pred_labels}}
