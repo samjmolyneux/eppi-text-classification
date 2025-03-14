@@ -11,8 +11,6 @@ from eppi_text_classification.model_io import load_model_from_dir
 from eppi_text_classification.predict import raw_threshold_predict
 from eppi_text_classification.utils import (
     load_csr_at_directory,
-    save_model_to_dir,
-    save_npz,
 )
 
 
