@@ -1,3 +1,4 @@
+import os
 from typing import TYPE_CHECKING
 
 import joblib
@@ -27,13 +28,18 @@ def save_model_to_dir(
 def load_model_from_dir(
     load_dir: str,
 ) -> None:
-    print(f"Loading model from {load_dir}")
-    if load_dir.endswith("txt"):
-        lgb.Booster(model_file=f"{load_dir}/model.txt")
-    if load_dir.endswith("ubj"):
-        xgb.Booster(model_file=f"{load_dir}/model.ubj")
-    if load_dir.endswith("joblib"):
-        joblib.load(f"{load_dir}/model.joblib")
+    txt_path = os.path.join(load_dir, "model.txt")
+    ubj_path = os.path.join(load_dir, "model.ubj")
+    joblib_path = os.path.join(load_dir, "model.joblib")
+
+    if os.path.isfile(txt_path):
+        return lgb.Booster(model_file=txt_path)
+
+    if os.path.isfile(ubj_path):
+        return xgb.Booster(model_file=ubj_path)
+
+    if os.path.isfile(joblib_path):
+        return joblib.load(joblib_path)
 
     msg = f"Could not load model from {load_dir}"
     raise ValueError(msg)
