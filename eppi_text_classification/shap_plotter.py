@@ -117,6 +117,7 @@ class DecisionPlot:
         """Save the decision plot."""
         self._make_plot()
         plt.savefig(filename)
+        plt.close()
 
     def _make_plot(self) -> None:
         # Create a decision plot
@@ -311,6 +312,7 @@ class DotPlot:
         """Save the dot plot."""
         self._make_plot()
         plt.savefig(filename)
+        plt.close()
 
     def _make_plot(self) -> None:
         sparse_summary_new(
@@ -366,6 +368,7 @@ class BarPlot:
         """Save the bar plot."""
         self._make_plot()
         plt.savefig(filename)
+        plt.close()
 
     def _make_plot(self) -> None:
         sparse_summary_new(
