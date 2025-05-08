@@ -19,8 +19,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 
 from eppi_text_classification.plots import shap_colors as colors
-
-from .. import predict_scores
+from eppi_text_classification.predict import predict_scores
 
 if TYPE_CHECKING:
     from matplotlib.colors import LinearSegmentedColormap
