@@ -29,7 +29,7 @@ def parse_args():
     # input and output arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--unlabelled_data",
+        "--unlabelled_tfidf_scores",
         type=str,
         help="path to input tsv",
     )
@@ -39,7 +39,7 @@ def parse_args():
         help="Classification threshold",
     )
     parser.add_argument(
-        "--model",
+        "--trained_model",
         type=str,
         help="Path to saved model",
     )
@@ -51,9 +51,9 @@ def parse_args():
     args = parser.parse_args()
 
     return PredArgs(
-        unlabelled_data_dir=args.unlabelled_data,
+        unlabelled_data_dir=args.unlabelled_tfidf_scores,
         threshold=args.threshold,
-        model_dir=args.model,
+        model_dir=args.trained_model,
         pred_labels_dir=args.pred_labels,
     )
 

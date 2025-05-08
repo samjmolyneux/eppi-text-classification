@@ -17,8 +17,8 @@ from eppi_text_classification.model_stability import (
     predict_cv_metrics,
     predict_cv_scores,
 )
-from eppi_text_classification.opt import (
-    OptunaHyperparameterOptimisation,
+from eppi_text_classification.multi_process_hparam_search import (
+    MultiProcessHparamSearch,
     get_best_hparams_from_study,
 )
 from eppi_text_classification.plots import (
@@ -30,7 +30,7 @@ from eppi_text_classification.plots import (
     roc_plot,
     select_threshold_plot,
 )
-from eppi_text_classification.shap_plotter import ShapPlotter
+from eppi_text_classification.plots.shap_plotter import ShapPlotter
 from eppi_text_classification.train import train
 from eppi_text_classification.utils import load_json_at_directory, str2bool
 
@@ -341,9 +341,9 @@ def main(args: SingleModelArgs):
 
     # Check that nothing was lost in word feature extraction
     number_of_rows = labelled_df.shape[0] + unlabelled_df.shape[0]
-    assert number_of_rows == len(word_features), (
-        "something was lost in word feature extraction"
-    )
+    assert number_of_rows == len(
+        word_features
+    ), "something was lost in word feature extraction"
 
     print("")
     tprint("GETTING LABELS")
@@ -362,7 +362,7 @@ def main(args: SingleModelArgs):
 
     print("")
     tprint("INITIALISING OPTIMISER")
-    optimiser = OptunaHyperparameterOptimisation(
+    optimiser = MultiProcessHparamSearch(
         tfidf_scores=labelled_tfidf_scores,
         labels=labels,
         model_name=args.model_name,
