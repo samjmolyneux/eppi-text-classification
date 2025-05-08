@@ -62,23 +62,6 @@ dependencies = [
     # "torch @ https://download.pytorch.org/whl/torch/torch-2.6.0+cpu-cp311-cp311-linux_x86_64.whl",
 ]
 
-# dependencies = [
-#     "pandas",
-#     "optuna",
-#     "joblib",
-#     "lightgbm",
-#     "scikit-learn",
-#     "xgboost",
-#     "spacy",
-#     "plotly",
-#     "nbformat",
-#     "matplotlib",
-#     # "shap",
-#     "jupyter",
-#     "jsonpickle",
-#     "numpy",
-#     "torch",
-# ]
 
 [project.optional-dependencies]
 # test = [
