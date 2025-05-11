@@ -342,9 +342,14 @@ class MultiProcessHparamSearch:
                 num_cv_repeats=self.num_cv_repeats, nfolds=self.nfolds
             )
 
+        storage_db = optuna.storages.RDBStorage(
+            url=self.db_storage_url,
+            engine_kwargs={"connect_args": {"timeout": 30}},
+        )
+
         study = optuna.create_study(
             study_name=study_name,
-            storage=self.db_storage_url,
+            storage=storage_db,
             direction="maximize",
             load_if_exists=True,
         )
