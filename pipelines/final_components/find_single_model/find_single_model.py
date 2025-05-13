@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Literal
@@ -246,8 +247,10 @@ def main(args: SingleModelArgs):
     print(f"pwd: {Path.cwd()}")
     print("")
 
-    search_db_url = f"sqlite:///{args.search_db_dir}optuna.db"
-    # search_db_url = f"sqlite:///{cwd_path.parents[5]}/optuna.db"
+    # search_db_url = f"sqlite:///{args.search_db_dir}optuna.db"
+    optuna_db_dir = Path.cwd() / "optuna.db"
+    search_db_url = f"sqlite:///{optuna_db_dir}"
+
     print(f"search_db_url: {search_db_url}")
 
     os.mkdir(f"{args.plots_dir}/optuna_plots")
@@ -379,7 +382,7 @@ def main(args: SingleModelArgs):
         use_worse_than_first_two_pruner=args.use_worse_than_first_two_pruner,
     )
 
-    optimiser.delete_optuna_study(study_name="hyperparameter_search_study")
+    # optimiser.delete_optuna_study(study_name="hyperparameter_search_study")
 
     print("")
     tprint("RUNNING HYPERPARAMETER SEARCH")
@@ -482,6 +485,7 @@ def main(args: SingleModelArgs):
         json.dump(best_params, f)
     print(type(model))
     save_model_to_dir(model, args.trained_model_dir)
+    shutil.copy2(optuna_db_dir, Path(args.search_db_dir) / "optuna.db")
 
 
 def tprint(*args, **kwargs):
