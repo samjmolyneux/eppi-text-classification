@@ -187,3 +187,4 @@ cython_debug/
 #.idea/
 pipelines/pipeline_outputs
 prot.py
+notebooks/sim_pipeline_outputs
