@@ -1,8 +1,47 @@
+from joblib import Parallel, delayed
 from sklearn.metrics import recall_score, roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 
 from .predict import predict_scores, raw_threshold_predict
 from .train import train
+
+
+def _one_cv_metric(
+    tfidf_scores,
+    labels,
+    model_name,
+    model_params,
+    threshold,
+    nfolds,
+    repeat_idx,
+):
+    auc_scores, recall_scores, fpr_scores = [], [], []
+
+    kf = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=repeat_idx)
+
+    for train_idx, val_idx in kf.split(tfidf_scores, labels):
+        X_train = tfidf_scores[train_idx]
+        X_val = tfidf_scores[val_idx]
+
+        y_train = labels[train_idx]
+        y_val = labels[val_idx]
+
+        clf = train(model_name, model_params, X_train, y_train, n_jobs=1)
+
+        y_val_scores = predict_scores(clf, X_val)
+
+        auc = roc_auc_score(y_val, y_val_scores)
+        auc_scores.append(auc)
+
+        if threshold is not None:
+            y_val_pred = raw_threshold_predict(clf, X_val, threshold)
+            recall = recall_score(y_val, y_val_pred)
+            recall_scores.append(recall)
+
+            fpr = 1 - recall_score(y_val, y_val_pred, pos_label=0)
+            fpr_scores.append(fpr)
+
+    return auc_scores, recall_scores, fpr_scores
 
 
 def predict_cv_metrics(
@@ -14,38 +53,72 @@ def predict_cv_metrics(
     num_cv_repeats,
     threshold=None,
 ):
-    auc_scores = []
-    recall_scores = []
-    fpr_scores = []
+    cv_metrics = Parallel(n_jobs=-1)(
+        delayed(_one_cv_metric)(
+            tfidf_scores=tfidf_scores,
+            labels=labels,
+            model_name=model_name,
+            model_params=model_params,
+            threshold=threshold,
+            nfolds=nfolds,
+            repeat_idx=i,
+        )
+        for i in range(num_cv_repeats)
+    )
 
-    for i in range(num_cv_repeats):
-        kf = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=i)
-        for _, (train_idx, val_idx) in enumerate(kf.split(tfidf_scores, labels)):
-            X_train = tfidf_scores[train_idx]
-            X_val = tfidf_scores[val_idx]
-
-            y_train = labels[train_idx]
-            y_val = labels[val_idx]
-
-            clf = train(model_name, model_params, X_train, y_train)
-
-            y_val_scores = predict_scores(clf, X_val)
-
-            auc = roc_auc_score(y_val, y_val_scores)
-            auc_scores.append(auc)
-
-            if threshold is not None:
-                y_val_pred = raw_threshold_predict(clf, X_val, threshold)
-                recall = recall_score(y_val, y_val_pred)
-                recall_scores.append(recall)
-
-                fpr = 1 - recall_score(y_val, y_val_pred, pos_label=0)
-                fpr_scores.append(fpr)
+    auc_scores, recall_scores, fpr_scores = [], [], []
+    for aucs, recalls, fprs in cv_metrics:
+        auc_scores.extend(aucs)
+        recall_scores.extend(recalls)
+        fpr_scores.extend(fprs)
 
     if threshold is None:
         return auc_scores
 
     return auc_scores, recall_scores, fpr_scores
+
+
+# def predict_cv_metrics(
+#     tfidf_scores,
+#     labels,
+#     model_name,
+#     model_params,
+#     nfolds,
+#     num_cv_repeats,
+#     threshold=None,
+# ):
+#     auc_scores = []
+#     recall_scores = []
+#     fpr_scores = []
+
+#     for i in range(num_cv_repeats):
+#         kf = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=i)
+#         for _, (train_idx, val_idx) in enumerate(kf.split(tfidf_scores, labels)):
+#             X_train = tfidf_scores[train_idx]
+#             X_val = tfidf_scores[val_idx]
+
+#             y_train = labels[train_idx]
+#             y_val = labels[val_idx]
+
+#             clf = train(model_name, model_params, X_train, y_train)
+
+#             y_val_scores = predict_scores(clf, X_val)
+
+#             auc = roc_auc_score(y_val, y_val_scores)
+#             auc_scores.append(auc)
+
+#             if threshold is not None:
+#                 y_val_pred = raw_threshold_predict(clf, X_val, threshold)
+#                 recall = recall_score(y_val, y_val_pred)
+#                 recall_scores.append(recall)
+
+#                 fpr = 1 - recall_score(y_val, y_val_pred, pos_label=0)
+#                 fpr_scores.append(fpr)
+
+#     if threshold is None:
+#         return auc_scores
+
+#     return auc_scores, recall_scores, fpr_scores
 
 
 def predict_cv_scores(
@@ -97,13 +170,13 @@ def predict_cv_metrics_per_model(
     recall_scores_per_model = []
     fpr_scores_per_model = []
 
-    assert len(model_names) == len(model_params_list), (
-        "model_list and model_param_list must have the same length"
-    )
+    assert len(model_names) == len(
+        model_params_list
+    ), "model_list and model_param_list must have the same length"
     if thresholds is not None:
-        assert len(model_names) == len(thresholds), (
-            "model_list and thresholds must have the same length"
-        )
+        assert len(model_names) == len(
+            thresholds
+        ), "model_list and thresholds must have the same length"
 
     for i in range(len(model_names)):
         model_name = model_names[i]
