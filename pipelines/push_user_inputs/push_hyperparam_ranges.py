@@ -3,7 +3,8 @@ import json
 import jsonpickle
 from azure.ai.ml.constants import AssetTypes
 from azure.ai.ml.entities import Data
-from load_azure_ml import get_azure_ml_client
+
+from pipelines import get_azure_ml_client
 
 ml_client = get_azure_ml_client()
 

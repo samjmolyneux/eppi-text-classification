@@ -247,15 +247,10 @@ def main(args: SingleModelArgs):
     print(f"pwd: {Path.cwd()}")
     print("")
 
-    # search_db_url = f"sqlite:///{args.search_db_dir}optuna.db"
     optuna_db_dir = Path.cwd() / "optuna.db"
     search_db_url = f"sqlite:///{optuna_db_dir}"
 
     print(f"search_db_url: {search_db_url}")
-
-    os.mkdir(f"{args.plots_dir}/optuna_plots")
-
-    # raise Exception("stop")
 
     # Print all the arguments using the args labelled_dataclass
     tprint(f"labelled_data_path: {args.labelled_data_path}")
@@ -382,7 +377,7 @@ def main(args: SingleModelArgs):
         use_worse_than_first_two_pruner=args.use_worse_than_first_two_pruner,
     )
 
-    # optimiser.delete_optuna_study(study_name="hyperparameter_search_study")
+    optimiser.delete_optuna_study(study_name="hyperparameter_search_study")
 
     print("")
     tprint("RUNNING HYPERPARAMETER SEARCH")
@@ -395,6 +390,7 @@ def main(args: SingleModelArgs):
     # Second perform analysis for the resulting model
 
     optuna_plots_directory = f"{args.plots_dir}/optuna_plots"
+    os.mkdir(optuna_plots_directory)
     create_all_optuna_plots(study, optuna_plots_directory)
 
     _, _, val_fold_scores, val_fold_labels = predict_cv_scores(

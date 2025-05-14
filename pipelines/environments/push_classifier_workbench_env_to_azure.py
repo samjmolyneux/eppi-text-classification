@@ -1,7 +1,8 @@
 import os
 
 from azure.ai.ml.entities import Environment
-from load_azure_ml import get_azure_ml_client
+
+from pipelines import get_azure_ml_client
 
 ml_client = get_azure_ml_client()
 
