@@ -93,14 +93,6 @@ def binary_train_valid_confusion_plotly(
     add_ticks_to_confusion(fig, labels, 1)
     add_ticks_to_confusion(fig, labels, 2)
 
-    # Save as html file
-    pio.write_html(
-        fig,
-        file="confusion_matrix.html",
-        auto_open=False,
-        include_plotlyjs="cdn",
-    )
-
     if save_path:
         fig.write_html(save_path)
     else:
