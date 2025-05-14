@@ -188,3 +188,5 @@ cython_debug/
 pipelines/pipeline_outputs
 prot.py
 notebooks/sim_pipeline_outputs
+tests/test_pipeline_components/sim_pipeline_outputs
+tests/test_pipeline_components/optuna.db
