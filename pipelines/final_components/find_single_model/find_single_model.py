@@ -420,8 +420,8 @@ def main(args: SingleModelArgs):
     box_plot(
         data_by_box=val_fold_scores,
         box_names=[f"Fold {i}" for i in range(args.nfolds)],
-        title="Cross-Validation AUC Scores",
-        yaxis_title="AUC",
+        title="Model Confidence Scores By Fold",
+        yaxis_title="Scores",
         xaxis_title="",
         savepath=f"{args.plots_dir}/box_plot.html",
     )
