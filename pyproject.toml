@@ -7,7 +7,7 @@ requires = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["eppi_text_classification*"]
+include = ["eppi_text_classification*", "pipelines*"]
 
 [project]
 name = "eppi_text_classification"
