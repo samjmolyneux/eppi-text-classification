@@ -658,7 +658,7 @@ def _train_model(
                 "Stopped training because there are no more leaves that meet the split requirements",
             ]
         ):
-            num_boost_round = train_params.pop("n_estimators")
+            num_boost_round = train_params.pop("num_iterations")
             dtrain = lgb.Dataset(X, label=y, free_raw_data=True)
             model = lgb.train(train_params, dtrain, num_boost_round=num_boost_round)
         return model

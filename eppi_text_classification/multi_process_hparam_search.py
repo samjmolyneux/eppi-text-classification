@@ -69,14 +69,19 @@ default_hyperparameter_ranges = {
     "lightgbm": {
         # INTS
         "max_depth": {"low": 1, "high": 15, "log": False, "suggest_type": "int"},
-        "min_child_samples": {
+        "min_data_in_leaf": {
             "low": 1,
             "high": 30,
             "log": False,
             "suggest_type": "int",
         },
         "num_leaves": {"low": 2, "high": 50, "log": False, "suggest_type": "int"},
-        "n_estimators": {"low": 100, "high": 1000, "log": False, "suggest_type": "int"},
+        "num_iterations": {
+            "low": 100,
+            "high": 1000,
+            "log": False,
+            "suggest_type": "int",
+        },
         # FLOATS
         "learning_rate": {
             "low": 0.1,
@@ -84,27 +89,28 @@ default_hyperparameter_ranges = {
             "log": False,
             "suggest_type": "float",
         },
-        "min_split_gain": {
+        "min_gain_to_split": {
             "low": 1e-6,
             "high": 10,
             "log": True,
             "suggest_type": "float",
         },
-        "min_child_weight": {
+        "min_sum_hessian_in_leaf": {
             "low": 1e-6,
             "high": 1e-1,
             "log": True,
             "suggest_type": "float",
         },
-        "reg_alpha": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
-        "reg_lambda": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
+        "lambda_l1": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
+        "lambda_l2": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
         # SINGULAR
         "data_sample_strategy": {"value": "bagging", "suggest_type": "singular"},
-        "boosting_type": {"value": "gbdt", "suggest_type": "singular"},
+        "boosting": {"value": "gbdt", "suggest_type": "singular"},
         "tree_learner": {"value": "serial", "suggest_type": "singular"},
         "use_quantized_grad": {"value": False, "suggest_type": "singular"},
-        "subsample": {"value": 1.0, "suggest_type": "singular"},
-        "subsample_for_bin": {"value": 20000, "suggest_type": "singular"},
+        "bagging_fraction": {"value": 1.0, "suggest_type": "singular"},
+        "bin_construct_sample_cnt": {"value": 20000, "suggest_type": "singular"},
+        "bagging_freq": {"value": 1, "suggest_type": "singular"},
         # CATEGORICAL
     },
     "RandomForestClassifier": {
