@@ -115,7 +115,7 @@ class DecisionPlot:
     def save(self, filename: str) -> None:
         """Save the decision plot."""
         self._make_plot()
-        plt.savefig(filename)
+        plt.savefig(filename, dpi=1000)
         plt.close()
 
     def _make_plot(self) -> None:
@@ -310,7 +310,7 @@ class DotPlot:
     def save(self, filename: str) -> None:
         """Save the dot plot."""
         self._make_plot()
-        plt.savefig(filename)
+        plt.savefig(filename, dpi=1000)
         plt.close()
 
     def _make_plot(self) -> None:
@@ -366,7 +366,7 @@ class BarPlot:
     def save(self, filename: str) -> None:
         """Save the bar plot."""
         self._make_plot()
-        plt.savefig(filename)
+        plt.savefig(filename, dpi=1000)
         plt.close()
 
     def _make_plot(self) -> None:
