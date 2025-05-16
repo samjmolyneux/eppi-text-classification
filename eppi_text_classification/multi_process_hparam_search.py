@@ -68,41 +68,42 @@ default_hyperparameter_ranges = {
     },
     "lightgbm": {
         # INTS
-        "max_depth": {"low": 1, "high": 15, "log": False, "suggest_type": "int"},
+        "max_depth": {"low": 1, "high": 60, "log": False, "suggest_type": "int"},
         "min_data_in_leaf": {
             "low": 1,
             "high": 30,
             "log": False,
             "suggest_type": "int",
         },
-        "num_leaves": {"low": 2, "high": 50, "log": False, "suggest_type": "int"},
+        "num_leaves": {"low": 2, "high": 70, "log": False, "suggest_type": "int"},
         "num_iterations": {
             "low": 100,
-            "high": 1000,
+            "high": 2000,
             "log": False,
             "suggest_type": "int",
         },
         # FLOATS
         "learning_rate": {
             "low": 0.1,
-            "high": 0.6,
+            "high": 0.45,
             "log": False,
             "suggest_type": "float",
         },
         "min_gain_to_split": {
-            "low": 1e-6,
-            "high": 10,
+            "low": 1e-8,
+            "high": 1,
             "log": True,
             "suggest_type": "float",
         },
         "min_sum_hessian_in_leaf": {
-            "low": 1e-6,
-            "high": 1e-1,
+            "low": 1e-8,
+            "high": 1e-2,
             "log": True,
             "suggest_type": "float",
         },
-        "lambda_l1": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
-        "lambda_l2": {"low": 1e-5, "high": 10, "log": True, "suggest_type": "float"},
+        "lambda_l1": {"low": 1e-9, "high": 1, "log": True, "suggest_type": "float"},
+        "lambda_l2": {"low": 1e-9, "high": 1, "log": True, "suggest_type": "float"},
+        # "path_smooth": {"low": 1e-6, "high": 0.5, "log": True, "suggest_type": "float"},
         # SINGULAR
         "data_sample_strategy": {"value": "bagging", "suggest_type": "singular"},
         "boosting": {"value": "gbdt", "suggest_type": "singular"},
@@ -352,7 +353,6 @@ class MultiProcessHparamSearch:
             url=self.db_storage_url,
             engine_kwargs={"connect_args": {"timeout": 30}},
         )
-
         study = optuna.create_study(
             study_name=study_name,
             storage=storage_db,
