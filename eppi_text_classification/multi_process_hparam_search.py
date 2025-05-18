@@ -41,15 +41,25 @@ default_hyperparameter_ranges = {
     # TO DO: change default to linear
     "SVC": {
         # INTS
+        "degree": {"low": 2, "high": 7, "log": False, "suggest_type": "int"},
         # FLOATS
-        "C": {"low": 1e-3, "high": 100000, "log": True},
-        "gamma": {"low": 1e-7, "high": 1000, "log": True},
+        "C": {"low": 1e-3, "high": 100000, "log": True, "suggest_type": "float"},
+        "gamma": {"low": 1e-7, "high": 1000, "log": True, "suggest_type": "float"},
+        "coef0": {"low": 1e-7, "high": 1000, "log": True, "suggest_type": "float"},
+        "tol": {"low": 1e-7, "high": 1e-3, "log": True, "suggest_type": "float"},
         # SINGULAR
         "cache_size": {"value": 1000, "suggest_type": "singular"},
-        "kernel": {"value": "rbf", "suggest_type": "singular"},
         "shrinking": {"value": True, "suggest_type": "singular"},
-        "tol": {"value": 1e-5, "suggest_type": "singular"},
         # CATEGORICAL
+        "kernel": {
+            "choices": [
+                "linear",
+                # "poly",
+                "rbf",
+                "sigmoid",
+            ],
+            "suggest_type": "categorical",
+        },
     },
     "xgboost": {
         # INTS
