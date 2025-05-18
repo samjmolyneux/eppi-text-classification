@@ -57,6 +57,8 @@ def train(
         return model
 
     if model_name == "SVC":
+        # SVC does not support n_jobs
+        train_params.pop("n_jobs", None)
         model = SVC(**train_params)
         model.fit(X, y)
         return model
