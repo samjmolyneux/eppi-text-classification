@@ -61,41 +61,49 @@ inputs:
     type: integer
     default: 20
     optional: true
-outputs:
-  plots:
-    type: uri_folder
-    mode: rw_mount
-  search_db:
-    type: uri_folder
-    mode: rw_mount
-  feature_names:
-    type: uri_folder
-    mode: rw_mount
-  labelled_tfidf_scores:
-    type: uri_folder
-    mode: rw_mount
-  unlabelled_tfidf_scores:
-    type: uri_folder
-    mode: rw_mount
-  labels:
-    type: uri_folder
-    mode: rw_mount
-  best_hparams:
-    type: uri_folder
-    mode: rw_mount
-  trained_model:
-    type: uri_folder
-    mode: rw_mount
+  working_container_url:
+    type: string
+    default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation" 
+    optional: true
+  output_container_url:
+    type: string
+
+# outputs:
+#   plots:
+#     type: uri_folder
+#     mode: rw_mount
+#   search_db:
+#     type: uri_folder
+#     mode: rw_mount
+#   feature_names:
+#     type: uri_folder
+#     mode: rw_mount
+#   labelled_tfidf_scores:
+#     type: uri_folder
+#     mode: rw_mount
+#   unlabelled_tfidf_scores:
+#     type: uri_folder
+#     mode: rw_mount
+#   labels:
+#     type: uri_folder
+#     mode: rw_mount
+#   best_hparams:
+#     type: uri_folder
+#     mode: rw_mount
+#   trained_model:
+#     type: uri_folder
+#     mode: rw_mount
 code: find_single_model.py
 environment: azureml:eppi-classifier-workbench-env:1.0.2
 is_deterministic: false
 command: >-
   python find_single_model.py  
-  --labelled_data ${{inputs.labelled_data}}  
-  --unlabelled_data ${{inputs.unlabelled_data}}  
+  --labelled_data_path ${{inputs.labelled_data_path}}  
+  --unlabelled_data_path ${{inputs.unlabelled_data_path}}  
   --model_name ${{inputs.model_name}}
   --hparam_search_ranges ${{inputs.hparam_search_ranges}}  
   --use_early_terminator ${{inputs.use_early_terminator}}  
+  --output_container_url ${{inputs.output_container_url}}
   $[[--title_header ${{inputs.title_header}}]]  
   $[[--abstract_header ${{inputs.abstract_header}}]]  
   $[[--label_header ${{inputs.label_header}}]]  
@@ -108,11 +116,12 @@ command: >-
   $[[--wilcoxon_trial_pruner_threshold ${{inputs.wilcoxon_trial_pruner_threshold}}]]  
   $[[--use_worse_than_first_two_pruner ${{inputs.use_worse_than_first_two_pruner}}]]  
   $[[--shap_num_display ${{inputs.shap_num_display}}]]  
-  --plots ${{outputs.plots}} 
-  --search_db ${{outputs.search_db}}  
-  --feature_names ${{outputs.feature_names}}  
-  --labelled_tfidf_scores ${{outputs.labelled_tfidf_scores}}  
-  --unlabelled_tfidf_scores ${{outputs.unlabelled_tfidf_scores}}  
-  --labels ${{outputs.labels}}  
-  --best_hparams ${{outputs.best_hparams}}
-  --trained_model ${{outputs.trained_model}}
+  $[[--working_container_url ${{inputs.working_container_url}}]]
+  # --plots ${{outputs.plots}} 
+  # --search_db ${{outputs.search_db}}  
+  # --feature_names ${{outputs.feature_names}}  
+  # --labelled_tfidf_scores ${{outputs.labelled_tfidf_scores}}  
+  # --unlabelled_tfidf_scores ${{outputs.unlabelled_tfidf_scores}}  
+  # --labels ${{outputs.labels}}  
+  # --best_hparams ${{outputs.best_hparams}}
+  # --trained_model ${{outputs.trained_model}}

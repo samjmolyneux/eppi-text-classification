@@ -8,6 +8,8 @@ from typing import Annotated, Literal
 
 import numpy as np
 import pandas as pd
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import ContainerClient
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 from scipy.sparse import save_npz
@@ -56,16 +58,18 @@ class SingleModelArgs:
     wilcoxon_trial_pruner_threshold: Annotated[float, Field(gt=0, le=1)] | None
     use_worse_than_first_two_pruner: bool
     shap_num_display: Annotated[int, Field(ge=10)]
+    working_container_url: str
+    output_container_path: str
 
-    # Outputs
-    search_db_dir: str
-    feature_names_dir: str
-    labelled_tfidf_dir: str
-    unlabelled_tfidf_dir: str
-    labels_dir: str
-    plots_dir: str
-    best_hparams_dir: str
-    trained_model_dir: str
+    # # Outputs
+    # search_db_dir: str
+    # feature_names_dir: str
+    # labelled_tfidf_dir: str
+    # unlabelled_tfidf_dir: str
+    # labels_dir: str
+    # plots_dir: str
+    # best_hparams_dir: str
+    # trained_model_dir: str
 
     # TODO validate the hparam_search_ranges
 
@@ -74,14 +78,14 @@ def parse_args():
     # input and output arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--labelled_data",
+        "--labelled_data_path",
         type=str,
-        help="path to input tsv",
+        help="Path to labelled data",
     )
     parser.add_argument(
-        "--unlabelled_data",
+        "--unlabelled_data_path",
         type=str,
-        help="path to input tsv",
+        help="Path to unlabelled data",
     )
     parser.add_argument(
         "--title_header",
@@ -173,50 +177,62 @@ def parse_args():
         default=20,
     )
     parser.add_argument(
-        "--search_db",
+        "--working_container_url",
         type=str,
-        help="Path to directory containing optuna search database",
+        help="Container URL",
+        default="https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation",
     )
     parser.add_argument(
-        "--feature_names",
+        "--output_container_path",
         type=str,
-        help="Path to feature names",
+        help="Path to output directory",
     )
-    parser.add_argument(
-        "--labelled_tfidf_scores",
-        type=str,
-        help="Path to tfidf scores",
-    )
-    parser.add_argument(
-        "--unlabelled_tfidf_scores",
-        type=str,
-        help="Path to tfidf scores",
-    )
-    parser.add_argument(
-        "--labels",
-        type=str,
-        help="Path to labels",
-    )
-    parser.add_argument(
-        "--plots",
-        type=str,
-        help="Path to directory to plots",
-    )
-    parser.add_argument(
-        "--best_hparams",
-        type=str,
-        help="Path to best hyperparameters",
-    )
-    parser.add_argument(
-        "--trained_model",
-        type=str,
-        help="Path directory of the model",
-    )
+
+    # parser.add_argument(
+    #     "--search_db",
+    #     type=str,
+    #     help="Path to directory containing optuna search database",
+    # )
+    # parser.add_argument(
+    #     "--feature_names",
+    #     type=str,
+    #     help="Path to feature names",
+    # )
+    # parser.add_argument(
+    #     "--labelled_tfidf_scores",
+    #     type=str,
+    #     help="Path to tfidf scores",
+    # )
+    # parser.add_argument(
+    #     "--unlabelled_tfidf_scores",
+    #     type=str,
+    #     help="Path to tfidf scores",
+    # )
+    # parser.add_argument(
+    #     "--labels",
+    #     type=str,
+    #     help="Path to labels",
+    # )
+    # parser.add_argument(
+    #     "--plots",
+    #     type=str,
+    #     help="Path to directory to plots",
+    # )
+    # parser.add_argument(
+    #     "--best_hparams",
+    #     type=str,
+    #     help="Path to best hyperparameters",
+    # )
+    # parser.add_argument(
+    #     "--trained_model",
+    #     type=str,
+    #     help="Path directory of the model",
+    # )
     args = parser.parse_args()
 
     return SingleModelArgs(
-        labelled_data_path=args.labelled_data,
-        unlabelled_data_path=args.unlabelled_data,
+        labelled_data_path=args.labelled_data_path,
+        unlabelled_data_path=args.unlabelled_data_path,
         title_header=args.title_header,
         abstract_header=args.abstract_header,
         label_header=args.label_header,
@@ -232,22 +248,47 @@ def parse_args():
         wilcoxon_trial_pruner_threshold=args.wilcoxon_trial_pruner_threshold,
         use_worse_than_first_two_pruner=args.use_worse_than_first_two_pruner,
         shap_num_display=args.shap_num_display,
-        search_db_dir=args.search_db,
-        feature_names_dir=args.feature_names,
-        labelled_tfidf_dir=args.labelled_tfidf_scores,
-        unlabelled_tfidf_dir=args.unlabelled_tfidf_scores,
-        labels_dir=args.labels,
-        plots_dir=args.plots,
-        best_hparams_dir=args.best_hparams,
-        trained_model_dir=args.trained_model,
+        working_container_url=args.working_container_url,
+        output_container_path=args.output_container_path,
+        # search_db_dir=args.search_db,
+        # feature_names_dir=args.feature_names,
+        # labelled_tfidf_dir=args.labelled_tfidf_scores,
+        # unlabelled_tfidf_dir=args.unlabelled_tfidf_scores,
+        # labels_dir=args.labels,
+        # plots_dir=args.plots,
+        # best_hparams_dir=args.best_hparams,
+        # trained_model_dir=args.trained_model,
     )
+
+
+def download_blob_to_file(
+    container_client: ContainerClient,
+    source_file_path: str,
+    destination_file_path: str,
+):
+    with open(destination_file_path, "wb") as f:
+        download_stream = container_client.download_blob(source_file_path)
+        f.write(download_stream.readall())
+
+
+def upload_blob_file(
+    container_client: ContainerClient,
+    source_file_path: str,
+    destination_file_path: str,
+):
+    with open(file=source_file_path, mode="rb") as data:
+        container_client.upload_blob(
+            name=destination_file_path,
+            data=data,
+            overwrite=False,
+        )
 
 
 def main(args: SingleModelArgs):
     print(f"pwd: {Path.cwd()}")
     print("")
 
-    optuna_db_dir = Path.cwd() / "optuna.db"
+    optuna_db_dir = "outputs/optuna.db"
     search_db_url = f"sqlite:///{optuna_db_dir}"
 
     print(f"search_db_url: {search_db_url}")
@@ -270,12 +311,8 @@ def main(args: SingleModelArgs):
     tprint(f"use_worse_than_first_two_pruner: {args.use_worse_than_first_two_pruner}")
     tprint(f"shap_num_display: {args.shap_num_display}")
     tprint(f"hyperparameter_search_ranges: {args.hparam_search_ranges}")
-    tprint(f"search_db_url: {search_db_url}")
-    tprint(f"plots_dir: {args.plots_dir}")
-    tprint(f"search_db: {args.search_db_dir}")
-    tprint(f"labelled_tfidf_dir: {args.labelled_tfidf_dir}")
-    tprint(f"unlabelled_tfidf_dir: {args.unlabelled_tfidf_dir}")
-    tprint(f"trained_model_dir: {args.trained_model_dir}")
+    tprint(f"working_container_url: {args.working_container_url}")
+    tprint(f"output_container_path: {args.output_container_path}")
 
     # Print types of all the arguments
     tprint(f"type of labelled_data_path: {type(args.labelled_data_path)}")
@@ -299,21 +336,35 @@ def main(args: SingleModelArgs):
     )
     tprint(f"type of shap_num_display: {type(args.shap_num_display)}")
     tprint(f"type of hyperparameter_search_ranges: {type(args.hparam_search_ranges)}")
-    tprint(f"type of search_db_url: {type(search_db_url)}")
-    tprint(f"type of plots_dir: {type(args.plots_dir)}")
-    tprint(f"type of search_db: {type(args.search_db_dir)}")
-    tprint(f"type labelled_tfidf_dir: {type(args.labelled_tfidf_dir)}")
-    tprint(f"type unlabelled_tfidf_dir: {type(args.unlabelled_tfidf_dir)}")
-    tprint(f"type of trained_model_dir: {type(args.trained_model_dir)}")
+    tprint(f"type working_container_url: {type(args.working_container_url)}")
+    tprint(f"type output_container_path: {type(args.output_container_path)}")
+
+    credential = DefaultAzureCredential()
+    client = ContainerClient.from_container_url(args.working_container_url, credential)
+
+    with open("labelled_data_path.tsv", "wb") as f:
+        download_stream = client.download_blob(args.labelled_data_path)
+        f.write(download_stream.readall())
+
+    download_blob_to_file(
+        container_client=client,
+        source_file_path=args.labelled_data_path,
+        destination_file_path="labelled_data_path.tsv",
+    )
+    download_blob_to_file(
+        container_client=client,
+        source_file_path=args.unlabelled_data_path,
+        destination_file_path="unlabelled_data_path.tsv",
+    )
 
     labelled_df = pd.read_csv(
-        args.labelled_data_path,
+        "labelled_data_path.tsv",
         sep="\t",
         usecols=[args.title_header, args.abstract_header, args.label_header],
     )
 
     unlabelled_df = pd.read_csv(
-        args.unlabelled_data_path,
+        "unlabelled_data_path.tsv",
         sep="\t",
         usecols=[args.title_header, args.abstract_header],
     )
@@ -389,8 +440,8 @@ def main(args: SingleModelArgs):
 
     # Second perform analysis for the resulting model
 
-    optuna_plots_directory = f"{args.plots_dir}/optuna_plots"
-    os.mkdir(optuna_plots_directory)
+    optuna_plots_directory = "outputs/plots/optuna_plots"
+    os.makedirs(optuna_plots_directory)
     create_all_optuna_plots(study, optuna_plots_directory)
 
     _, _, val_fold_scores, val_fold_labels = predict_cv_scores(
@@ -405,16 +456,14 @@ def main(args: SingleModelArgs):
     cv_scores = np.concatenate(val_fold_scores, axis=0)
     cv_y = np.concatenate(val_fold_labels, axis=0)
 
-    roc_plot(cv_y, cv_scores, f"{args.plots_dir}/roc_plot.html")
+    roc_plot(cv_y, cv_scores, "outputs/plots/roc_plot.html")
 
-    select_threshold_plot(
-        cv_y, cv_scores, f"{args.plots_dir}/select_threshold_plot.html"
-    )
+    select_threshold_plot(cv_y, cv_scores, "outputs/plots/select_threshold_plot.html")
 
     positive_negative_scores_histogram_plot(
         cv_y,
         cv_scores,
-        f"{args.plots_dir}/positive_negative_scores_histogram_plot.html",
+        "outputs/plots/positive_negative_scores_histogram_plot.html",
     )
 
     box_plot(
@@ -423,7 +472,7 @@ def main(args: SingleModelArgs):
         title="Model Confidence Scores By Fold",
         yaxis_title="Scores",
         xaxis_title="",
-        savepath=f"{args.plots_dir}/box_plot.html",
+        savepath="outputs/plots/box_plot.html",
     )
 
     learning_curve(
@@ -431,7 +480,7 @@ def main(args: SingleModelArgs):
         labels,
         args.model_name,
         best_params,
-        savepath=f"{args.plots_dir}/learning_curve.html",
+        savepath="outputs/plots/learning_curve.html",
         nfolds=args.nfolds,
         proportions=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     )
@@ -447,7 +496,7 @@ def main(args: SingleModelArgs):
 
     histogram_plot(
         scores=auc_scores,
-        savepath=f"{args.plots_dir}/auc_histogram.html",
+        savepath="outputs/plots/auc_histogram.html",
         title="Model Stability Histogram",
         xaxis_title="AUC",
     )
@@ -465,23 +514,31 @@ def main(args: SingleModelArgs):
         feature_names,
     )
     dot_plot = shap_plotter.dot_plot(num_display=args.shap_num_display, log_scale=True)
-    dot_plot.save(filename=f"{args.plots_dir}/shap_dot_plot_log_x.png")
+    dot_plot.save(filename="outputs/plots/shap_dot_plot_log_x.png")
     dot_plot = shap_plotter.dot_plot(num_display=args.shap_num_display, log_scale=False)
-    dot_plot.save(filename=f"{args.plots_dir}/shap_dot_plot_linear_x.png")
+    dot_plot.save(filename="outputs/plots/shap_dot_plot_linear_x.png")
     bar_plot = shap_plotter.bar_chart(num_display=args.shap_num_display)
-    bar_plot.save(filename=f"{args.plots_dir}/shap_bar_plot.png")
+    bar_plot.save(filename="outputs/plots/shap_bar_plot.png")
 
-    save_npz(f"{args.labelled_tfidf_dir}/labelled_tfidf.npz", labelled_tfidf_scores)
-    save_npz(
-        f"{args.unlabelled_tfidf_dir}/unlabelled_tfidf.npz", unlabelled_tfidf_scores
-    )
-    np.save(f"{args.feature_names_dir}/feature_names.npy", feature_names)
-    np.save(f"{args.labels_dir}/labels.npy", labels)
-    with open(f"{args.best_hparams_dir}/best_hparams.json", "w") as f:
+    save_npz("outputs/labelled_tfidf.npz", labelled_tfidf_scores)
+    save_npz("outputs/unlabelled_tfidf.npz", unlabelled_tfidf_scores)
+    np.save("outputs/feature_names.npy", feature_names)
+    np.save("outputs/labels.npy", labels)
+    with open("outputs/best_hparams.json", "w") as f:
         json.dump(best_params, f)
-    print(type(model))
-    save_model_to_dir(model, args.trained_model_dir)
-    shutil.copy2(optuna_db_dir, Path(args.search_db_dir) / "optuna.db")
+
+    save_model_to_dir(model, "outputs")
+
+    # Upload all outputs to azure blob storage
+    for path, _, file_names in os.walk("outputs"):
+        for name in file_names:
+            full_path = os.path.join(path, name)
+            rel_path = os.path.relpath(full_path, start="outputs")
+            upload_blob_file(
+                container_client=client,
+                source_file_path=full_path,
+                destination_file_path=f"{args.output_container_path}/{rel_path}",
+            )
 
 
 def tprint(*args, **kwargs):
