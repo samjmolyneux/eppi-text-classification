@@ -43,3 +43,19 @@ def load_model_from_dir(
 
     msg = f"Could not load model from {load_dir}"
     raise ValueError(msg)
+
+
+def load_model_from_filepath(
+    filepath: str,
+) -> None:
+    if filepath.endswith(".txt"):
+        return lgb.Booster(model_file=filepath)
+
+    if filepath.endswith(".ubj"):
+        return xgb.Booster(model_file=filepath)
+
+    if filepath.endswith(".joblib"):
+        return joblib.load(filepath)
+
+    msg = f"Could not load model from {filepath}"
+    raise ValueError(msg)

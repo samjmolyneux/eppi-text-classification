@@ -41,6 +41,18 @@ def load_json_at_directory(
         return json.load(file)
 
 
+def load_json_at_fname(
+    fname: str,
+    unpickle: bool = False,
+) -> dict[str, Any]:
+    """Load json from directory with single file."""
+    with open(fname) as file:
+        if unpickle:
+            return jsonpickle.decode(json.load(file))
+
+        return json.load(file)
+
+
 def load_csr_at_directory(directory_path: str) -> "csr_matrix":
     """Load csr matrix from directory with single file."""
     file_path = Path(directory_path) / os.listdir(directory_path)[0]
