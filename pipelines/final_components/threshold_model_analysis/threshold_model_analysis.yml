@@ -5,14 +5,14 @@ type: command
 description: >-
   Gets recall, fpr model stability histograms and returns a cv confusion plot.
 inputs:
-  labelled_tfidf_scores:
-    type: uri_folder
-  labels:
-    type: uri_folder
+  labelled_tfidf_path:
+    type: string
+  labels_path:
+    type: string
   model_name:
     type: string
-  model_params:
-    type: uri_folder
+  model_params_path:
+    type: string
   threshold:
     type: number
   nfolds:
@@ -27,21 +27,23 @@ inputs:
     type: integer
     default: 1
     optional: true
-outputs:
-  plots:
-    type: uri_folder
-    mode: rw_mount
+  working_container_url:
+    type: string
+    default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation"
+    optional: true
+  output_container_path:
+    type: string
 code: threshold_model_analysis.py
 environment: azureml:eppi-classifier-workbench-env:1.0.2
 is_deterministic: false
 command: >-
   python threshold_model_analysis.py  
-  --labelled_tfidf_scores ${{inputs.labelled_tfidf_scores}}
-  --labels ${{inputs.labels}}
+  --labelled_tfidf_path ${{inputs.labelled_tfidf_path}}
+  --labels_path ${{inputs.labels_path}}
   --model_name ${{inputs.model_name}}
-  --model_params ${{inputs.model_params}}
+  --model_params_path ${{inputs.model_params_path}}
   --threshold ${{inputs.threshold}}
+  --output_container_path ${{inputs.output_container_path}}
   $[[--nfolds ${{inputs.nfolds}}]]
   $[[--histogram_num_cv_repeats ${{inputs.histogram_num_cv_repeats}}]]
   $[[--confusion_num_cv_repeats ${{inputs.confusion_num_cv_repeats}}]]
-  --plots ${{outputs.plots}}

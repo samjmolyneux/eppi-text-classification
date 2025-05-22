@@ -1,14 +1,13 @@
 import argparse
 import json
 import os
-import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Literal
 
 import numpy as np
 import pandas as pd
-from azure.identity import DefaultAzureCredential
+from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 from azure.storage.blob import ContainerClient
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -35,20 +34,26 @@ from eppi_text_classification.plots import (
 )
 from eppi_text_classification.plots.shap_plotter import ShapPlotter
 from eppi_text_classification.train import train
-from eppi_text_classification.utils import load_json_at_directory, str2bool
+from eppi_text_classification.utils import (
+    download_blob_to_file,
+    str2bool,
+    upload_file_to_blob,
+)
 
 
-@dataclass(config=ConfigDict(frozen=True, strict=True))
+@dataclass(config=ConfigDict(frozen=True, strict=True, arbitrary_types_allowed=True))
 class SingleModelArgs:
     # Inputs
-    labelled_data_path: str
-    unlabelled_data_path: str
+    labelled_df: pd.DataFrame
+    unlabelled_df: pd.DataFrame
     title_header: Annotated[str, Field(min_length=1)]
     abstract_header: Annotated[str, Field(min_length=1)]
     label_header: Annotated[str, Field(min_length=1)]
     positive_class_value: Annotated[str, Field(min_length=1)]
     model_name: Literal["lightgbm", "xgboost", "RandomForestClassifier", "SVC"]
-    hparam_search_ranges: dict
+    hparam_search_ranges: (
+        dict[str, dict[str, dict[str, float | int | str | bool]]] | None
+    )
     max_n_search_iterations: Annotated[int, Field(gt=0)] | None
     nfolds: Annotated[int, Field(ge=3, le=10)]
     num_cv_repeats: Annotated[int, Field(gt=0)]
@@ -60,21 +65,10 @@ class SingleModelArgs:
     shap_num_display: Annotated[int, Field(ge=10)]
     working_container_url: str
     output_container_path: str
-
-    # # Outputs
-    # search_db_dir: str
-    # feature_names_dir: str
-    # labelled_tfidf_dir: str
-    # unlabelled_tfidf_dir: str
-    # labels_dir: str
-    # plots_dir: str
-    # best_hparams_dir: str
-    # trained_model_dir: str
-
-    # TODO validate the hparam_search_ranges
+    container_client: ContainerClient
 
 
-def parse_args():
+def parse_and_load_args():
     # input and output arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -117,7 +111,7 @@ def parse_args():
         help="Name of the model used in the search",
     )
     parser.add_argument(
-        "--hparam_search_ranges",
+        "--hparam_search_ranges_path",
         type=str,
         help="Path to directory containing hyperparameter search ranges json",
         default=None,
@@ -188,163 +182,12 @@ def parse_args():
         help="Path to output directory",
     )
 
-    # parser.add_argument(
-    #     "--search_db",
-    #     type=str,
-    #     help="Path to directory containing optuna search database",
-    # )
-    # parser.add_argument(
-    #     "--feature_names",
-    #     type=str,
-    #     help="Path to feature names",
-    # )
-    # parser.add_argument(
-    #     "--labelled_tfidf_scores",
-    #     type=str,
-    #     help="Path to tfidf scores",
-    # )
-    # parser.add_argument(
-    #     "--unlabelled_tfidf_scores",
-    #     type=str,
-    #     help="Path to tfidf scores",
-    # )
-    # parser.add_argument(
-    #     "--labels",
-    #     type=str,
-    #     help="Path to labels",
-    # )
-    # parser.add_argument(
-    #     "--plots",
-    #     type=str,
-    #     help="Path to directory to plots",
-    # )
-    # parser.add_argument(
-    #     "--best_hparams",
-    #     type=str,
-    #     help="Path to best hyperparameters",
-    # )
-    # parser.add_argument(
-    #     "--trained_model",
-    #     type=str,
-    #     help="Path directory of the model",
-    # )
     args = parser.parse_args()
 
-    return SingleModelArgs(
-        labelled_data_path=args.labelled_data_path,
-        unlabelled_data_path=args.unlabelled_data_path,
-        title_header=args.title_header,
-        abstract_header=args.abstract_header,
-        label_header=args.label_header,
-        positive_class_value=args.positive_class_value,
-        model_name=args.model_name,
-        hparam_search_ranges=load_json_at_directory(args.hparam_search_ranges),
-        max_n_search_iterations=args.max_n_search_iterations,
-        nfolds=args.nfolds,
-        num_cv_repeats=args.num_cv_repeats,
-        timeout=args.timeout,
-        use_early_terminator=args.use_early_terminator,
-        max_stagnation_iterations=args.max_stagnation_iterations,
-        wilcoxon_trial_pruner_threshold=args.wilcoxon_trial_pruner_threshold,
-        use_worse_than_first_two_pruner=args.use_worse_than_first_two_pruner,
-        shap_num_display=args.shap_num_display,
-        working_container_url=args.working_container_url,
-        output_container_path=args.output_container_path,
-        # search_db_dir=args.search_db,
-        # feature_names_dir=args.feature_names,
-        # labelled_tfidf_dir=args.labelled_tfidf_scores,
-        # unlabelled_tfidf_dir=args.unlabelled_tfidf_scores,
-        # labels_dir=args.labels,
-        # plots_dir=args.plots,
-        # best_hparams_dir=args.best_hparams,
-        # trained_model_dir=args.trained_model,
+    credential = ManagedIdentityCredential(
+        client_id="df5b7af0-a55a-44d9-9ec7-9cde9abf3051"
     )
-
-
-def download_blob_to_file(
-    container_client: ContainerClient,
-    source_file_path: str,
-    destination_file_path: str,
-):
-    with open(destination_file_path, "wb") as f:
-        download_stream = container_client.download_blob(source_file_path)
-        f.write(download_stream.readall())
-
-
-def upload_blob_file(
-    container_client: ContainerClient,
-    source_file_path: str,
-    destination_file_path: str,
-):
-    with open(file=source_file_path, mode="rb") as data:
-        container_client.upload_blob(
-            name=destination_file_path,
-            data=data,
-            overwrite=False,
-        )
-
-
-def main(args: SingleModelArgs):
-    print(f"pwd: {Path.cwd()}")
-    print("")
-
-    optuna_db_dir = "outputs/optuna.db"
-    search_db_url = f"sqlite:///{optuna_db_dir}"
-
-    print(f"search_db_url: {search_db_url}")
-
-    # Print all the arguments using the args labelled_dataclass
-    tprint(f"labelled_data_path: {args.labelled_data_path}")
-    tprint(f"unlabelled_data_path: {args.unlabelled_data_path}")
-    tprint(f"title_header: {args.title_header}")
-    tprint(f"abstract_header: {args.abstract_header}")
-    tprint(f"label_header: {args.label_header}")
-    tprint(f"positive_class_value: {args.positive_class_value}")
-    tprint(f"model_name: {args.model_name}")
-    tprint(f"max_n_search_iterations: {args.max_n_search_iterations}")
-    tprint(f"nfolds: {args.nfolds}")
-    tprint(f"num_cv_repeats: {args.num_cv_repeats}")
-    tprint(f"timeout: {args.timeout}")
-    tprint(f"use_early_terminator: {args.use_early_terminator}")
-    tprint(f"max_stagnation_iterations: {args.max_stagnation_iterations}")
-    tprint(f"wilcoxon_trial_pruner_threshold: {args.wilcoxon_trial_pruner_threshold}")
-    tprint(f"use_worse_than_first_two_pruner: {args.use_worse_than_first_two_pruner}")
-    tprint(f"shap_num_display: {args.shap_num_display}")
-    tprint(f"hyperparameter_search_ranges: {args.hparam_search_ranges}")
-    tprint(f"working_container_url: {args.working_container_url}")
-    tprint(f"output_container_path: {args.output_container_path}")
-
-    # Print types of all the arguments
-    tprint(f"type of labelled_data_path: {type(args.labelled_data_path)}")
-    tprint(f"type of unlabelled_data_path: {type(args.unlabelled_data_path)}")
-    tprint(f"type of title_header: {type(args.title_header)}")
-    tprint(f"type of abstract_header: {type(args.abstract_header)}")
-    tprint(f"type of label_header: {type(args.label_header)}")
-    tprint(f"type of positive_class_value: {type(args.positive_class_value)}")
-    tprint(f"type of model_name: {type(args.model_name)}")
-    tprint(f"type of max_n_search_iterations: {type(args.max_n_search_iterations)}")
-    tprint(f"type of nfolds: {type(args.nfolds)}")
-    tprint(f"type of num_cv_repeats: {type(args.num_cv_repeats)}")
-    tprint(f"type of timeout: {type(args.timeout)}")
-    tprint(f"type of use_early_terminator: {type(args.use_early_terminator)}")
-    tprint(f"type of max_stagnation_iterations: {type(args.max_stagnation_iterations)}")
-    tprint(
-        f"type of wilcoxon_trial_pruner_threshold: {type(args.wilcoxon_trial_pruner_threshold)}"
-    )
-    tprint(
-        f"type of use_worse_than_first_two_pruner: {type(args.use_worse_than_first_two_pruner)}"
-    )
-    tprint(f"type of shap_num_display: {type(args.shap_num_display)}")
-    tprint(f"type of hyperparameter_search_ranges: {type(args.hparam_search_ranges)}")
-    tprint(f"type working_container_url: {type(args.working_container_url)}")
-    tprint(f"type output_container_path: {type(args.output_container_path)}")
-
-    credential = DefaultAzureCredential()
     client = ContainerClient.from_container_url(args.working_container_url, credential)
-
-    with open("labelled_data_path.tsv", "wb") as f:
-        download_stream = client.download_blob(args.labelled_data_path)
-        f.write(download_stream.readall())
 
     download_blob_to_file(
         container_client=client,
@@ -369,11 +212,101 @@ def main(args: SingleModelArgs):
         usecols=[args.title_header, args.abstract_header],
     )
 
+    if args.hparam_search_ranges_path is not None:
+        download_blob_to_file(
+            container_client=client,
+            source_file_path=args.hparam_search_ranges_path,
+            destination_file_path="hparam_search_ranges.json",
+        )
+        with open("hparam_search_ranges.json", "r") as f:
+            hparam_search_ranges = json.load(f)
+    else:
+        hparam_search_ranges = None
+
+    return SingleModelArgs(
+        labelled_df=labelled_df,
+        unlabelled_df=unlabelled_df,
+        title_header=args.title_header,
+        abstract_header=args.abstract_header,
+        label_header=args.label_header,
+        positive_class_value=args.positive_class_value,
+        model_name=args.model_name,
+        hparam_search_ranges=hparam_search_ranges,
+        max_n_search_iterations=args.max_n_search_iterations,
+        nfolds=args.nfolds,
+        num_cv_repeats=args.num_cv_repeats,
+        timeout=args.timeout,
+        use_early_terminator=args.use_early_terminator,
+        max_stagnation_iterations=args.max_stagnation_iterations,
+        wilcoxon_trial_pruner_threshold=args.wilcoxon_trial_pruner_threshold,
+        use_worse_than_first_two_pruner=args.use_worse_than_first_two_pruner,
+        shap_num_display=args.shap_num_display,
+        working_container_url=args.working_container_url,
+        output_container_path=args.output_container_path,
+        container_client=client,
+    )
+
+
+def main(args: SingleModelArgs):
+    print(f"pwd: {Path.cwd()}")
+    print("")
+
+    optuna_db_dir = "outputs/optuna.db"
+    search_db_url = f"sqlite:///{optuna_db_dir}"
+
+    print(f"search_db_url: {search_db_url}")
+
+    # Print all the arguments using the args labelled_dataclass
+    tprint(f"labelled_data_path: {args.labelled_df.shape}")
+    tprint(f"unlabelled_data_path: {args.unlabelled_df.shape}")
+    tprint(f"title_header: {args.title_header}")
+    tprint(f"abstract_header: {args.abstract_header}")
+    tprint(f"label_header: {args.label_header}")
+    tprint(f"positive_class_value: {args.positive_class_value}")
+    tprint(f"model_name: {args.model_name}")
+    tprint(f"max_n_search_iterations: {args.max_n_search_iterations}")
+    tprint(f"nfolds: {args.nfolds}")
+    tprint(f"num_cv_repeats: {args.num_cv_repeats}")
+    tprint(f"timeout: {args.timeout}")
+    tprint(f"use_early_terminator: {args.use_early_terminator}")
+    tprint(f"max_stagnation_iterations: {args.max_stagnation_iterations}")
+    tprint(f"wilcoxon_trial_pruner_threshold: {args.wilcoxon_trial_pruner_threshold}")
+    tprint(f"use_worse_than_first_two_pruner: {args.use_worse_than_first_two_pruner}")
+    tprint(f"shap_num_display: {args.shap_num_display}")
+    tprint(f"hyperparameter_search_ranges: {args.hparam_search_ranges}")
+    tprint(f"working_container_url: {args.working_container_url}")
+    tprint(f"output_container_path: {args.output_container_path}")
+
+    # Print types of all the arguments
+    tprint(f"type of labelled_data_path: {type(args.labelled_df)}")
+    tprint(f"type of unlabelled_data_path: {type(args.unlabelled_df)}")
+    tprint(f"type of title_header: {type(args.title_header)}")
+    tprint(f"type of abstract_header: {type(args.abstract_header)}")
+    tprint(f"type of label_header: {type(args.label_header)}")
+    tprint(f"type of positive_class_value: {type(args.positive_class_value)}")
+    tprint(f"type of model_name: {type(args.model_name)}")
+    tprint(f"type of max_n_search_iterations: {type(args.max_n_search_iterations)}")
+    tprint(f"type of nfolds: {type(args.nfolds)}")
+    tprint(f"type of num_cv_repeats: {type(args.num_cv_repeats)}")
+    tprint(f"type of timeout: {type(args.timeout)}")
+    tprint(f"type of use_early_terminator: {type(args.use_early_terminator)}")
+    tprint(f"type of max_stagnation_iterations: {type(args.max_stagnation_iterations)}")
+    tprint(
+        f"type of wilcoxon_trial_pruner_threshold: {type(args.wilcoxon_trial_pruner_threshold)}"
+    )
+    tprint(
+        f"type of use_worse_than_first_two_pruner: {type(args.use_worse_than_first_two_pruner)}"
+    )
+    tprint(f"type of shap_num_display: {type(args.shap_num_display)}")
+    tprint(f"type of hyperparameter_search_ranges: {type(args.hparam_search_ranges)}")
+    tprint(f"type working_container_url: {type(args.working_container_url)}")
+    tprint(f"type output_container_path: {type(args.output_container_path)}")
+
     # First create a model
     print("")
     tprint(f"GETTING LABELLED WORD FEATURES")
     labelled_word_features = get_features(
-        labelled_df,
+        args.labelled_df,
         title_key=args.title_header,
         abstract_key=args.abstract_header,
     )
@@ -381,7 +314,7 @@ def main(args: SingleModelArgs):
     print("")
     tprint(f"GETTING UNLABELLED WORD FEATURES")
     unlabelled_word_features = get_features(
-        unlabelled_df,
+        args.unlabelled_df,
         title_key=args.title_header,
         abstract_key=args.abstract_header,
     )
@@ -389,7 +322,7 @@ def main(args: SingleModelArgs):
     word_features = labelled_word_features + unlabelled_word_features
 
     # Check that nothing was lost in word feature extraction
-    number_of_rows = labelled_df.shape[0] + unlabelled_df.shape[0]
+    number_of_rows = args.labelled_df.shape[0] + args.unlabelled_df.shape[0]
     assert number_of_rows == len(
         word_features
     ), "something was lost in word feature extraction"
@@ -397,7 +330,7 @@ def main(args: SingleModelArgs):
     print("")
     tprint("GETTING LABELS")
     labels = get_labels(
-        labelled_df,
+        args.labelled_df,
         label_key=args.label_header,
         positive_class_value=args.positive_class_value,
     )
@@ -406,8 +339,8 @@ def main(args: SingleModelArgs):
     tprint("GETTING TFIDF AND NAMES")
     all_tfidf_scores, feature_names = get_tfidf_and_names(word_features)
 
-    labelled_tfidf_scores = all_tfidf_scores[: labelled_df.shape[0]]
-    unlabelled_tfidf_scores = all_tfidf_scores[labelled_df.shape[0] :]
+    labelled_tfidf_scores = all_tfidf_scores[: args.labelled_df.shape[0]]
+    unlabelled_tfidf_scores = all_tfidf_scores[args.labelled_df.shape[0] :]
 
     print("")
     tprint("INITIALISING OPTIMISER")
@@ -527,15 +460,16 @@ def main(args: SingleModelArgs):
     with open("outputs/best_hparams.json", "w") as f:
         json.dump(best_params, f)
 
-    save_model_to_dir(model, "outputs")
+    os.makedirs("outputs/trained_model")
+    save_model_to_dir(model, "outputs/trained_model")
 
     # Upload all outputs to azure blob storage
     for path, _, file_names in os.walk("outputs"):
         for name in file_names:
             full_path = os.path.join(path, name)
             rel_path = os.path.relpath(full_path, start="outputs")
-            upload_blob_file(
-                container_client=client,
+            upload_file_to_blob(
+                container_client=args.container_client,
                 source_file_path=full_path,
                 destination_file_path=f"{args.output_container_path}/{rel_path}",
             )
@@ -548,5 +482,5 @@ def tprint(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = parse_and_load_args()
     main(args)
