@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 import joblib
 import jsonpickle
 import numpy as np
+from azure.storage.blob import ContainerClient
 from numpy.typing import NDArray
 from scipy.sparse import load_npz
 
@@ -72,6 +73,29 @@ def load_pickle_object_at_directory(directory_path: str) -> Any:
     file_path = Path(directory_path) / os.listdir(directory_path)[0]
     with file_path.open("rb") as file:
         return pickle.load(file)
+
+
+def download_blob_to_file(
+    container_client: ContainerClient,
+    source_file_path: str,
+    destination_file_path: str,
+):
+    with open(destination_file_path, "wb") as f:
+        download_stream = container_client.download_blob(source_file_path)
+        f.write(download_stream.readall())
+
+
+def upload_file_to_blob(
+    container_client: ContainerClient,
+    source_file_path: str,
+    destination_file_path: str,
+):
+    with open(file=source_file_path, mode="rb") as data:
+        container_client.upload_blob(
+            name=destination_file_path,
+            data=data,
+            overwrite=False,
+        )
 
 
 def parse_multiple_types(value: str) -> int | float | str:
