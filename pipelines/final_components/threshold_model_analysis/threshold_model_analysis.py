@@ -20,6 +20,7 @@ from eppi_text_classification.plots import (
     binary_train_valid_confusion_plotly,
     histogram_plot,
 )
+from eppi_text_classification.utils import download_blob_to_file, upload_file_to_blob
 
 
 @dataclass(config=ConfigDict(frozen=True, strict=True, arbitrary_types_allowed=True))
@@ -116,8 +117,6 @@ def parse_and_load_args():
         source_file_path=args.labels_path,
         destination_file_path="labels.npy",
     )
-    labels = np.load("labels.npy")
-    print(type(labels))
 
     download_blob_to_file(
         container_client=client,
@@ -140,29 +139,6 @@ def parse_and_load_args():
         output_container_path=args.output_container_path,
         container_client=client,
     )
-
-
-def download_blob_to_file(
-    container_client: ContainerClient,
-    source_file_path: str,
-    destination_file_path: str,
-):
-    with open(destination_file_path, "wb") as f:
-        download_stream = container_client.download_blob(source_file_path)
-        f.write(download_stream.readall())
-
-
-def upload_blob_file(
-    container_client: ContainerClient,
-    source_file_path: str,
-    destination_file_path: str,
-):
-    with open(file=source_file_path, mode="rb") as data:
-        container_client.upload_blob(
-            name=destination_file_path,
-            data=data,
-            overwrite=False,
-        )
 
 
 def main(args: ThresholdModelAnalysisArgs):
@@ -255,7 +231,7 @@ def main(args: ThresholdModelAnalysisArgs):
         for name in file_names:
             full_path = os.path.join(path, name)
             rel_path = os.path.relpath(full_path, start="outputs")
-            upload_blob_file(
+            upload_file_to_blob(
                 container_client=args.container_client,
                 source_file_path=full_path,
                 destination_file_path=f"{args.output_container_path}/{rel_path}",
