@@ -1,4 +1,5 @@
 import argparse
+import os
 from datetime import datetime
 
 import lightgbm as lgb
@@ -13,18 +14,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 
 from eppi_text_classification.model_io import (
-    load_model_from_dir,
     load_model_from_filepath,
 )
 from eppi_text_classification.predict import raw_threshold_predict
-from eppi_text_classification.utils import (
-    download_blob_to_file,
-    load_csr_at_directory,
-    upload_file_to_blob,
-)
+from eppi_text_classification.utils import download_blob_to_file, upload_file_to_blob
 
 
-@dataclass(config=ConfigDict(frozen=True, strict=True))
+@dataclass(config=ConfigDict(frozen=True, strict=True, arbitrary_types_allowed=True))
 class PredArgs:
     # Inputs
     unlabelled_tfidf: csr_matrix
@@ -33,11 +29,9 @@ class PredArgs:
     working_container_url: str
     output_container_path: str
     container_client: ContainerClient
-    # Outputs
-    # pred_labels_dir: str
 
 
-def parse_args():
+def parse_and_load_args():
     # input and output arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -66,11 +60,6 @@ def parse_args():
         type=str,
         help="Path to output directory",
     )
-    # parser.add_argument(
-    #     "--pred_labels",
-    #     type=str,
-    #     help="Predicted labels directory",
-    # )
     args = parser.parse_args()
 
     credential = ManagedIdentityCredential(
@@ -86,20 +75,18 @@ def parse_args():
 
     # The trained model directory contains only the model file, so we can
     # list all blobs in directory (just the model) and take the first one
-    print(client.list_blob_names(name_starts_with=args.trained_model_dir)[0])
-    model_filepath = client.list_blob_names(name_starts_with=args.trained_model_dir)[0]
-    raise ValueError("testing")
+    model_filepath = next(
+        client.list_blob_names(name_starts_with=args.trained_model_dir)
+    )
     download_blob_to_file(
         container_client=client,
         source_file_path=model_filepath,
-        # UP TO HERE
-        destination_file_path="trained_model.joblib",
+        destination_file_path=os.path.basename(model_filepath),
     )
-
     return PredArgs(
-        unlabelled_tfidf=load_npz(args.unlabelled_tfidf_path),
+        unlabelled_tfidf=load_npz("unlabelled_tfidf.npz"),
         threshold=args.threshold,
-        model=load_model_from_filepath(args.trained_model_path),
+        model=load_model_from_filepath(os.path.basename(model_filepath)),
         working_container_url=args.working_container_url,
         output_container_path=args.output_container_path,
         container_client=client,
@@ -123,7 +110,12 @@ def main(args: PredArgs):
         threshold=args.threshold,
     )
 
-    np.save(f"{args.pred_labels_dir}/pred_labels.npy", pred_labels)
+    np.save("pred_labels.npy", pred_labels)
+    upload_file_to_blob(
+        container_client=args.container_client,
+        source_file_path="pred_labels.npy",
+        destination_file_path=f"{args.output_container_path}/pred_labels.npy",
+    )
 
 
 def tprint(*args, **kwargs):
@@ -133,5 +125,5 @@ def tprint(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    args = parse_and_load_args()
     main(args)

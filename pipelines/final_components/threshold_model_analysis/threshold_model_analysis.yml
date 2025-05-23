@@ -47,3 +47,4 @@ command: >-
   $[[--nfolds ${{inputs.nfolds}}]]
   $[[--histogram_num_cv_repeats ${{inputs.histogram_num_cv_repeats}}]]
   $[[--confusion_num_cv_repeats ${{inputs.confusion_num_cv_repeats}}]]
+  $[[--working_container_url ${{inputs.working_container_url}}]]

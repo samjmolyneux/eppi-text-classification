@@ -5,22 +5,25 @@ type: command
 description: >-
   Predicts labels for tfidf scores of unlabelled data using a trained model.
 inputs:
-  unlabelled_tfidf_scores:
-    type: uri_folder
+  unlabelled_tfidf_path:
+    type: string
   threshold:
     type: number
-  trained_model:
-    type: uri_folder
-outputs:
-  pred_labels:
-    type: uri_folder
-    mode: rw_mount
+  trained_model_dir:
+    type: string
+  working_container_url:
+    type: string
+    default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation"
+    optional: true
+  output_container_path:
+    type: string
 code: classify_unlabelled_tfidf.py
 environment: azureml:eppi-classifier-workbench-env:1.0.2
 is_deterministic: false
 command: >-
   python classify_unlabelled_tfidf.py  
-  --unlabelled_tfidf_scores ${{inputs.unlabelled_tfidf_scores}}
+  --unlabelled_tfidf_path ${{inputs.unlabelled_tfidf_path}}
   --threshold ${{inputs.threshold}}
-  --trained_model ${{inputs.trained_model}}
-  --pred_labels ${{outputs.pred_labels}}
+  --trained_model_dir ${{inputs.trained_model_dir}}
+  --output_container_path ${{inputs.output_container_path}}
+  $[[--working_container_url ${{inputs.working_container_url}}]]
