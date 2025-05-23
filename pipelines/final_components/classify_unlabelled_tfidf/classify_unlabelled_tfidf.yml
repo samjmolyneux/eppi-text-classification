@@ -14,7 +14,6 @@ inputs:
   working_container_url:
     type: string
     default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation"
-    optional: true
   output_container_path:
     type: string
 code: classify_unlabelled_tfidf.py
@@ -26,4 +25,4 @@ command: >-
   --threshold ${{inputs.threshold}}
   --trained_model_dir ${{inputs.trained_model_dir}}
   --output_container_path ${{inputs.output_container_path}}
-  $[[--working_container_url ${{inputs.working_container_url}}]]
+  --working_container_url ${{inputs.working_container_url}}

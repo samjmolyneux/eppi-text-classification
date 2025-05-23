@@ -85,25 +85,21 @@ def parse_and_load_args():
         "--title_header",
         type=str,
         help="Name of title column",
-        default="PaperTitle",
     )
     parser.add_argument(
         "--abstract_header",
         type=str,
         help="Name of abstract column",
-        default="Abstract",
     )
     parser.add_argument(
         "--label_header",
         type=str,
         help="Name of label column",
-        default="Label",
     )
     parser.add_argument(
         "--positive_class_value",
         type=str,
         help="What value is given to the positive class in the dataset",
-        default="1",
     )
     parser.add_argument(
         "--model_name",
@@ -126,25 +122,21 @@ def parse_and_load_args():
         "--nfolds",
         type=int,
         help="Number of folds for cross-validation in the hyperparameter search",
-        default=3,
     )
     parser.add_argument(
         "--num_cv_repeats",
         type=int,
         help="Number of times to average the cross-validation to stabilize the search",
-        default=1,
     )
     parser.add_argument(
         "--timeout",
         type=int,
         help="Time in seconds before cancelling search",
-        default=3600 * 24,
     )
     parser.add_argument(
         "--use_early_terminator",
         type=str2bool,
         help="Whether to use the regret based early terminator",
-        default=False,
     )
     parser.add_argument(
         "--max_stagnation_iterations",
@@ -162,19 +154,16 @@ def parse_and_load_args():
         "--use_worse_than_first_two_pruner",
         type=str2bool,
         help="Whether to use the worse than first two pruner",
-        default=False,
     )
     parser.add_argument(
         "--shap_num_display",
         type=int,
         help="Number of features to display in shap plots",
-        default=20,
     )
     parser.add_argument(
         "--working_container_url",
         type=str,
         help="Container URL",
-        default="https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation",
     )
     parser.add_argument(
         "--output_container_path",

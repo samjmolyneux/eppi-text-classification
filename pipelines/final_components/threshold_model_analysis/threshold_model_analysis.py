@@ -38,9 +38,6 @@ class ThresholdModelAnalysisArgs:
     output_container_path: str
     container_client: ContainerClient
 
-    # Outputs
-    # plots_dir: str
-
 
 def parse_and_load_args():
     # input and output arguments
@@ -74,25 +71,21 @@ def parse_and_load_args():
         "--nfolds",
         type=int,
         help="Number of cross validation folds",
-        default=3,
     )
     parser.add_argument(
         "--histogram_num_cv_repeats",
         type=int,
         help="Number of cv repeats to do for histogram plot",
-        default=100,
     )
     parser.add_argument(
         "--confusion_num_cv_repeats",
         type=int,
         help="Number of cv repeats to do for confusion plot",
-        default=1,
     )
     parser.add_argument(
         "--working_container_url",
         type=str,
         help="Container URL",
-        default="https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation",
     )
     parser.add_argument(
         "--output_container_path",

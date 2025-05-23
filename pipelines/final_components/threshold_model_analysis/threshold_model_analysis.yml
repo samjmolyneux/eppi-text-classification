@@ -18,19 +18,15 @@ inputs:
   nfolds:
     type: integer
     default: 3
-    optional: true
   histogram_num_cv_repeats:
     type: integer
     default: 100
-    optional: true
   confusion_num_cv_repeats:
     type: integer
     default: 1
-    optional: true
   working_container_url:
     type: string
     default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation"
-    optional: true
   output_container_path:
     type: string
 code: threshold_model_analysis.py
@@ -44,7 +40,7 @@ command: >-
   --model_params_path ${{inputs.model_params_path}}
   --threshold ${{inputs.threshold}}
   --output_container_path ${{inputs.output_container_path}}
-  $[[--nfolds ${{inputs.nfolds}}]]
-  $[[--histogram_num_cv_repeats ${{inputs.histogram_num_cv_repeats}}]]
-  $[[--confusion_num_cv_repeats ${{inputs.confusion_num_cv_repeats}}]]
-  $[[--working_container_url ${{inputs.working_container_url}}]]
+  --nfolds ${{inputs.nfolds}}
+  --histogram_num_cv_repeats ${{inputs.histogram_num_cv_repeats}}
+  --confusion_num_cv_repeats ${{inputs.confusion_num_cv_repeats}}
+  --working_container_url ${{inputs.working_container_url}}

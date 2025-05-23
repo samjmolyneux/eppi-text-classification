@@ -53,7 +53,6 @@ def parse_and_load_args():
         "--working_container_url",
         type=str,
         help="Container URL",
-        default="https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation",
     )
     parser.add_argument(
         "--output_container_path",

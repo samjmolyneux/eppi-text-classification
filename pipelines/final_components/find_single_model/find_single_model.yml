@@ -13,19 +13,15 @@ inputs:
   title_header:
     type: string
     default: PaperTitle
-    optional: true
   abstract_header:
     type: string
     default: Abstract
-    optional: true
   label_header:
     type: string
     default: Label
-    optional: true
   positive_class_value:
     type: string
     default: "1"
-    optional: true
   model_name:
     type: string
   hparam_search_ranges_path:
@@ -37,14 +33,12 @@ inputs:
   nfolds:
     type: integer
     default: 3
-    optional: true
   num_cv_repeats:
     type: integer
     default: 1
-    optional: true
   timeout:
     type: integer
-    optional: true
+    default: 86400
   use_early_terminator:
     type: boolean
     default: false
@@ -57,15 +51,12 @@ inputs:
   use_worse_than_first_two_pruner:
     type: boolean
     default: false
-    optional: true
   shap_num_display:
     type: integer
     default: 20
-    optional: true
   working_container_url:
     type: string
     default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation"
-    optional: true
   output_container_path:
     type: string
 code: find_single_model.py
@@ -77,18 +68,18 @@ command: >-
   --unlabelled_data_path ${{inputs.unlabelled_data_path}}  
   --model_name ${{inputs.model_name}}
   --use_early_terminator ${{inputs.use_early_terminator}}  
+  --positive_class_value ${{inputs.positive_class_value}}
   --output_container_path ${{inputs.output_container_path}}
+  --title_header ${{inputs.title_header}}  
+  --abstract_header ${{inputs.abstract_header}}  
+  --label_header ${{inputs.label_header}} 
+  --nfolds ${{inputs.nfolds}}
+  --num_cv_repeats ${{inputs.num_cv_repeats}}  
+  --timeout ${{inputs.timeout}}
+  --use_worse_than_first_two_pruner ${{inputs.use_worse_than_first_two_pruner}}  
+  --shap_num_display ${{inputs.shap_num_display}}  
+  --working_container_url ${{inputs.working_container_url}}
   $[[--hparam_search_ranges_path ${{inputs.hparam_search_ranges_path}}]]
-  $[[--title_header ${{inputs.title_header}}]]  
-  $[[--abstract_header ${{inputs.abstract_header}}]]  
-  $[[--label_header ${{inputs.label_header}}]]  
-  $[[--positive_class_value ${{inputs.positive_class_value}}]]  
   $[[--max_n_search_iterations ${{inputs.max_n_search_iterations}}]]  
-  $[[--nfolds ${{inputs.nfolds}}]]  
-  $[[--num_cv_repeats ${{inputs.num_cv_repeats}}]]  
-  $[[--timeout ${{inputs.timeout}}]]  
   $[[--max_stagnation_iterations ${{inputs.max_stagnation_iterations}}]]  
   $[[--wilcoxon_trial_pruner_threshold ${{inputs.wilcoxon_trial_pruner_threshold}}]]  
-  $[[--use_worse_than_first_two_pruner ${{inputs.use_worse_than_first_two_pruner}}]]  
-  $[[--shap_num_display ${{inputs.shap_num_display}}]]  
-  $[[--working_container_url ${{inputs.working_container_url}}]]
