@@ -240,6 +240,13 @@ class MultiProcessHparamSearch:
         self.use_worse_than_first_two_pruner = use_worse_than_first_two_pruner
         self.model_name = model_name
 
+        if max_n_search_iterations <= 0:
+            max_n_search_iterations = None
+        if max_stagnation_iterations <= 0:
+            max_stagnation_iterations = None
+        if wilcoxon_trial_pruner_threshold <= 0:
+            wilcoxon_trial_pruner_threshold = None
+
         # Bool to track if we need to use a pruner
         self.use_pruner = (
             self.wilcoxon_trial_pruner_threshold is not None
