@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 
 import numpy as np
 import pandas as pd
-from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+from azure.identity import ManagedIdentityCredential
 from azure.storage.blob import ContainerClient
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -170,12 +170,15 @@ def parse_and_load_args():
         type=str,
         help="Path to output directory",
     )
+    parser.add_argument(
+        "--managed_identity_client_id",
+        type=str,
+        help="Client ID for Azure Managed Identity",
+    )
 
     args = parser.parse_args()
 
-    credential = ManagedIdentityCredential(
-        client_id="df5b7af0-a55a-44d9-9ec7-9cde9abf3051"
-    )
+    credential = ManagedIdentityCredential(client_id=args.managed_identity_client_id)
     client = ContainerClient.from_container_url(args.working_container_url, credential)
 
     download_blob_to_file(

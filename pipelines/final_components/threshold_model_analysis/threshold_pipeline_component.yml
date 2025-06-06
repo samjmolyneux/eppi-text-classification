@@ -1,0 +1,54 @@
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineComponent.schema.json
+name: threshold_model_analysis_for_classifier_workbench_pipeline
+display_name: Threshold_model_analysis_for_eppi_classifier_workbench_pipeline_wrapper
+type: pipeline
+description: >
+  Pipeline wrapper that simply runs the
+  `threshold_model_analysis_for_classifier_workbench` command component and
+  exposes every parameter of that component as a pipeline-level input.
+
+inputs:
+  labelled_tfidf_path:
+    type: string
+  labels_path:
+    type: string
+  model_name:
+    type: string
+  model_params_path:
+    type: string
+  threshold:
+    type: number
+  nfolds:
+    type: integer
+    default: 3
+  histogram_num_cv_repeats:
+    type: integer
+    default: 100
+  confusion_num_cv_repeats:
+    type: integer
+    default: 1
+  working_container_url:
+    type: string
+    default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation"
+  output_container_path:
+    type: string
+  managed_identity_client_id:
+    type: string
+    default: "df5b7af0-a55a-44d9-9ec7-9cde9abf3051"
+
+jobs:
+  threshold_model_analysis:
+    type: command
+    component: azureml://registries/eppi-shared-assets/components/threshold_model_analysis_for_classifier_workbench
+    inputs:
+      labelled_tfidf_path:      ${{parent.inputs.labelled_tfidf_path}}
+      labels_path:              ${{parent.inputs.labels_path}}
+      model_name:               ${{parent.inputs.model_name}}
+      model_params_path:        ${{parent.inputs.model_params_path}}
+      threshold:                ${{parent.inputs.threshold}}
+      nfolds:                   ${{parent.inputs.nfolds}}
+      histogram_num_cv_repeats: ${{parent.inputs.histogram_num_cv_repeats}}
+      confusion_num_cv_repeats: ${{parent.inputs.confusion_num_cv_repeats}}
+      working_container_url:    ${{parent.inputs.working_container_url}}
+      output_container_path:    ${{parent.inputs.output_container_path}}
+      managed_identity_client_id: ${{parent.inputs.managed_identity_client_id}}

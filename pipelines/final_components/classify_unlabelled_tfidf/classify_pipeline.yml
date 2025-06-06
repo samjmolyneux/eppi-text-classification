@@ -1,0 +1,36 @@
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineComponent.schema.json
+name: classify_unlabelled_tfidf_for_classifier_workbench_pipeline
+display_name: Classify unlabelled TF-IDF (pipeline wrapper)
+type: pipeline
+description: >
+  Pipeline wrapper that runs the
+  `classify_unlabelled_tfidf_for_classifier_workbench` command component and
+  exposes every parameter of that component as a pipeline-level input.
+
+inputs:
+  unlabelled_tfidf_path:
+    type: string
+  threshold:
+    type: number
+  trained_model_dir:
+    type: string
+  working_container_url:
+    type: string
+    default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation"
+  output_container_path:
+    type: string
+  managed_identity_client_id:
+    type: string
+    default: "df5b7af0-a55a-44d9-9ec7-9cde9abf3051"
+
+jobs:
+  classify_unlabelled_tfidf:
+    type: command
+    component: azureml://registries/eppi-shared-assets/components/classify_unlabelled_tfidf_for_classifier_workbench
+    inputs:
+      unlabelled_tfidf_path:      ${{parent.inputs.unlabelled_tfidf_path}}
+      threshold:                  ${{parent.inputs.threshold}}
+      trained_model_dir:          ${{parent.inputs.trained_model_dir}}
+      working_container_url:      ${{parent.inputs.working_container_url}}
+      output_container_path:      ${{parent.inputs.output_container_path}}
+      managed_identity_client_id: ${{parent.inputs.managed_identity_client_id}}

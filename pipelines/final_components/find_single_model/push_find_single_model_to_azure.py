@@ -9,6 +9,10 @@ from pipelines import get_azure_ml_client, get_registry_client
 
 ml_client = get_registry_client()
 
+# upload component to registry
 component = load_component(source="./find_single_model.yml")
+ml_client.components.create_or_update(component)
 
+# upload pipeline component to registry
+component = load_component(source="./find_single_pipeline_component.yml")
 ml_client.components.create_or_update(component)

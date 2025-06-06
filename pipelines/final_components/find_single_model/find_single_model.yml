@@ -59,6 +59,9 @@ inputs:
     default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation"
   output_container_path:
     type: string
+  managed_identity_client_id:
+    type: string
+    default: "df5b7af0-a55a-44d9-9ec7-9cde9abf3051"
 code: find_single_model.py
 environment: azureml://registries/eppi-shared-assets/environments/eppi-classifier-workbench-env/versions/1.0.2
 is_deterministic: false
@@ -79,6 +82,7 @@ command: >-
   --use_worse_than_first_two_pruner ${{inputs.use_worse_than_first_two_pruner}}  
   --shap_num_display ${{inputs.shap_num_display}}  
   --working_container_url ${{inputs.working_container_url}}
+  --managed_identity_client_id ${{inputs.managed_identity_client_id}}
   $[[--hparam_search_ranges_path ${{inputs.hparam_search_ranges_path}}]]
   $[[--max_n_search_iterations ${{inputs.max_n_search_iterations}}]]  
   $[[--max_stagnation_iterations ${{inputs.max_stagnation_iterations}}]]  

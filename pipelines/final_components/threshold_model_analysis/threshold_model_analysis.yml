@@ -29,6 +29,9 @@ inputs:
     default: "https://eppidev2985087618.blob.core.windows.net/sams-prod-simulation"
   output_container_path:
     type: string
+  managed_identity_client_id:
+    type: string
+    default: "df5b7af0-a55a-44d9-9ec7-9cde9abf3051"
 code: threshold_model_analysis.py
 environment: azureml://registries/eppi-shared-assets/environments/eppi-classifier-workbench-env/versions/1.0.2
 is_deterministic: false
@@ -44,3 +47,4 @@ command: >-
   --histogram_num_cv_repeats ${{inputs.histogram_num_cv_repeats}}
   --confusion_num_cv_repeats ${{inputs.confusion_num_cv_repeats}}
   --working_container_url ${{inputs.working_container_url}}
+  --managed_identity_client_id ${{inputs.managed_identity_client_id}}
