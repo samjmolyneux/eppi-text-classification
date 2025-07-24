@@ -193,3 +193,37 @@ pip3 install -e ".[test]"
 > **Description:** The id of the managed identity. This managed identity provides the cluster with access to the production blob storage.
 
 > **Implementation**: SET_FROM_DATA_FACTORY
+
+## Outputs
+
+### Plots directory
+
+> **Description:** A directory containing all the plots from the find_single_model pipeline.
+
+### optuna.db
+
+> **Description:** A database containing the information of the hyperparameter search. This doesn't really need to be saved at the moment, but it may be useful in the future if we wanted to have a continue search option if the model wasn't good enough.
+
+### labelled_tfidf.npz
+
+> **Description:** A file containing the tfidif scores of the labelled data.
+
+### unlabelled_tfidf.npz
+
+> **Description:** A file containing the tfidif scores of the unlabelled data.
+
+### feature_names.npy
+
+> **Description:** A file containing the names of the features that are used as columns in the tfidf array. They are ordered in the same order as the tfidf arrays in the .npz files.
+
+### labels.npy
+
+> **Description:** A file containing an array of the labels of the labelled data in order of the rows of the labelled_tfidf.npz.
+
+### best_hparams.json
+
+> **Description:** A file containing the hparams of the best performing model from the hyperparameter search.
+
+### trained_model Directory
+
+> **Description** A directory which contains the trained model. The file type varies based on which model is used.
