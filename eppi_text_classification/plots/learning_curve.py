@@ -1,7 +1,7 @@
 import numpy as np
 from joblib import Parallel, delayed
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 
 from eppi_text_classification.predict import predict_scores
 from eppi_text_classification.train import train
@@ -20,16 +20,26 @@ def _learning_curve_for_one_proportion(
     fold_train_sizes = []
 
     for train_idx, val_idx in kf_splits:
-        slice_end = int(len(train_idx) * proportion)  # proportion of this fold
-        train_idx_slice = train_idx[:slice_end]
-
-        fold_train_sizes.append(len(train_idx_slice))
-
-        X_train = tfidf_scores[train_idx_slice]
-        y_train = labels[train_idx_slice]
+        # Take a proportion of the training folds
+        # Train test split uses ceil of the test proportion, so need 13 of each class
+        # To guarantee that we have one of each class in the 0.1 proportion
+        # We are using the test size to determine the size of the training set
+        # As a result we take the test from train_test_split and use it for training
+        X_train = tfidf_scores[train_idx]
+        y_train = labels[train_idx]
+        if proportion < 1.0:
+            _, X_train, _, y_train = train_test_split(
+                X_train,
+                y_train,
+                test_size=proportion,
+                random_state=42,
+                stratify=y_train,
+            )
 
         X_val = tfidf_scores[val_idx]
         y_val = labels[val_idx]
+
+        fold_train_sizes.append(len(y_train))
 
         clf = train(model_name, model_params, X_train, y_train)
         train_auc = roc_auc_score(y_train, predict_scores(clf, X_train))
@@ -42,6 +52,7 @@ def _learning_curve_for_one_proportion(
     return mean_train_size, train_auc_scores, val_auc_scores
 
 
+# TODO: test that the test result is calculated by testing on the full dataset, not just a fold of the smaller proportion.
 def get_learning_curve_data(
     tfidf_scores,
     labels,
