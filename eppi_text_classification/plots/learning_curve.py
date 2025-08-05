@@ -52,7 +52,6 @@ def _learning_curve_for_one_proportion(
     return mean_train_size, train_auc_scores, val_auc_scores
 
 
-# TODO: test that the test result is calculated by testing on the full dataset, not just a fold of the smaller proportion.
 def get_learning_curve_data(
     tfidf_scores,
     labels,
@@ -69,7 +68,11 @@ def get_learning_curve_data(
     kf = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=42)
     kf_splits = list(kf.split(tfidf_scores, labels))
 
-    # Launch one job per proportion
+    # We are handling the edge case where there are less than 13 of a class.
+    _, counts = np.unique(labels, return_counts=True)
+    if np.any(counts < 13):
+        proportions = [p for p in proportions if p >= 0.2]
+
     results = Parallel(n_jobs=n_jobs, backend="loky")(
         delayed(_learning_curve_for_one_proportion)(
             prop,
